@@ -2,12 +2,12 @@
 if vacation is approved - authorityID is not null - then vacation charges could be charged
 if charge is made then vacation is considered to be taken
 only full time positions are entitled for the vacation
-некоторые выходят на пенсию, после чего им отпускные не начисляются.
+РЅРµРєРѕС‚РѕСЂС‹Рµ РІС‹С…РѕРґСЏС‚ РЅР° РїРµРЅСЃРёСЋ, РїРѕСЃР»Рµ С‡РµРіРѕ РёРј РѕС‚РїСѓСЃРєРЅС‹Рµ РЅРµ РЅР°С‡РёСЃР»СЏСЋС‚СЃСЏ.
 */
 
-declare @date date = '20220226'; -- условная дата расчета отпускных
-declare @charge_start date = dateadd(M, -6, @date); -- начало расчета отпускных
-declare  @personid int = 10 ; -- расчет для А.Балушкиной
+declare @date date = '20220226'; -- СѓСЃР»РѕРІРЅР°СЏ РґР°С‚Р° СЂР°СЃС‡РµС‚Р° РѕС‚РїСѓСЃРєРЅС‹С…
+declare @charge_start date = dateadd(M, -6, @date); -- РЅР°С‡Р°Р»Рѕ СЂР°СЃС‡РµС‚Р° РѕС‚РїСѓСЃРєРЅС‹С…
+declare  @personid int = 10 ; -- СЂР°СЃС‡РµС‚ РґР»СЏ Рђ.Р‘Р°Р»СѓС€РєРёРЅРѕР№
 with _source (personid, positionnameid, date_start, positionname, num) as (
 	select 
 		s.personid, pn.positionnameid, date_start , pn.positionname, 
@@ -23,7 +23,7 @@ from _source s
 	join hr.vacations v  on v.personid =s.personid
 where s.num=1 and v.personid =10 and taken = 'false'
 /*
-	авторизовать отпуск или нет - вопрос другой процедуры
-	сейчас  нужно создать функцию отработанного времени и процент среди других продавцов
-	за отпускной период
+	Р°РІС‚РѕСЂРёР·РѕРІР°С‚СЊ РѕС‚РїСѓСЃРє РёР»Рё РЅРµС‚ - РІРѕРїСЂРѕСЃ РґСЂСѓРіРѕР№ РїСЂРѕС†РµРґСѓСЂС‹
+	СЃРµР№С‡Р°СЃ  РЅСѓР¶РЅРѕ СЃРѕР·РґР°С‚СЊ С„СѓРЅРєС†РёСЋ РѕС‚СЂР°Р±РѕС‚Р°РЅРЅРѕРіРѕ РІСЂРµРјРµРЅРё Рё РїСЂРѕС†РµРЅС‚ СЃСЂРµРґРё РґСЂСѓРіРёС… РїСЂРѕРґР°РІС†РѕРІ
+	Р·Р° РѕС‚РїСѓСЃРєРЅРѕР№ РїРµСЂРёРѕРґ
 */
