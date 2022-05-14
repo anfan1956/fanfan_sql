@@ -15,23 +15,23 @@ with _user (userid) as (
 	select userid from fanfan.org.users u
 		where username = @user and u.roleID in  (2,3)
 )
-, s (валюта, тип, сумма) As (
-	select валюта, тип_счета
-		, sum(isnull(сумма, 0) * anfan_release.acc.current_rate_cur(валюта)) сумма
+, s (РІР°Р»СЋС‚Р°, С‚РёРї, СЃСѓРјРјР°) As (
+	select РІР°Р»СЋС‚Р°, С‚РёРї_СЃС‡РµС‚Р°
+		, sum(isnull(СЃСѓРјРјР°, 0) * anfan_release.acc.current_rate_cur(РІР°Р»СЋС‚Р°)) СЃСѓРјРјР°
 	from anfan_release.acc.cash_daily_f(@mydate)
-	group by валюта, тип_счета
-	having  sum(isnull(сумма, 0) * anfan_release.acc.current_rate_cur(валюта))>0
+	group by РІР°Р»СЋС‚Р°, С‚РёРї_СЃС‡РµС‚Р°
+	having  sum(isnull(СЃСѓРјРјР°, 0) * anfan_release.acc.current_rate_cur(РІР°Р»СЋС‚Р°))>0
 )
-select s.валюта, s.тип, 
-	format (s.сумма, '#,##0') сумма,
-	format (sum(s.сумма) over (), '#,##0') всего
+select s.РІР°Р»СЋС‚Р°, s.С‚РёРї, 
+	format (s.СЃСѓРјРјР°, '#,##0') СЃСѓРјРјР°,
+	format (sum(s.СЃСѓРјРјР°) over (), '#,##0') РІСЃРµРіРѕ
 from s
 	cross apply _user
 
 ;
 go
 
-declare @user varchar (37) = 'ПИКУЛЕВА О. Н.';
+declare @user varchar (37) = 'РџРРљРЈР›Р•Р’Рђ Рћ. Рќ.';
 exec rep.cash_on_date @user, @date  = '20220511';
 
 
