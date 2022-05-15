@@ -87,7 +87,7 @@ ALTER proc [inv].[hardcash_return_proc] @info dbo.id_money_type readonly, @salei
 				cross apply @amount  a
 		)				
 			insert inv.sales_receipts (saleID, receipttypeID, amount)
-			select @returnid, a.receipttypeid, -a.amount 
+			select @returnid, a.receipttypeid, a.amount 
 			from _amount a;
 
 			exec cust.totals_update;
