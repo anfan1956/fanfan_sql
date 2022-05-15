@@ -22,7 +22,7 @@ create function hr.vacation_params_f (@personid int ) returns table as return
 		where s.has_MW = 'True' and 
 		isnull(s.date_finish, GETDATE())>= v.vac_date
 	)
-	select s.personid, positionnameid, vacation_date, vacationyear, v.num_of_weeks 
+	select s.personid, positionnameid, vacation_date, vacationyear, v.num_of_weeks, DATEADD(WK, -1, vacation_date) vac_charge_date 
 	from _source s 
 		join hr.vacations v  on v.personid =s.personid
 	where s.num=1 and v.personid =@personid and taken = 'false'
@@ -44,7 +44,7 @@ with
 _params as (select * from hr.vacation_params_f(@personid))
 
 --selecting and checking authorised working time for the period used to calc vac charge
-, _attd (personid, attn_date, t_verified, checktype, vacation_date) as (
+, _attd (personid, attn_date, t_verified, checktype, vac_charge_date) as (
 	select 
 		a.personID, cast (checktime as date), 		
 			case 
@@ -58,12 +58,12 @@ _params as (select * from hr.vacation_params_f(@personid))
 						 then DATEADD(hh, 22, dbo.justdate(checktime))
 				else checktime end, 
 				a.checktype, 
-				p.vacation_date
+				p.vac_charge_date
 	from org.attendance a 
 		cross apply _params p
 	where 
 		a.personID not in (1) and
-		a.checktime between dateadd(M, - hr.parameter_value_f('мес/расчет/отпуск',null), p.vacation_date) and p.vacation_date
+		a.checktime between dateadd(M, - hr.parameter_value_f('мес/расчет/отпуск',null), p.vac_charge_date) and p.vac_charge_date
 )
 
 --checking all the persons eligible to take part in common hours
@@ -72,7 +72,7 @@ _params as (select * from hr.vacation_params_f(@personid))
 	from hr.compensation_schedule_21 c
 		join hr.positions_21 p on p.positionID = c.positionid		
 		cross apply _params pr
-	where c.date_start <=pr.vacation_date and min_wage is not null
+	where c.date_start <=pr.vac_charge_date and min_wage is not null
 )	
 , _persons (personid, hour_wage) as (
 	select distinct s.personid, w.hour_wage
@@ -83,7 +83,7 @@ _params as (select * from hr.vacation_params_f(@personid))
 		cross apply _params pm
 		join _hr_wage w on w.positionnameid=p.positionnameid
 	where 
-		isnull(s.date_finish, GETDATE())>= dateadd(M, -hr.parameter_value_f('мес/расчет/отпуск',null), pm.vacation_date) and
+		isnull(s.date_finish, GETDATE())>= dateadd(M, -hr.parameter_value_f('мес/расчет/отпуск',null), pm.vac_charge_date) and
 		positionname like 'консуль%' and
 		num = 1
 )
@@ -120,7 +120,7 @@ where a.num=1
 		join inv.sales_receipts s on s.saleID=sg.saleID
 		join inv.transactions t on t.transactionID  = s.saleID
 		cross apply _params pm
-	where t.transactiondate between dateadd(M, - hr.parameter_value_f('мес/расчет/отпуск',null), pm.vacation_date) and pm.vacation_date
+	where t.transactiondate between dateadd(M, - hr.parameter_value_f('мес/расчет/отпуск',null), pm.vac_charge_date) and pm.vac_charge_date
 	group by s.receipttypeID
 )
 
