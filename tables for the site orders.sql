@@ -14,6 +14,7 @@ inv.site_reservations:
 */
 
 if OBJECT_ID('cust.logs') is not null drop table cust.logs
+go
 create table cust.logs (
 personid int constraint fk_cust_logs foreign key  references cust.users (userid),
 log_date datetime,
