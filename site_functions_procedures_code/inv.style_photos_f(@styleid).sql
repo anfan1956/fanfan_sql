@@ -1,10 +1,5 @@
 USE [fanfan]
 GO
-/****** Object:  UserDefinedFunction [inv].[style_photos_f]    Script Date: 19.05.2022 11:17:34 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 ALTER function [inv].[style_photos_f](@styleid int) returns table as return
 
@@ -27,7 +22,9 @@ select distinct
 		v.brand, v.category, v.article, c.color,
 		--v.styleID,	
 		sp.parent_styleid styleID,	
-		v.price, v.discount,	sp.photo,
+--		v.price, 
+		s.cost * cr.rate * cr.markup price, 
+		v.discount,	sp.photo,
 		--datediff(s, d.date, receipt_date) 
 		receipt_date
 from _p sp
@@ -35,6 +32,8 @@ from _p sp
 		join inv.v_remains r on r.barcodeID=v.barcodeID
 		join inv.orders o on o.orderID=v.orderID
 		join inv.colors c on c.colorID=sp.colorid		
+		join inv.current_rate_v cr on cr.currencyid=o.currencyID and cr.divisionid = org.division_id('fanfan.store')
+		join inv.styles s on s.styleID=sp.styleid
 	where 
 		r.logstateID=8 and r.divisionID in (0, 14, 18, 25, 27) and 
 		sp.parent_styleid=@styleid
