@@ -23,7 +23,7 @@ select distinct
 		--v.styleID,	
 		sp.parent_styleid styleID,	
 --		v.price, 
-		s.cost * cr.rate * cr.markup price, 
+		s.cost * isnull(s.cost_adj, 1) * cr.rate * cr.markup price, 
 		v.discount,	sp.photo,
 		--datediff(s, d.date, receipt_date) 
 		receipt_date
