@@ -14,26 +14,25 @@ with _art (article, brandid) as (
 	from inv.current_rate_v cr 
 )
 
-, _s (styleid, colorid, sizeid, qty, price, cost, divisionid) as (
+, _s (styleid, colorid, sizeid, qty, price, cost, divisionid, division) as (
 	select 
 		st.styleID, b.colorID, b.sizeID, count(b.barcodeid), 
 		st.cost * isnull(st.cost_adj, 1) * cr.rate * cr.markup,
 		max(st.cost) over(),
-		r.divisionID
+		r.divisionID, d.division
 	from _art a
 		join inv.styles st on st.article=a.article and	st.brandID=a.brandid
 		join inv.orders o on o.orderID=st.orderID
 		join inv.barcodes b on b.styleID=st.styleID
 		join inv.v_remains r on r.barcodeID=b.barcodeID and r.logstateID =inv.logstate_id ('IN-WAREHOUSE')
+		join org.active_retail_divisions_f(getdate()) d on d.divisionID=r.divisionID
 		join inv.current_rate_v cr on cr.currencyid = o.currencyID and  cr.divisionID= org.division_id('fanfan.store')
-	group by st.styleID, b.colorID, b.sizeID, st.cost, st.cost_adj, cr.rate, cr.markup, r.divisionid
+	group by st.styleID, b.colorID, b.sizeID, st.cost, st.cost_adj, cr.rate, cr.markup, r.divisionid, d.division
 )
-	select sz.size, s.sizeid, cl.color, s.qty, s.price, s.styleid, d.division
+	select sz.size, s.sizeid, cl.color, s.qty, s.price, s.styleid, s.division
 	from _s s
 	join inv.sizes sz on sz.sizeID=s.sizeid
 	join inv.colors cl on cl.colorID=s.colorid
-	join org.divisions d on d.divisionid=s.divisionid and d.divisionid not in (org.division_id('б осрх'));
-
 GO
 
 declare @styleid int = 19691--19321;
