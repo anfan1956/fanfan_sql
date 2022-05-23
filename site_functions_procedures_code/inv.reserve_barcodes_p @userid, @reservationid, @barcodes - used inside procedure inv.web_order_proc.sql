@@ -1,7 +1,6 @@
 USE [fanfan]
 GO
 
-
 ALTER proc [inv].[reserve_barcodes_p] 
 		@userid int, 
 		@reservationid int,
