@@ -25,7 +25,7 @@ create function hr.vacation_params_f (@personid int ) returns table as return
 		where s.has_MW = 'True' and 
 		isnull(s.date_finish, v.vac_date)>= v.vac_date
 	)
-	select vacationid, s.personid, positionnameid, vacation_date, vacationyear, v.num_of_weeks, DATEADD(WK, -1, vacation_date) vac_charge_date 
+	select vacationid, s.personid, positionnameid, vacation_date, vacationyear, v.authorityID, v.num_of_weeks, DATEADD(WK, -1, vacation_date) vac_charge_date 
 	from _source s 
 		join hr.vacations v  on v.personid =s.personid
 	where s.num=1 and v.personid =@personid and taken = 'false'
