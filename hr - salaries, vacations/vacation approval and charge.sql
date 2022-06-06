@@ -9,14 +9,14 @@ create proc hr.vacation_approve2_p 	@vacationid int, @authorityid int, @note var
 		begin transaction
 			if (select count(*) from org.users where userid =@authorityid and roleID in (2, 3)) = 0
 				begin 
-					select @note = 'нет прав для авторизации';
+					select @note = 'РЅРµС‚ РїСЂР°РІ РґР»СЏ Р°РІС‚РѕСЂРёР·Р°С†РёРё';
 					throw 50001, @note, 1
 				end 
 			update v set v.authorityID=@authorityid, v.approval_date= CURRENT_TIMESTAMP
 			output inserted.authorityid, inserted.approval_date into @approval
 			from hr.vacations v		
 			where v.vacationid=@vacationid
-			select @note = p.lfmname + ': ' + 'согласовано '  + format(a.approval_date, 'dd.MM.yy  HH:mm') 
+			select @note = p.lfmname + ': ' + 'СЃРѕРіР»Р°СЃРѕРІР°РЅРѕ '  + format(a.approval_date, 'dd.MM.yy  HH:mm') 
 			from @approval a
 				join org.persons p on p.personID=a.autorityid
 					
