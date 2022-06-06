@@ -1,3 +1,6 @@
+use fanfan
+go
+
 /*This is going to represent whole procedure of approving and charging vacations
 if vacation is approved - authorityID is not null - then vacation charges could be charged
 if charge is made then vacation is considered to be taken
@@ -20,7 +23,7 @@ create function hr.vacation_params_f (@personid int ) returns table as return
 			join hr.position_names pn on pn.positionnameid=p.positionnameid
 			cross apply _vac_date v
 		where s.has_MW = 'True' and 
-		isnull(s.date_finish, GETDATE())>= v.vac_date
+		isnull(s.date_finish, v.vac_date)>= v.vac_date
 	)
 	select s.personid, positionnameid, vacation_date, vacationyear, v.num_of_weeks, DATEADD(WK, -1, vacation_date) vac_charge_date 
 	from _source s 
@@ -44,6 +47,7 @@ with
 _params as (select * from hr.vacation_params_f(@personid))
 
 --selecting and checking authorised working time for the period used to calc vac charge
+-- функция за 6 месяцев   hr.parameter_value_f('мес/расчет/отпуск',null)
 , _attd (personid, attn_date, t_verified, checktype, vac_charge_date) as (
 	select 
 		a.personID, cast (checktime as date), 		
@@ -143,5 +147,10 @@ where a.num=1
 select * from _sf where personid = @personid
 go
 
-declare  @personid int = 10 ; -- расчет для А.Балушкиной
+declare  @personid int = 66 ; -- расчет для Беззубцевой на 22.06.06
+
+select * from hr.vacation_params_f(@personid)
 select * from hr.vacation_charge_f (@personid)
+
+
+
