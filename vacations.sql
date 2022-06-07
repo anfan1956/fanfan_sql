@@ -150,7 +150,7 @@ go
 declare  @personid int = 66 ; -- расчет для Беззубцевой на 22.06.06
 
 select * from hr.vacation_params_f(@personid)
-select * from hr.vacation_charge_f (@personid)
+select комиссия + почасовая from hr.vacation_charge_f (@personid)
 
 
 
