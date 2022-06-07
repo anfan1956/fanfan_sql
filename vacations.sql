@@ -9,7 +9,9 @@ only full time positions are entitled for the vacation
 */
 
 
-/*Создаем функцию с датой и количестом недель отпуска для сотрудника, утвержденного но еще не отгулянного*/
+/*Создаем функцию с датой и количестом недель отпуска для сотрудника, утвержденного но еще не отгулянного
+	vac_charge_date - начисление начинается за одну неделю, hardcoding
+*/
 if OBJECT_ID ('hr.vacation_params_f') is not null drop function hr.vacation_params_f
 go
 create function hr.vacation_params_f (@personid int ) returns table as return
@@ -25,17 +27,20 @@ create function hr.vacation_params_f (@personid int ) returns table as return
 		where s.has_MW = 'True' and 
 		isnull(s.date_finish, v.vac_date)>= v.vac_date
 	)
-	select vacationid, s.personid, positionnameid, vacation_date, vacationyear, v.authorityID, v.num_of_weeks, DATEADD(WK, -1, vacation_date) vac_charge_date 
+	select 
+		vacationid, s.personid, positionnameid, vacation_date, 
+		vacationyear, v.authorityID, v.num_of_weeks, 
+		DATEADD(WK, -1, vacation_date) vac_charge_date, 
+		v.vac_pay_charged
 	from _source s 
 		join hr.vacations v  on v.personid =s.personid
 	where s.num=1 and v.personid =@personid and taken = 'false'
 go
 
 /*
-	авторизовать отпуск или нет - вопрос другой процедуры
+	авторизовать отпуск или нет - вопрос другой процедуры, см. модуль vacation approval
 	сейчас  нужно создать функцию отработанного времени и процент среди других продавцов
 	за отпускной период
-	нужно будет поправить процедуру регистрации персонала
 */
 
 -- Функция расчета отпускных (наличная часть)
