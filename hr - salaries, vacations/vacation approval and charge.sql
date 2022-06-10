@@ -1,16 +1,24 @@
+/*
+hr.vacations_pending_v
+hr.vacation_approve2_p
+hr.vacations_charge_p
+*/
 use fanfan
 go
 
 if OBJECT_ID('hr.vacations_pending_v') is not null drop view hr.vacations_pending_v
 go
 create view hr.vacations_pending_v as 
-	select v.vacationid [№_отпуска], cast(v.vacation_date as datetime) дата_отпуска, v.num_of_weeks недель, v.vacationyear за_год, p.personID id, p.lfmname сотрудник
+	select 
+		v.vacationid [№_отпуска], cast(v.vacation_date as datetime) дата_отпуска, 
+		cast (DATEADD(dd, -hr.parameter_value_f('дн/перед/отпуском', null), v.vacation_date) as datetime) charge_date,
+		v.num_of_weeks недель, v.vacationyear за_год, p.personID id, p.lfmname сотрудник, p2.lastname авторизовал,
+		v.vac_pay_charged
 	from hr.vacations v 
 		join org.persons p on p.personID = v.personid
+		left join org.persons p2 on p2.personID = v.authorityID
 	where taken = 'False'
 go
-
-
 
 if OBJECT_ID('hr.vacation_approve2_p') is not null drop proc hr.vacation_approve2_p
 go
@@ -43,6 +51,46 @@ go
 
 declare @vacationid int = 40, @authorityid int = 1, @note varchar(max);
 ---exec hr.vacation_approve2_p @vacationid, @authorityid, @note output; select @note
-select * from hr.vacations where vacationid=@vacationid
-select * from hr.vacations_pending_v;
+
 --update v set v.approval_date = null, authorityID = null from hr.vacations v where vacationid = 40
+
+
+
+if OBJECT_ID('hr.vacations_charge_p')  is not null drop proc hr.vacations_charge_p
+go 
+create proc hr.vacations_charge_p as 
+	set nocount on;
+	declare @message varchar(max);
+	if exists (select * from hr.vacations_pending_v v 
+				where getdate() > = v.charge_date 
+				and vac_pay_charged is null 
+				and авторизовал is not null
+			)
+		begin
+			begin try
+				begin transaction
+					
+					select @message = 'succeded';
+					throw 50001, 'debuging', 1
+				commit transaction
+			end try
+			begin catch
+				select @message = ERROR_MESSAGE()
+				rollback transaction
+			end catch		
+			insert hr.vacation_charges_log (log_code) values (@message)
+		end
+	else 
+		insert hr.vacation_charges_log (log_code) values ('no authorised vacations pending')
+
+go 
+
+--exec hr.vacations_charge_p
+
+select  *  from  hr.vacation_charges_log
+--truncate table  hr.vacation_charges_log
+
+select * from hr.vacations_pending_v;
+select * from hr.vacations v 
+where DATEADD(dd, -10,  v.vacation_date)< getdate() 
+	and taken = 'false'
