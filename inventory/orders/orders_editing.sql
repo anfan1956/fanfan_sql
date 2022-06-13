@@ -1,1 +1,0 @@
-SELECT * from inv.styles s where s.styleID = 19951
