@@ -145,6 +145,8 @@ go
 if OBJECT_ID('inv.order_re_sorted_drop_f') is not null drop proc inv.order_re_sorted_drop_f
 go
 create proc inv.order_re_sorted_drop_f @orderid int, @note varchar(max) output as
+
+--just showing how it works
 set nocount on;
 begin try
 	begin transaction;

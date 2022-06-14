@@ -10,7 +10,7 @@ only full time positions are entitled for the vacation
 
 
 /*Создаем функцию с датой и количестом недель отпуска для сотрудника, утвержденного но еще не отгулянного
-	vac_charge_date - начисление начинается за одну неделю, hardcoding
+	vac_charge_date - начисление начинается за десять дней, hardcoding
 */
 if OBJECT_ID ('hr.vacation_params_f') is not null drop function hr.vacation_params_f
 go
@@ -30,7 +30,7 @@ create function hr.vacation_params_f (@personid int ) returns table as return
 	select 
 		vacationid, s.personid, positionnameid, vacation_date, 
 		vacationyear, v.authorityID, v.num_of_weeks, 
-		DATEADD(WK, -1, vacation_date) vac_charge_date, 
+		DATEADD(DD, -hr.parameter_value_f('дн/перед/отпуском', null), vacation_date) vac_charge_date, 
 		v.vac_pay_charged
 	from _source s 
 		join hr.vacations v  on v.personid =s.personid
@@ -96,6 +96,7 @@ _params as (select * from hr.vacation_params_f(@personid))
 		positionname like 'консуль%' and
 		num = 1
 )
+
 
 -- calculating persons total hours worked  and hour wage
 , f (personid, hrs, hour_wage) as (
