@@ -12,7 +12,8 @@
 Дозаказ только в случае, если этот артикул уже есть в заказе.
 сначала создаем функцию перечисляющую все артикулы
 */
-
+use fanfan
+go
 
 if OBJECT_ID('inv.order_articles_f') is not null drop function inv.order_articles_f
 go 
@@ -144,28 +145,31 @@ go
 
 if OBJECT_ID('inv.order_re_sorted_drop_f') is not null drop proc inv.order_re_sorted_drop_f
 go
-create proc inv.order_re_sorted_drop_f @orderid int, @note varchar(max) output as
+create proc inv.order_re_sorted_drop_f @styleid int, @note varchar(max) output as
 
---just showing how it works
 set nocount on;
 begin try
 	begin transaction;
 		declare @barcodes table (barcodeid int);
-			with _resort_barcodes as (
-		select distinct i.barcodeID
-		from inv.inventory i
-		where i.transactionID = @orderid and i.logstateID = inv.logstate_id('RE_SORTED')
-)
-insert @barcodes (barcodeid) select barcodeid from _resort_barcodes;
 
-delete i from @barcodes b
-	join inv.inventory i on i.barcodeID = b.barcodeid;
+		with _resort_barcodes as (
+			select distinct i.barcodeID
+			from inv.inventory i
+				join inv.barcodes b on b.barcodeID= i.barcodeID
+				join inv.styles s on s.styleID = b.styleID and s.orderID= i.transactionID
+			where i.logstateID = inv.logstate_id('RE_SORTED')
+				and s.styleID = @styleid
+		)
+		insert @barcodes (barcodeid) select barcodeid from _resort_barcodes;
 
-delete i from @barcodes b
-	join inv.barcodes i on i.barcodeID = b.barcodeid;
+		delete i from @barcodes b
+			join inv.inventory i on i.barcodeID = b.barcodeid;
 
-	set @note = 're_sorted deleted'
-	--;throw 50001, 'debugging', 1;
+		delete i from @barcodes b
+			join inv.barcodes i on i.barcodeID = b.barcodeid;
+
+		set @note = 're_sorted deleted'
+		--;throw 50001, 'debugging', 1;
 	commit transaction
 end try
 begin catch
@@ -208,7 +212,7 @@ begin try
 	declare @clientid int = (select o.buyerID from inv.orders o where o.orderID= @orderid);
 	declare @divisionid int = org.division_id('В ПУТИ')
 
-	exec inv.order_re_sorted_drop_f @orderid, @note output; 
+	exec inv.order_re_sorted_drop_f @styleid, @note output; 
 	if @note <> 're_sorted deleted' 
 		throw 50001, 'failed to clear current barcodes', 1; 
 	
