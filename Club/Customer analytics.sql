@@ -3,7 +3,7 @@ go
 if OBJECT_ID('club.cust_turnover_f') is not null drop function club.cust_turnover_f
 go
 create function club.cust_turnover_f(@num_months int) returns table as return
-	with s (ñóììà, customerid, ÔÈÙ, òåëåôîí) as (
+	with s (ÑÑƒÐ¼Ð¼Ð°, customerid, Ð¤Ð˜Ð©, Ñ‚ÐµÐ»ÐµÑ„Ð¾Ð½) as (
 		select 
 			sum(sg.amount) amount, s.customerID, p.lfmname,
 			c.connect
@@ -16,8 +16,8 @@ create function club.cust_turnover_f(@num_months int) returns table as return
 		group by s.customerID, p.lfmname, c.connect
 	)
 	select *,  
-			RANK() over(order by s.ñóììà desc) ðàíæèð
+			RANK() over(order by s.ÑÑƒÐ¼Ð¼Ð° desc) Ñ€Ð°Ð½Ð¶Ð¸Ñ€
 	from s
-	where s.ñóììà>0
+	where s.ÑÑƒÐ¼Ð¼Ð°>0
 go
 --select * from club.cust_turnover_f(6)
