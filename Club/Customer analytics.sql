@@ -3,7 +3,7 @@ go
 if OBJECT_ID('club.cust_turnover_f') is not null drop function club.cust_turnover_f
 go
 create function club.cust_turnover_f(@num_months int) returns table as return
-	with s (сумма, customerid, ФИЩ, телефон) as (
+	with s (сумма, customerid, ФИO, телефон) as (
 		select 
 			sum(sg.amount) amount, s.customerID, p.lfmname,
 			c.connect
@@ -20,4 +20,4 @@ create function club.cust_turnover_f(@num_months int) returns table as return
 	from s
 	where s.сумма>0
 go
---select * from club.cust_turnover_f(6)
+select * from club.cust_turnover_f(6)
