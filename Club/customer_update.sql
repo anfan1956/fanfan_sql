@@ -42,7 +42,7 @@ as
 	begin try
 		begin transaction;
 			if OBJECT_ID('temp.cust_update_t') is null			
-				throw 50001, 'клиента с таким номером телефона не существует', 1;
+				throw 50001, 'РєР»РёРµРЅС‚Р° СЃ С‚Р°РєРёРј РЅРѕРјРµСЂРѕРј С‚РµР»РµС„РѕРЅР° РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚', 1;
 				--select 'STOP'
 				select @customerid = c.personID  from cust.connect c 
 					join temp.cust_update_t t on t.customerid=c.personID and t.code=@code
@@ -59,10 +59,10 @@ as
 						update c set c.connect = @new_phone
 						from cust.connect c where c.personID = @customerid and c.connecttypeID =1;
 
-						select @note = 'Телефон обновлен'
+						select @note = 'РўРµР»РµС„РѕРЅ РѕР±РЅРѕРІР»РµРЅ'
 					end 
 				else 
-					select @note = 'Неверный код подтверждения';
+					select @note = 'РќРµРІРµСЂРЅС‹Р№ РєРѕРґ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ';
 				if OBJECT_ID('temp.cust_update_t') is not null drop table temp.cust_update_t;
 
 			--	--throw 500001, 'debuging', 1
@@ -104,14 +104,14 @@ as
 			
 			if @customerid is  null 
 				begin;
-					throw 50001, 'клиента с таким номером телефона не существует ',1
+					throw 50001, 'РєР»РёРµРЅС‚Р° СЃ С‚Р°РєРёРј РЅРѕРјРµСЂРѕРј С‚РµР»РµС„РѕРЅР° РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ ',1
 				end
 
 				insert temp.cust_update_t (customerid, new_phone, code)
 				select @customerid, @new_phone, @code;
 				select @r = @@ROWCOUNT;
 				
-				select @note = 'контрольная запись сделана'
+				select @note = 'РєРѕРЅС‚СЂРѕР»СЊРЅР°СЏ Р·Р°РїРёСЃСЊ СЃРґРµР»Р°РЅР°'
 		commit transaction;
 		return @r
 	end try
