@@ -42,6 +42,7 @@ as
 	begin try
 		begin transaction;
 			if OBJECT_ID('temp.cust_update_t') is null			
+
 				throw 50001, 'клиента с таким номером телефона не существует', 1;
 				--select 'STOP'
 				select @customerid = c.personID  from cust.connect c 
@@ -104,7 +105,9 @@ as
 			
 			if @customerid is  null 
 				begin;
+
 					throw 50001, 'клиента с таким номером телефона не существует ',1
+
 				end
 
 				insert temp.cust_update_t (customerid, new_phone, code)
@@ -112,6 +115,7 @@ as
 				select @r = @@ROWCOUNT;
 				
 				select @note = 'контрольная запись сделана'
+
 		commit transaction;
 		return @r
 	end try
