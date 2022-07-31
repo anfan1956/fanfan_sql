@@ -19,8 +19,11 @@ with s (commissions) as (
 		h.hrs * hr.parameter_value_f('минималка/час', null) * hr.parameter_value_f('ЕСН', null) * w.has_MW, 
 		@update
 		--h.hrs/sum(h.hrs) over () * s.commissions + hr.actual_hourcharge_salespeople(@startdate) *h.hrs total
+---------------вот здесь была ошибка. Функция считает все деньги начисленные после startdate, а не только за период
+---------- Ошибку поправил в предыдущем коммите
 	from hr.hours_lastperiod(@startdate) h
-		join hr.has_MW_f(@update) w on w.personid=h.personID
+------- поправил hr.has_MW_f
+		join hr.has_MW_f(@startdate) w on w.personid=h.personID
 		cross apply s
 	)
 ,  r (charge_date, personid, clientid, journalid, detailsid, amount, accountid) as (
@@ -32,7 +35,7 @@ select charge_date, personID, clientid,
 select charge_date, personID, clientid, 
 	anfan_release.acc.journalid_func('hard cash'),
 	anfan_release.acc.transaction_details_id ('оклад, нал'), 
-	hourly_wage - min_wage,
+	hourly_wage - min_wage  ,
 		anfan_release.acc.accountid_func('оклад', 'RUR') from f union
 select charge_date, personID, clientid, 
 	anfan_release.acc.journalid_func('payroll'),
@@ -58,11 +61,5 @@ from r
 /*following to be deleted*/
 --where personid = 67
 GO
-declare @startdate date = dateadd(d, 1, hr.last_date())
-DECLARE  @update date = hr.upcoming_date() 
-
-SELECT * from hr.salary_charge_f(@startdate, @update) s
-WHERE s.personid =67
-
 
 
