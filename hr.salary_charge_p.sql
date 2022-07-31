@@ -5,11 +5,27 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER proc [hr].[salary_charge_p] @note varchar(max) output as 
+ALTER proc [hr].[salary_charge_p] 
+	@note varchar(max) OUTPUT,
+	@passed_date DATE=null	
+as 
 
---	declare @mydate date = cast (getdate() as date)
-	declare @startdate date = dateadd(d, 1, hr.last_date()), @update date = hr.upcoming_date(), 
-	@currenttime datetime =  current_timestamp;
+	DECLARE @startdate DATE, @update DATE;
+
+	SET @startdate = dateadd(d, 1, hr.last_date())
+	IF @passed_date IS NOT NULL 
+		BEGIN
+			SET @startdate=@passed_date
+		END
+
+	SELECT @update = sd.salary_date
+	FROM hr.salary_dates sd
+	WHERE sd.salary_date >= DATEADD(d, -1, @startdate)
+	ORDER BY sd.salary_date 
+	OFFSET 1 ROWS
+	FETCH NEXT 1 ROWS ONLY;
+
+	DECLARE @currenttime datetime =  current_timestamp;
 	declare @transactions table (
 		transactionid int, currencyid int, transactiondate datetime, 
 		detailsid int, clientid int, comment varchar(255)
@@ -28,12 +44,16 @@ ALTER proc [hr].[salary_charge_p] @note varchar(max) output as
 
 	begin try
 		begin transaction;
-			if not( datediff(D, hr.upcoming_date(), cast(CURRENT_TIMESTAMP as date))>=10
-				and (select success from hr.salary_dates d where d.salary_date=hr.upcoming_date() ) is null)
-				begin
-					select @note = 'either to early or already done'
-					;throw 50001, @note, 1;		
-				end ;
+			IF @passed_date IS NULL
+					begin
+						if not( datediff(D, hr.upcoming_date(), cast(CURRENT_TIMESTAMP as date))>=10
+							and (select success from hr.salary_dates d where d.salary_date=hr.upcoming_date() ) is null)
+							begin
+								select @note = 'either to early or already done'
+								;throw 50001, @note, 1;		
+							end;
+					END; 
+
 
 				/*create new transactions, one transaction per personid */
 				with s (personid, currencyid, transactiondate, detailsid, clientid, comment) as (
