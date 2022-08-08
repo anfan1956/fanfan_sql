@@ -2,31 +2,45 @@ use fanfan
 go
 if OBJECT_ID('club.cust_turnover_f') is not null drop function club.cust_turnover_f
 go
-create function club.cust_turnover_f(@num_months int) returns table as return
-	with _startdate (startdate, transactionid)  as (
-			select top 1 t.transactiondate, t.transactionID
-			from inv.transactions t order by 2 
+create function club.cust_turnover_f(@months INT = null, @startdate DATE = NULL) returns table as return
+	with _transactions (transactionid)  as (
+			select T.transactionID
+			from inv.transactions t 
+				JOIN inv.sales_trans_types_v s ON s.transactiontypeID=t.transactiontypeID
+			WHERE 
+			CAST(T.transactiondate AS DATE) >=
+				DATEADD(m,-ISNULL(@months, 12), ISNULL(@startdate, CAST(GETDATE() AS DATE))) 
+				AND 
+			CAST(t.transactiondate AS DATE) <= ISNULL(@startdate, CAST(GETDATE()AS DATE))
 	)
+	, _sales_volume (customerID, phone, customer, amount ) AS (
+		SELECT 
 
-	, s  (amount, customerid, customer, phone, stdate) as (
-			select 
-				sum(isnull(sg.amount, 0)) amount, p.personID, p.lfmname,
-				c.connect, sd.startdate
-			from cust.persons p 
-				join cust.connect c on c.personID=p.personID and c.prim='True'
-				left join inv.sales s on p.personID = s.customerID
-				left join inv.sales_goods sg on sg.saleID=s.saleID
-				left join inv.transactions t on t.transactionid =s.saleID
-				cross apply _startdate sd
-			where isnull(t.transactiondate, sd.startdate)>=iif	(@num_months>0, 
-					DATEADD(MM,  -@num_months, GETDATE()), sd.startdate)
-				and connecttypeID=1
-			group by p.personID, p.lfmname, c.connect, sd.startdate
+			s.customerID,
+			c.connect phone,
+			P.lfmname,
+			sum (sg.amount) amount
+		FROM _transactions t
+			JOIN inv.transactions tr ON tr.transactionID=t.transactionid
+			JOIN inv.sales_goods sg ON sg.saleID=t.transactionid
+			JOIN inv.sales s ON s.saleID=t.transactionid
+			JOIN cust.persons p ON p.personID= s.customerID
+			JOIN cust.connect c ON c.personID=p.personID
+		WHERE c.connecttypeID=1
+		GROUP BY s.customerID, p.lfmname, c.connect
 	)
-
-	select amount, customerid, customer, phone, stdate,  
-			RANK() over(order by s.amount desc) cust_rank
-	from s
-	where s.amount> iif (@num_months = 0, -1, 0)
+SELECT 
+	amount,
+	RANK() OVER (ORDER BY amount desc) cust_rank,
+	customer,
+	phone, 
+	customerID 
+FROM _sales_volume
+WHERE amount>0
 go
-select * from club.cust_turnover_f(12)
+
+select amount, cust_rank, customer, phone, customerid from club.cust_turnover_f(12, '20220701')
+ORDER BY 2 
+
+GO
+
