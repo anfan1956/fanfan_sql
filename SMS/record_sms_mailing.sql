@@ -11,7 +11,8 @@ create proc sms.record_individ_p
 	@userid int, 
 	@cost money,
 	@note varchar(max) OUTPUT, 
-	@expires date,
+	@expires DATE, 
+	@discount DECIMAL (4,3),
 	@singleCode BIT = 'False'
 
 as
@@ -39,8 +40,8 @@ BEGIN
 
 	declare @smsid int;
 	
-	insert sms.instances(smstext,smsdate, senderid, userid, cost, singlePromo, expirationDate)
-	select @sms_text, CURRENT_TIMESTAMP	, @clientid, @userid, @cost * @number, 'False', @expires;
+	insert sms.instances(smstext,smsdate, senderid, userid, cost, singlePromo, expirationDate, discount)
+	select @sms_text, CURRENT_TIMESTAMP	, @clientid, @userid, @cost * @number, 'False', @expires, @discount;
 	set @smsid= SCOPE_IDENTITY();
 	--select * from sms.instances where smsid=@smsid;
 
@@ -56,9 +57,10 @@ go
 set nocount on;
 declare @sms_text varchar(255) = 'Sale in FANFAN. Your promocode:';
 declare @cost money = 3.62;
-declare @customers dbo.id_type, @note varchar(max), @clientid int =179, @userid int =1, @expires date = '20220801'; 
+declare @customers dbo.id_type, @note varchar(max), @clientid int =179, @userid int =1, 
+	@expires date = '20220801', @discount DECIMAL(4, 3)= 0.15; 
 insert @customers values (4),(34),(17338);
-exec sms.record_individ_p @sms_text, @customers, @clientid, @userid, @cost, @note OUTPUT, @expires;
+exec sms.record_individ_p @sms_text, @customers, @clientid, @userid, @cost, @note OUTPUT, @expires, @discount;
 select @note;
 
 select * from sms.customers
