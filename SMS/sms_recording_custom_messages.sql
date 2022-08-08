@@ -1,5 +1,8 @@
 USE fanfan
 go
+
+--DO NOT RUN THE SCRIPT ON LIVE DATA!!!
+
 if OBJECT_ID('sms.phones')is not null drop table sms.phones 
 if OBJECT_ID('sms.operators')is	not null drop table sms.operators 
 
@@ -52,29 +55,39 @@ begin try
 	begin TRANSACTION;
 		
 		-- update operator regions with merge
-		WITH s (region, timezone) AS (
-			SELECT DISTINCT region, tz
-			FROM @ph_data
+		WITH s (region, timezone, num) AS (
+			SELECT  d.region, d.tz,  
+			ROW_NUMBER() OVER (PARTITION BY D.region ORDER BY p.personID DESC)
+			FROM @ph_data d
+			JOIN cust.connect c1 ON c1.connect= RIGHT(d.phone, 10)
+			JOIN cust.persons p ON P.personID=c1.personID
 		)
 		MERGE sms.operator_regions AS t USING s
 		ON t.region=s.region
-		WHEN MATCHED THEN UPDATE SET t.timezone=s.timezone
-		WHEN NOT MATCHED THEN INSERT(region, timezone)
+		WHEN MATCHED AND s.num =1
+		THEN UPDATE SET t.timezone=s.timezone
+		WHEN NOT MATCHED AND s.num =1
+		THEN INSERT(region, timezone)
 			VALUES (s.region, s.timezone);
 
 		-- update operators list with merge
-		WITH s (operator) AS (
-			SELECT DISTINCT p.operator
-			FROM @ph_data p
+		WITH s (operator, num) AS (
+			SELECT DISTINCT d.operator,
+			ROW_NUMBER() OVER(PARTITION BY D.operator ORDER BY P.personID DESC)
+			FROM @ph_data d
+				LEFT JOIN cust.connect c1 ON c1.connect= RIGHT(d.phone, 10)
+			JOIN cust.persons p ON P.personID=c1.personID
 		)
 		MERGE sms.operators AS t USING s
 		ON t.operator=s.operator
-		WHEN NOT MATCHED THEN INSERT(operator)
+		WHEN NOT MATCHED AND s.num=1
+		THEN INSERT(operator)
 			VALUES (s.operator);
+
 
 		-- update phones list with merge
 		WITH s 
-			(customerid, phone, countryid, operatorid , regionid,	mcc, mnc, timezone) 
+			(customerid, phone, countryid, operatorid , regionid,	mcc, mnc, timezone, num) 
 			AS (
 			SELECT DISTINCT 
 				p1.personID,
@@ -84,7 +97,8 @@ begin try
 				r.regionid, 
 				P.mcc, 
 				P.mnc,
-				P.tz
+				P.tz, 
+				ROW_NUMBER() OVER (PARTITION BY p.phone ORDER by p1.personid desc)
 			FROM @ph_data p
 				JOIN cmn.countries c ON c.countryrus=P.country
 				JOIN sms.operators o ON o.operator = P.operator
@@ -92,13 +106,14 @@ begin try
 				LEFT JOIN cust.connect c1 ON c1.connect= RIGHT(p.phone, 10)
 				LEFT JOIN cust.persons p1 ON p1.personID=c1.personID
 		)
-		--SELECT * FROM s;
+		--SELECT s.*, P.lfmname, ROW_NUMBER() OVER(PARTITION BY phone ORDER BY customerid desc) FROM s
+			--JOIN cust.persons p ON p.personID=customerid
 		MERGE sms.phones AS t USING s
 		ON t.phone=s.phone
-		WHEN NOT MATCHED AND s.customerid IS NOT null  THEN INSERT(customerid, phone, countryid, operatorid , regionid,	mcc, mnc, timezone)
+		WHEN NOT MATCHED AND s.customerid IS NOT null AND s.num=1
+		THEN INSERT(customerid, phone, countryid, operatorid , regionid,	mcc, mnc, timezone)
 			VALUES (customerid, phone, countryid, operatorid , regionid,	mcc, mnc, timezone)
-		WHEN MATCHED AND 
-			(t.customerid<> s.customerid AND s.customerid IS NOT NULL) or
+		WHEN MATCHED AND s.num =1 and
 			t.countryid<>s.countryid or
 			t.operatorid<>s.operatorid or
 			t.regionid<> s.regionid or
@@ -115,10 +130,9 @@ begin try
 			timezone = s.timezone		
 		;
 	DECLARE @phones_checked INT = (SELECT COUNT(*) FROM @ph_data)
-	
 
 	set @note = 
-		'phones checked: ' + CAST(@phones_checked AS VARCHAR(max));
+		'# of phones checked: ' + CAST(@phones_checked AS VARCHAR(max));
 --	;throw 50001, @message, 1
 	commit transaction
 end try
@@ -141,11 +155,8 @@ insert @ph_data (phone, country, operator, region, mcc, mnc, tz) values
 ('79256712827', 'Россия', 'Мегафон', 'г. Москва и Московская область', '250', '02', '3')
 
 set nocount on; declare @note varchar (max)
---EXEC sms.phones_data_update @ph_data, @note output; select @note
+EXEC sms.phones_data_update @ph_data, @note output; select @note
 
 SELECT * FROM sms.operator_regions 
 SELECT *FROM sms.operators o
 SELECT * FROM sms.phones p
-
-
-
