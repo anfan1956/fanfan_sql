@@ -26,7 +26,7 @@ create function club.cust_turnover_f(@startdate DATE = NULL, @enddate date = nul
 			JOIN inv.sales s ON s.saleID=t.transactionid
 			JOIN cust.persons p ON p.personID= s.customerID
 			JOIN cust.connect c ON c.personID=p.personID
-		WHERE c.connecttypeID=1 AND c.connect not LIKE '0%'
+		WHERE c.connecttypeID=1 AND c.connect LIKE '9%'
 		GROUP BY s.customerID, p.lfmname, c.connect
 	)
 SELECT 
