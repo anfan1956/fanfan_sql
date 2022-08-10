@@ -8,7 +8,6 @@ create table sms.instances (
 	smsid int not null identity constraint pk_sms_instances primary key,
 	smstext varchar (255) not null, 
 	smsdate datetime not null default current_timestamp,
-	cost money null,
 	senderid int not null constraint fk_sms_client foreign key references org.clients (clientid), 
 	userid int not null constraint fk_sms_users foreign key references org.users (userid), 
 	singlePromo BIT DEFAULT ('True'), 
@@ -21,7 +20,7 @@ create table sms.instances_customers (
 	customerid int not null constraint fk_sms_customers references cust.persons (personid),
 	--no violation of 3 normal, because customer phone could change, but ID stays
 	promocode char (4) NULL, 
-	succsess bit, 
+	cost MONEY,
 	constraint pk_sms_customeres primary key (smsid, customerid)
 )
 
