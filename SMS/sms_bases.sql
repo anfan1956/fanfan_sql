@@ -1,7 +1,7 @@
 use fanfan
 go
 
-if OBJECT_ID('sms.customers') is not null drop table sms.customers
+if OBJECT_ID('sms.instances_customers') is not null drop table sms.instances_customers
 if OBJECT_ID('sms.instances') is not null drop table sms.instances
 go 
 create table sms.instances (
@@ -16,7 +16,7 @@ create table sms.instances (
 	discount DECIMAL(4,3) NULL
 )
 
-create table sms.customers (
+create table sms.instances_customers (
 	smsid int not null constraint fk_sms_instances_cust references sms.instances (smsid),
 	customerid int not null constraint fk_sms_customers references cust.persons (personid),
 	--no violation of 3 normal, because customer phone could change, but ID stays
