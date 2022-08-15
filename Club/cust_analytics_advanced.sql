@@ -20,41 +20,54 @@ WITH _CASE_tran_types (sale_type, transactiontypeid) AS (
 	SELECT	P.phoneid, P.customerid
 	FROM sms.phones p
 )
---, _dates(custid, tr_date, tr_type, start_nums, lst, frs_division, lst_division) AS (
-, _dates(cust_id, trans_id, purch_date, div_id, sale_type ) AS (
+, _dates(cust_id, cust_name , trans_id, purch_date, division, sale_type, chain ) AS (
 	SELECT 
-		s.customerid, T.transactionID, T.transactiondate, sl.divisionID, TT.sale_type  
+		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.divisionfullname, 
+		TT.sale_type , c.chain
 	FROM s 
-	JOIN inv.sales sl ON sl.customerID=s.customerid
-	JOIN inv.transactions t ON T.transactionID=sl.saleID	
-	JOIN _CASE_tran_types TT ON TT.transactiontypeid=T.transactiontypeID
+		JOIN inv.sales sl ON sl.customerID=s.customerid
+		JOIN inv.transactions t ON T.transactionID=sl.saleID	
+		JOIN _CASE_tran_types TT ON TT.transactiontypeid=T.transactiontypeID
+		JOIN org.divisions d ON D.divisionID=sl.divisionID
+		JOIN org.chains c ON c.chainID=D.chainID
+		JOIN cust.persons p ON P.personID=s.customerid
 ) 
-	, _nums (cust_id, trans_id, purch_date, div_id, sale_type, num_asc, nums_desc) as (
+	, _nums (cust_id, cust_name, trans_id, purch_date, division, sale_type, num_asc, nums_desc, chain) as (
 	SELECT 
-		s.cust_id, s.trans_id, s.purch_date, s.div_id, s.sale_type, 
+		s.cust_id, s.cust_name, s.trans_id, s.purch_date, s.division, s.sale_type, 
 		ROW_NUMBER() OVER(PARTITION BY cust_id ORDER BY purch_date), 
-		ROW_NUMBER() OVER(PARTITION BY cust_id ORDER BY purch_date desc) 
+		ROW_NUMBER() OVER(PARTITION BY cust_id ORDER BY purch_date desc), 
+		s.chain 
 	FROM _dates s 
 	WHERE s.sale_type = 'SALES'
 
 )
-, _start(cust_id, frst_trans_id, frst_date, frs_divid ) AS (
-	SELECT n.cust_id, n.trans_id, n.purch_date, n.div_id
+, _start(cust_id, cust_name, frst_trans_id, frst_date, frs_div, chain ) AS (
+	SELECT n.cust_id, cust_name, n.trans_id, n.purch_date, n.division, n.chain
 	FROM _nums n
 	WHERE n.num_asc = 1
 )
-, _end (cust_id, lst_trans_id, lst_date, lst_divid ) AS (
-	SELECT n.cust_id, n.trans_id, n.purch_date, n.div_id
+, _sms_dates (cust_id, smsdate, num)  AS (
+SELECT s.customerid, i.smsdate,
+ROW_NUMBER() OVER (PARTITION BY s.customerid ORDER BY i.smsid desc )
+FROM s
+LEFT JOIN sms.instances_customers ic ON ic.customerid= s.customerid
+LEFT JOIN sms.instances i ON I.smsid	=ic.smsid
+)
+, _end (cust_id, lst_trans_id, lst_date, lst_div) AS (
+	SELECT n.cust_id, n.trans_id, n.purch_date, n.division
 	FROM _nums n
 	WHERE n.nums_desc = 1
 )
-SELECT s.cust_id, s.frst_trans_id, s.frst_date, s.frs_divid, e.lst_trans_id, e.lst_date, e.lst_divid
+SELECT 
+	s.cust_id, s.cust_name, s.chain registered,  
+	s.frst_trans_id, s.frst_date, s.frs_div, e.lst_trans_id, 
+	e.lst_date, e.lst_div, ISNULL(dbo.justdate(sd.smsdate), 0) sms_date
 FROM _start s
 	JOIN _end e ON e.cust_id= s.cust_id
-WHERE s.frst_date=e.lst_date
+	JOIN _sms_dates sd ON sd.cust_id= s.cust_id
+WHERE sd.num =1;
+
 
 GO
 
-SELECT aa.* 
-FROM cust.analytics_adv() aa
-	
