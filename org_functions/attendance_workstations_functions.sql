@@ -12,7 +12,7 @@ TABLE AS  RETURN
 	AND dbo.justdate(a.checktime) = dbo.justdate(@date)
 go
 
-SELECT person FROM org.attendance_date_shop_f(18, getdate()) adsf
+SELECT person FROM org.attendance_date_shop_f(org.division_id('07 ФАНФАН'), '20220822') 
 
 IF OBJECT_ID('org.workstation_id') IS NOT NULL DROP FUNCTION org.workstation_id
 GO
@@ -41,3 +41,4 @@ SELECT workstationID
 FROM _w
 WHERE num=1 AND _w.divisionid= @divisionid
 GO
+SELECT person FROM org.attendance_date_shop_f(org.division_id('07 ФАНФАН'), '20220822') 
