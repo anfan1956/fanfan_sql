@@ -17,8 +17,8 @@ with _enddate (enddate) AS (
 )
 -- теперь выбирает тех, у которых почасовая зарплата есть, кроме меня и Ирины
 -- и тех, кто еще работает в этот период
-, _ids as (
-		select distinct s.personid, pn.positionname, pn.positionnameid
+, _ids (personid, positionname, positionnameid, commission) as (
+		select distinct s.personid, pn.positionname, pn.positionnameid, P.commission
 		from hr.position_names pn
 			join hr.positions_21 p on p.positionnameid = pn.positionnameid
 			join hr.schedule_21 s on s.positionid =p.positionid
@@ -29,7 +29,7 @@ with _enddate (enddate) AS (
 				AND s.personid NOT IN (1, 5)
 		WHERE P.hour_wage = 'True'
 	)
-	, _verified (personid, checktype, checktime, clientid, salary_date) as (
+	, _verified (personid, checktype, checktime, clientid, salary_date, commission) as (
 		select 
 			a.personID, a.checktype,
 				case 
@@ -45,7 +45,8 @@ with _enddate (enddate) AS (
 							 then DATEADD(hh, 22, dbo.justdate(checktime))
 					else checktime end checktime, 
 					org.workstation_client_id(a.workstationID, cast(a.checktime as date)) client_id, 
-					e.enddate
+					e.enddate, 
+					i.commission
 		from org.attendance a 
 			join _ids i on i.personid=a.personID
 			JOIN _enddate e ON e.enddate>=CAST(a.checktime AS date)
@@ -55,7 +56,8 @@ with _enddate (enddate) AS (
 	)
 	select 
 		distinct a.salary_date, clientid, a.personID,
-		sum(convert(money, a.checktime)*(1 - 2 * a.checktype)*24) over(partition by a.personid, a.clientid, a.salary_date) hrs
+		sum(convert(money, a.checktime)*(1 - 2 * a.checktype)*24) over(partition by a.personid, a.clientid, a.salary_date) hrs, 
+		a.commission
 		/* с детализацией по  дням */
 	--	distinct a.personID, sum(convert(money, a.checktime)*(1 - 2 * a.checktype)*24) over(partition by a.personid) hr
 	from _verified a
