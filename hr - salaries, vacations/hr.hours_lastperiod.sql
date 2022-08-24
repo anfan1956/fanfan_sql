@@ -15,12 +15,19 @@ with _enddate (enddate) AS (
 	OFFSET 1 ROWS
 	FETCH NEXT 1 ROWS ONLY
 )
+-- теперь выбирает тех, у которых почасовая зарплата есть, кроме меня и Ирины
+-- и тех, кто еще работает в этот период
 , _ids as (
-		select distinct s.personid
+		select distinct s.personid, pn.positionname, pn.positionnameid
 		from hr.position_names pn
 			join hr.positions_21 p on p.positionnameid = pn.positionnameid
 			join hr.schedule_21 s on s.positionid =p.positionid
-		where pn.positionname like 'консультант%' and personid<>1
+			JOIN hr.compensation_schedule_21 cs 
+				ON cs.positionid=p.positionid 
+				AND ISNULL(cs.date_finish, CAST(GETDATE() AS date))>=@startdate
+				AND ISNULL(s.date_finish, CAST(GETDATE() AS DATE))>=@startdate
+				AND s.personid NOT IN (1, 5)
+		WHERE P.hour_wage = 'True'
 	)
 	, _verified (personid, checktype, checktime, clientid, salary_date) as (
 		select 
@@ -28,12 +35,13 @@ with _enddate (enddate) AS (
 				case 
 					when checktype=1 
 						and CAST(checktime as time(0))<cast('10:00' as time(0)) 
-
 						and superviserID is null 
+						AND i.positionnameid NOT IN (7)
 							then DATEADD(hh, 10, dbo.justdate(checktime))
 					when checktype=0 
 						and CAST(checktime as time(0))>cast('22:00' as time(0)) 
 						and superviserID is null 
+						AND i.positionnameid NOT IN (7)
 							 then DATEADD(hh, 22, dbo.justdate(checktime))
 					else checktime end checktime, 
 					org.workstation_client_id(a.workstationID, cast(a.checktime as date)) client_id, 
@@ -54,6 +62,7 @@ with _enddate (enddate) AS (
 GO
 ----функция считала отработанные часы за все время, а не за период
 
-DECLARE @startdate DATE = '20220701';
+
+DECLARE @startdate DATE = '20220801';
 SELECT * FROM hr.hours_lastperiod(@startdate) hl
-WHERE hl.personID= 67
+WHERE hl.personID= 7
