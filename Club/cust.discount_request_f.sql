@@ -1,4 +1,7 @@
-﻿IF OBJECT_ID('inv.barcode_discount_f') IS NOT NULL DROP FUNCTION inv.barcode_discount_f
+﻿USE fanfan
+go
+
+IF OBJECT_ID('inv.barcode_discount_f') IS NOT NULL DROP FUNCTION inv.barcode_discount_f
 GO
 CREATE FUNCTION inv.barcode_discount_f(@barcodeid INT) RETURNS DECIMAL(3,2) AS BEGIN
 	DECLARE @discount DECIMAL(3,2);
