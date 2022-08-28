@@ -13,15 +13,15 @@ GO
 
 ALTER view [hr].[salaries_payable_v] as
 	with _startdate (startdate) as (select '20210416')	
-	, s (сотрудник, [форма оплаты]/*, работодатель*/, [дата зачисления], операция, сумма/*, id*/) as (
+	, s (сотрудник, [форма оплаты], работодатель, [дата зачисления], операция, сумма, id) as (
 		select 
 			c.contractor, 
 			isnull(ps.split, iif(g.journalid = acc.journalid_func('hard cash'), 'cash', null)),
---			cl.client, 
+			cl.client, 
 			dbo.justdate(t.transactiondate), 
 			td.details, 
-			sum (g.amount* (2*g.is_credit-1))
---			g.transactionid
+			sum (g.amount* (2*g.is_credit-1)),
+			g.transactionid
 		from acc.generalledger g
 			join acc.fin_transactions t on t.transactionid=g.transactionid
 			join org.contractors c on c.contractorid=g.contractorid
@@ -31,6 +31,7 @@ ALTER view [hr].[salaries_payable_v] as
 			join _startdate sd on t.transactiondate> sd.startdate
 		where g.accountid=acc.accountid_func('зарплата к оплате', 'RUR')
 		group by c.contractor, ps.split, g.journalid, dbo.justdate(t.transactiondate), td.details
+			, cl.client, g.transactionid
 		)
 	select * from s;
 ;
