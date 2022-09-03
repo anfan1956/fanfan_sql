@@ -11,6 +11,7 @@ create function fin.gross_p_l_func(@date_start date) returns table as return
 select 
 	s.saleid, 
 	d.divisionfullname shop, 
+	d.divisionID,
 	p.lfmname sales_pers,
 	cp.lfmname customer,
 	sg.barcodeID, 
