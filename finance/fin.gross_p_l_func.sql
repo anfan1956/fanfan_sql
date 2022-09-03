@@ -32,8 +32,8 @@ from inv.sales s
 	join inv.sales_goods sg on sg.saleID=s.saleID
 	join inv.barcodes b on b.barcodeID= sg.barcodeID
 	join inv.styles st on st.styleID=b.styleID
-	join inv.orders o on o.orderID = st.orderID
-	join cmn.currentrates cr on cr.currencyID=o.currencyID
+	left join inv.orders o on o.orderID = st.orderID
+	join cmn.currentrates cr on cr.currencyID=isnull(o.currencyID, st.currencyid)
 	join inv.brands br on br.brandID=st.brandID
 	join inv.inventorytypes it on it.inventorytypeID=st.inventorytypeID
 	join org.divisions d on d.divisionID=s.divisionID
@@ -43,5 +43,7 @@ from inv.sales s
 where cast( t.transactiondate as date) >=  @date_start
 go
 
+declare @barcodeid int = 529299
 declare @date_start date =  '20200101'
-select * from fin.gross_p_l_func(@date_start)
+select * from fin.gross_p_l_func(@date_start) g
+where g.barcodeID =@barcodeid
