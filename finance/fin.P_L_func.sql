@@ -27,31 +27,35 @@ create function fin.P_L_func(@start_date date) returns table as return
 		group by g.divisionID, g.sales_period,
 			g.sales_month, g.sales_year, month_num
 	)
+	, f as (
 	select 
 		s.divisionid, 
 		s.amount SALES, 
-		s.COGS, 
+		cast(s.COGS as money) COGS, 
 		s.fin_period, 
 		s.sales_month, 
 		s.sales_year, 
 		r.rent_objectid, 
-		-iif(s.amount * r.turnover_rate> 
+		cast (-iif(s.amount * r.turnover_rate> 
 		ro.footage * isnull(r.rent_per_meter_year, 0 )/12 * cr.rate, 
 		s.amount * r.turnover_rate, ro.footage * 
-			isnull(r.rent_per_meter_year, 0 )/12 * cr.rate )*(1+VAT)
+			isnull(r.rent_per_meter_year, 0 )/12 * cr.rate )*(1+VAT) as money)
 			RENT,
 		iif(s.amount * r.turnover_rate> 
 		ro.footage * isnull(r.rent_per_meter_year, 0 )/12 * cr.rate, 
 		'turnover', 'base') rent_type,
 		s.month_num, 
-		- p.n_days * 4000 PRLL,
-		-s.amount * 0.025 CoMiSN
+		cast(- p.n_days * 4000 as money) PRLL,
+		cast(-s.amount * 0.025 as money) CoMiSN
 	from _sales s
 		join  _periods p on p.fin_period =s.fin_period
 		left join fin.rent r on s.divisionid= r.divisionid
 		left join fin.rent_objects ro on ro.rent_objectid= r.rent_objectid
 		join cmn.currentrates cr on cr.currencyID = r.currencyid
-
+)
+select divisionid, fin_period, sales_month, sales_year, rent_objectid, rent_type, month_num, amount, account 
+from (select * from f) f 
+unpivot ( amount for account in (SALES, COGS, RENT, PRLL, CoMiSN)) as unpvt
 
 go
 
