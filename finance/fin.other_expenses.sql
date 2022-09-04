@@ -57,3 +57,5 @@ insert fin.other_expenses (expense_typeid, amount, date_start, details, day_due)
 
 select *, sum(o.amount) over ()
 from fin.other_expenses o
+
+
