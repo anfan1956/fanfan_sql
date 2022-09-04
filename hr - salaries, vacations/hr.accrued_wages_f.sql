@@ -128,16 +128,9 @@ group by v.fin_period, v.personid, v.person, v.divisionid, has_MW, hour_wage
 	group by h.fin_period, h.divisionid
 )
 select * from _f
---select fin_period, divisionid, amount, account from 
---(select * from _f) f
---unpivot (amount for account in (PRLL, COMM)) as unpvt
-
-
 
 go
 
 declare @start_date date = '20220701';
-select a.* 
-from hr.acrued_wages_f() a 
-order by 1, 2;
+select a.* from hr.acrued_wages_f() a order by 1, 2;
 
