@@ -4,7 +4,10 @@ GO
 Цель - создать таблицы, которые помогут расчитать взаимоотношения 
 с поставщиками, а также себестоимость товара
 для этого создаем директорию ap от accounts payable
+Это большой скрипт, он не доделан, нужно проставить все ключи
 */
+if OBJECT_ID('fin.acc_chart') is not null drop table fin.acc_chart
+if OBJECT_ID('ap.deposits') is not null drop table ap.deposits
 if OBJECT_ID('ap.charges_barcodes')is not null drop table ap.charges_barcodes 
 if OBJECT_ID('ap.charges')is not null drop table ap.charges 
 if OBJECT_ID('ap.chargetypes')is not null drop table ap.chargetypes 
@@ -73,5 +76,41 @@ create table ap.registers(
 
 create table ap.payments(
 	paymentid int not null identity constraint pk_payments primary key,
-	registerid INT NOT null
+	registerid INT NOT null,
+	payment_date date not null, 
+	contractorid int not null, 
+	documentid int null,
+	doc_typeid int null, 
+	corr_accountid int not null
+
 )
+if OBJECT_ID ('fin.acctype_id') is not null drop function fin.acctype_id
+if OBJECT_ID('fin.acctypes') is not null drop table fin.acctypes
+go
+create table fin.acctypes (
+	acc_typeid int not null identity constraint pk_fin_acctypes primary key, 
+	acc_type varchar(25)
+)
+go
+create function fin.acctype_id (@acctype varchar (25)) returns int as
+begin
+	declare @acctypeid int ;
+		select @acctypeid= a.acc_typeid from fin.acctypes a where a.acc_type= @acctype;
+	return @acctypeid;
+end
+go
+insert fin.acctypes(acc_type) values 
+('assets') , ('liabilities') , ('equity') , ('revenues') , ('COGS') , ('expenses') 
+
+select fin.acctype_id ('liabilities'), fin.acctype_id ('assets') 
+
+create table fin.acc_chart (
+	accountid int not null identity constraint pk_fin_accchart primary key,
+	account varchar(150) not null,
+	acctype_id int not null
+)
+insert fin.acc_chart(account, acctype_id) values
+('deposits', fin.acctype_id ('assets')), 
+('accounts payable',  fin.acctype_id ('liabilities'))
+select * from fin.acc_chart
+
