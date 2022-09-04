@@ -45,13 +45,16 @@ create function fin.P_L_func(@start_date date) returns table as return
 		ro.footage * isnull(r.rent_per_meter_year, 0 )/12 * cr.rate, 
 		'turnover', 'base') rent_type,
 		s.month_num, 
-		cast(- p.n_days * 4000 as money) PRLL,
-		cast(-s.amount * 0.025 as money) CoMiSN
+		--cast(- p.n_days * 4000 as money) PRLL,
+		--cast(-s.amount * 0.025 as money) CoMiSN
+		-cast (ac.PRLL as money) PRLL, 
+		-cast (ac.COMM as money) CoMiSN
 	from _sales s
 		join  _periods p on p.fin_period =s.fin_period
 		left join fin.rent r on s.divisionid= r.divisionid
 		left join fin.rent_objects ro on ro.rent_objectid= r.rent_objectid
 		join cmn.currentrates cr on cr.currencyID = r.currencyid
+		join hr.acrued_wages_f() ac on ac.divisionid=s.divisionid and ac.fin_period= s.fin_period
 )
 select divisionid, fin_period, sales_month, sales_year, rent_objectid, rent_type, month_num, amount, account 
 from (select * from f) f 
