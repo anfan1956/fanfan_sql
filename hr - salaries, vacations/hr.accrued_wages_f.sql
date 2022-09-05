@@ -62,8 +62,20 @@ join hr.schedule_21 s on s.positionid= f.positionid
 			and ISNULL(s.date_finish, f.fin_period)>= f.fin_period
 where s.personid not in (select org.person_id('ФЕДОРОВ А. Н.') union select org.person_id('ФЕДОРОВА И. В.') )
 ) 
+, _actual_personnel (fin_period, personid, has_MW, hour_wage, person, positionnameid ) as (
+	select 
+		t2.fin_period, 
+		t2.personid, 
+		t2.has_MW, 
+		t2.hour_wage,
+		p.lfmname, 
+		t2.positionnameid
+	from t2 
+		join org.persons p on p.personid = t2.personid
+	where n =1
+)
 , _commissions (fin_period, divisionid, commission) as (
-	select p.fin_period, s.divisionID, sum(sg.amount)*c.rate 
+	select p.fin_period, s.divisionID, sum(sg.amount*c.rate) 
 	from  inv.sales s
 		join inv.sales_receipts sr on sr.saleID = s.saleID
 		join inv.sales_goods sg on sg.saleID= s.saleID
@@ -72,19 +84,7 @@ where s.personid not in (select org.person_id('ФЕДОРОВ А. Н.') union se
 		join _com c on c.recipttypeid = sr.receipttypeID and
 			c.date_start <= fin_period 
 	where c.num =1
-	group by s.divisionID, sr.receipttypeID, p.fin_period, c.rate
-)
-, _actual_personnel (fin_period, personid, has_MW, hour_wage, person, positionnameid ) as (
-select 
-	t2.fin_period, 
-	t2.personid, 
-	t2.has_MW, 
-	t2.hour_wage,
-	p.lfmname, 
-	t2.positionnameid
-from t2 
-	join org.persons p on p.personid = t2.personid
-where n =1
+	group by s.divisionID, p.fin_period
 )
 , _verified (fin_period, personid, has_MW, hour_wage, person, positionnameid, checktype, checktime, divisionid) as (
 	select
@@ -109,22 +109,22 @@ where n =1
 	where an.checktime< cast(getdate() as date)
 )
 , _hrs (fin_period, personid, person, divisionid, has_MW, hrs, hour_wage) as (
-select 
-	v.fin_period, v.personid, v.person, v.divisionid, has_MW,
-	sum(convert(money, v.checktime)*(1 - 2 * v.checktype)*24), 
-	v.hour_wage
-from 
-	_verified v
-group by v.fin_period, v.personid, v.person, v.divisionid, has_MW, hour_wage
+	select 
+		v.fin_period, v.personid, v.person, v.divisionid, has_MW,
+		sum(convert(money, v.checktime)*(1 - 2 * v.checktype)*24), 
+		v.hour_wage
+	from 
+		_verified v
+	group by v.fin_period, v.personid, v.person, v.divisionid, has_MW, hour_wage
 )
 , _f (fin_period, divisionid, PRLL, COMM) as (
 	select 
 		h.fin_period, h.divisionid, 
 		sum (h.hrs * (h.hour_wage + hr.parameter_value_f('минималка/час', null) * hr.parameter_value_f('ЕСН', null)* has_MW))		
 		amount,
-		cast (sum (c.commission) as money) COMM
+		cast (sum (isnull(c.commission, 0)) as money) COMM
 	from _hrs h 
-		join _commissions c on c.fin_period=h.fin_period and c.divisionid=h.divisionid
+		left join _commissions c on c.fin_period=h.fin_period and c.divisionid=h.divisionid
 	group by h.fin_period, h.divisionid
 )
 select * from _f
@@ -132,5 +132,8 @@ select * from _f
 go
 
 declare @start_date date = '20220701';
-select a.* from hr.acrued_wages_f() a order by 1, 2;
+select a.*, d.divisionfullname
+from hr.acrued_wages_f() a 
+	join org.divisions d on d.divisionID= a.divisionid
+order by 1, 2;
 
