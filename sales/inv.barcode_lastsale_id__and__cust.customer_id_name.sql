@@ -9,6 +9,7 @@ begin
 	with lt (transactionid) as (
 		select top 1  i.transactionID
 		from inv.inventory i
+		where i.barcodeid = @barcodeid
 		order by i.transactionID desc, i.opersign desc
 	)
 	, ls (saleid, num) as (
@@ -41,7 +42,24 @@ create function cust.customer_id_name (@saleid int ) returns table as return
 		where s.saleID= @saleid
 go
 
-declare @barcodeid int = 653704
+declare @barcodeid int = 658826
 declare @saleid int = inv.barcode_lastsale_id (@barcodeid);
 
-select customerid, customer, connect from cust.customer_id_name(@saleid)
+--select customerid, customer, connect from cust.customer_id_name(@saleid);
+
+	with lt (transactionid) as (
+		select top 1  i.transactionID
+		from inv.inventory i
+		order by i.transactionID desc, i.opersign desc
+	)
+	, ls (saleid, num) as (
+		select 
+			i.transactionID, 
+			ROW_NUMBER() over (order by i.transactionid desc)
+		from inv.inventory i 
+			where i.barcodeID = @barcodeid
+			and i.logstateID = inv.logstate_id('SOLD')
+	)
+	select * from 
+	--ls
+	lt
