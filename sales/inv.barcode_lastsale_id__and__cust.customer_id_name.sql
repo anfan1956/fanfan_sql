@@ -34,32 +34,21 @@ go
 if OBJECT_ID('cust.customer_id_name') is not null drop function cust.customer_id_name
 go
 create function cust.customer_id_name (@saleid int ) returns table as return
-	select s.customerID, lfmname customer, c.connect
-		from inv.sales s 
-			join cust.persons p on p.personID =s.customerID
-			join cust.connect c on c.personID = s.customerID 
-				and c.connecttypeID=1 and c.prim = 'true'
-		where s.saleID= @saleid
+	select 
+		s.customerID, 
+		lfmname customer, 
+		isnull(c.connect, 'N/A') connect, 
+		d.divisionfullname division
+	from inv.sales s 
+		join cust.persons p on p.personID =s.customerID
+		join org.divisions d on d.divisionID=s.divisionID
+		left join cust.connect c on c.personID = s.customerID 
+			and c.connecttypeID=1 and c.prim = 'true'
+	where s.saleID= @saleid
 go
 
 declare @barcodeid int = 658826
 declare @saleid int = inv.barcode_lastsale_id (@barcodeid);
 
---select customerid, customer, connect from cust.customer_id_name(@saleid);
+select customerid, customer, connect, division from cust.customer_id_name(@saleid);
 
-	with lt (transactionid) as (
-		select top 1  i.transactionID
-		from inv.inventory i
-		order by i.transactionID desc, i.opersign desc
-	)
-	, ls (saleid, num) as (
-		select 
-			i.transactionID, 
-			ROW_NUMBER() over (order by i.transactionid desc)
-		from inv.inventory i 
-			where i.barcodeID = @barcodeid
-			and i.logstateID = inv.logstate_id('SOLD')
-	)
-	select * from 
-	--ls
-	lt
