@@ -6,7 +6,6 @@ declare @start_date date = '20220731';
 go
 create function fin.P_L_func(@start_date date) returns table as return
 
-
 	with _date (start_date) as (
 		select DATEADD(dd,1, eomonth(@start_date, -1))
 	)
@@ -16,6 +15,7 @@ create function fin.P_L_func(@start_date date) returns table as return
 			cross apply _date d
 		where EOMONTH(d.start_date,n.i-1)<=EOMONTH(GETDATE(), 0)
 	)
+
 	, _sales (divisionid, amount, COGS, fin_period, sales_month, sales_year, month_num) as (
 		select g.divisionID, 
 			sum(g.amount), 
@@ -29,7 +29,7 @@ create function fin.P_L_func(@start_date date) returns table as return
 		group by g.divisionID, g.sales_period,
 			g.sales_month, g.sales_year, month_num
 	)
-	, f as (
+, f as (
 	select 
 		s.divisionid, 
 		s.amount SALES, 
@@ -47,8 +47,6 @@ create function fin.P_L_func(@start_date date) returns table as return
 		ro.footage * isnull(r.rent_per_meter_year, 0 )/12 * cr.rate, 
 		'turnover', 'base') as varchar(15)) rent_type,
 		s.month_num, 
-		--cast(- p.n_days * 4000 as money) PRLL,
-		--cast(-s.amount * 0.025 as money) CoMiSN
 		-cast (ac.PRLL as money) PRLL, 
 		-cast (ac.COMM as money) CoMiSN
 	from _sales s
@@ -57,7 +55,8 @@ create function fin.P_L_func(@start_date date) returns table as return
 		left join fin.rent_objects ro on ro.rent_objectid= r.rent_objectid
 		join cmn.currentrates cr on cr.currencyID = r.currencyid
 		join hr.acrued_wages_f() ac on ac.divisionid=s.divisionid and ac.fin_period= s.fin_period
-), unpvt as (
+)
+, unpvt as (
 select divisionid, fin_period, sales_month, sales_year, rent_objectid, rent_type, month_num, amount, account 
 from (select * from f) f 
 unpivot ( amount for account in (SALES, COGS, RENT, PRLL, CoMiSN)) as unpvt
@@ -85,5 +84,6 @@ full join _other o on o.fin_period = u.fin_period and o.divisionid= u.divisionid
 go
 
 declare @start_date date = '20220731';
-select * from fin.P_L_func(@start_date);
---select * 
+select * from fin.P_L_func(@start_date)
+order by 1 desc
+

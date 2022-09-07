@@ -3,7 +3,7 @@ go
 
 if OBJECT_ID('hr.acrued_wages_f') is not null drop function hr.acrued_wages_f
 go 
---create function hr.acrued_wages_f (@start_date date ) returns table as return
+
 create function hr.acrued_wages_f ( ) returns table as return
 
 	with _date (start_date) as (
@@ -15,18 +15,29 @@ create function hr.acrued_wages_f ( ) returns table as return
 			cross apply _date d
 		where EOMONTH(d.start_date,n.i-1)<=EOMONTH(GETDATE(), 0)
 	)
-, _sales (fin_period, divisionid, receitypeid, amount) as (
-		select p.fin_period, s.divisionID, sr.receipttypeID, sum(sg.amount) amount
-		from  inv.sales s
-			join inv.sales_receipts sr on sr.saleID = s.saleID
-			join inv.sales_goods sg on sg.saleID= s.saleID
-			join inv.transactions t on t.transactionID=s.saleID
-			join _periods p on p.fin_period = EOMONTH( t.transactiondate, 0)
-		group by s.divisionID, sr.receipttypeID, p.fin_period
+, _s as (
+	select 
+		s.saleID, 
+		s.divisionID,
+		t.transactiondate,	
+		receipttypeID, 
+		amount * case tt.transactiontypeid 
+			when inv.transactiontype_id('RETURN') then -1
+			else 1 end amount
+	from inv.sales_receipts sr 
+		join inv.transactions t on t.transactionID=sr.saleID
+		join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+		join inv.sales s on s.saleID=sr.saleID
 )
-,_com (date_start, recipttypeid, rate, num) as (
-	select *, ROW_NUMBER () over (partition by c.receipttypeid order by c.date_start desc)
-	from hr.commissions c
+, _sales (fin_period, divisionid, receipttypeid, amount) as (
+select 
+	EOMONTH(s.transactiondate, 0) fin_period, 
+	divisionID, 
+	receipttypeID, sum (amount) amount
+
+from _s s
+	join _periods p on p.fin_period=EOMONTH(s.transactiondate, 0)
+group by EOMONTH(s.transactiondate, 0), divisionID, receipttypeID 
 )
 , _ful_comp (fin_period, hour_wage, positionid, positionnameid, num) as (
 	select 
@@ -74,17 +85,17 @@ where s.personid not in (select org.person_id('ФЕДОРОВ А. Н.') union se
 		join org.persons p on p.personid = t2.personid
 	where n =1
 )
+,_com (fin_period ,receipttypeid, rate, num) as (
+	select fin_period, receipttypeid, rate, ROW_NUMBER () over (partition by c.receipttypeid, p.fin_period order by c.date_start desc)
+	from _periods p join  hr.commissions c on date_start < p.fin_period
+)
 , _commissions (fin_period, divisionid, commission) as (
-	select p.fin_period, s.divisionID, sum(sg.amount*c.rate) 
-	from  inv.sales s
-		join inv.sales_receipts sr on sr.saleID = s.saleID
-		join inv.sales_goods sg on sg.saleID= s.saleID
-		join inv.transactions t on t.transactionID=s.saleID
-		join _periods p on p.fin_period = EOMONTH( t.transactiondate, 0)
-		join _com c on c.recipttypeid = sr.receipttypeID and
-			c.date_start <= fin_period 
+	select s.fin_period, s.divisionID, sum(s.amount * c.rate)
+	from  _sales s
+		join _com c on c.receipttypeid = s.receipttypeID and
+			c.fin_period = s. fin_period 
 	where c.num =1
-	group by s.divisionID, p.fin_period
+	group by s.fin_period, s.divisionid
 )
 , _verified (fin_period, personid, has_MW, hour_wage, person, positionnameid, checktype, checktime, divisionid) as (
 	select
@@ -122,18 +133,20 @@ where s.personid not in (select org.person_id('ФЕДОРОВ А. Н.') union se
 		h.fin_period, h.divisionid, 
 		sum (h.hrs * (h.hour_wage + hr.parameter_value_f('минималка/час', null) * hr.parameter_value_f('ЕСН', null)* has_MW))		
 		amount,
-		cast (sum (isnull(c.commission, 0)) as money) COMM
+		cast (isnull(c.commission, 0) as money) COMM
 	from _hrs h 
 		left join _commissions c on c.fin_period=h.fin_period and c.divisionid=h.divisionid
-	group by h.fin_period, h.divisionid
+	group by h.fin_period, h.divisionid, (isnull(c.commission, 0))
 )
 select * from _f
+
 
 go
 
 declare @start_date date = '20220701';
-select a.*, d.divisionfullname
+select a.*, d.divisionfullname, sum (comm) over (partition by fin_period)
 from hr.acrued_wages_f() a 
 	join org.divisions d on d.divisionID= a.divisionid
-order by 1, 2;
+order by 1 desc, 2;
 
+go
