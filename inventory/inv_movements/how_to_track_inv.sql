@@ -160,3 +160,20 @@ from inv.inventory_on_account_v
 select 
 	customerid, client, trans_id, trans_date, barcodeid
 from inv.inventory_on_account_v v
+
+
+if OBJECT_ID('cust.customer_name_barcodes_f') is not null drop function cust.customer_name_barcodes_f
+go 
+create function cust.customer_name_barcodes_f(@barcodes barcodes_list readonly) returns table as
+return
+
+select distinct c.customerid, cust.customer_fullname(c.customerid) customer, cn.connect phone
+from cust.on_account c
+	join @barcodes b on b.barcodeID=c.barcodeid
+	join cust.connect cn on c.customerid=cn.personID
+		where cn.connecttypeID=1 and cn.prim= 'True'
+go
+
+declare  @barcodes dbo.barcodes_list
+insert @barcodes values (658808), (652166);
+select * from cust.customer_name_barcodes_f (@barcodes)
