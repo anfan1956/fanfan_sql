@@ -1,4 +1,7 @@
-﻿if OBJECT_ID('hr.active_emps_on_date') is not null drop function hr.active_emps_on_date
+﻿use fanfan
+go
+
+if OBJECT_ID('hr.active_emps_on_date') is not null drop function hr.active_emps_on_date
 go
 create function hr.active_emps_on_date(@date date ) returns table as return
 
