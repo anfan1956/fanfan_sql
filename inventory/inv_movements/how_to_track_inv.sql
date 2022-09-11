@@ -121,39 +121,57 @@ INSERT @barcodes VALUES
 if OBJECT_ID('inv.inventory_on_account_v') is not null drop view inv.inventory_on_account_v
 go 
 create view inv.inventory_on_account_v as
-	select 
-		a.customerid ,  
-		p.lfmname client,  
-		a.transactionid trans_id , 
-		dbo.justdate( t.transactiondate) trans_date, 
-		cast(a.deadline as datetime) due_date, 
-		a.barcodeid, 
-		a.price, 
-		a.discount, 
-		a.price* (1-a.discount) net_price,
-		u.username user_name, 
-		case tt.transactiontype 
-			when 'CUST_CONSMT' then 'выдача'
-			when 'CUST_CONSMT_RETURN' then 'возврат' end trans_type,			
-		s.article, 
-		it.inventorytyperus category, 
-		br.brand , 
-		sz.size , 
-		c.color , d.divisionfullname shop,
-		DATEDIFF(dd,t.transactiondate, deadline) days_out
+with _barcodes as (
+	select i.barcodeID
+	from inv.inventory i
+	where 
+		i.divisionID = org.division_id ('НА РУКАХ У КЛИЕНТОВ')
+	group by i.barcodeID
+	having sum(i.opersign)=1
 
-	from cust.on_account a
-		join cust.persons p on p.personID = a.customerid
-		join inv.transactions t on t.transactionID=a.transactionid
-		join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
-		join inv.barcodes b on b.barcodeID = a.barcodeid
-		join inv.styles s on s.styleID= b.styleID
-		join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
-		join inv.brands br on br.brandID=s.brandID
-		join inv.sizes sz on sz.sizeID=b.sizeID
-		join inv.colors c on c.colorID=b.colorID
-		join org.users u on u.userID= t.userID
-		join org.divisions d on d.divisionID=a.divisionid
+)
+, _ordered(barcodeid, transactionid, num) as (
+select i.barcodeID, i.transactionID, ROW_NUMBER() over(partition by i.barcodeid order by i.transactionid desc)
+	from inv.inventory i 
+join _barcodes b on b.barcodeID= i.barcodeID
+where i.divisionID = org.division_id ('НА РУКАХ У КЛИЕНТОВ')
+)
+, _last (barcodeid, transactionid) as (
+select 
+	o.barcodeid, o.transactionid
+from _ordered o
+	join cust.on_account a on a.transactionid=o.transactionid
+		and a.barcodeid=o.barcodeid
+where num =1
+)
+select 
+	a.customerid, p.lfmname client, l.transactionid trans_id, 
+	dbo.justdate(t.transactiondate) trans_date,
+	cast(a.deadline as datetime) due_date, 
+	l.barcodeid, a.price, a.discount, 
+	a.price* (1-a.discount) net_price,
+	pr.lfmname user_name,
+	s.article, 
+	it.inventorytyperus category, 
+	br.brand , 
+	sz.size , 
+	c.color , d.divisionfullname shop,
+	DATEDIFF(dd,t.transactiondate, deadline) days_out
+
+from _last l
+	join cust.on_account a 
+		on l.transactionid = a.transactionid 
+		and l.barcodeid = a.barcodeid
+	join cust.persons p on p.personID=a.customerid
+	join inv.transactions t on t.transactionID=l.transactionid 
+	join org.persons pr on pr.personID=t.userID
+	join inv.barcodes b on b.barcodeID = a.barcodeid
+	join inv.styles s on s.styleID= b.styleID
+	join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
+	join inv.brands br on br.brandID=s.brandID
+	join inv.sizes sz on sz.sizeID=b.sizeID
+	join inv.colors c on c.colorID=b.colorID
+	join org.divisions d on d.divisionID=a.divisionid
 go
 select * 
 from inv.inventory_on_account_v
