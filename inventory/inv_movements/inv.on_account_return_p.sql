@@ -139,7 +139,7 @@ declare
 declare @barcodes inv.barcode_price_discount_type; 
 insert @barcodes values (658804, 24288, 0.3), (659760, 10560, 0.2); 
 --exec inv.on_account_return_p 
---	@barcodes = @barcodes, 
+--	@barcodes = @barcodes,
 --	@date = @date, 
 --	@transaction_division = @transaction_division , 
 --	@user = @user , 
@@ -148,3 +148,4 @@ insert @barcodes values (658804, 24288, 0.3), (659760, 10560, 0.2);
 --	@receipt_type_id = @receipt_type_id, 
 --	@note = @note output; 
 --select @note; 
+
