@@ -9,8 +9,8 @@ create proc inv.on_account_return_p
 	@transaction_division varchar(20), 
 	@user varchar (50), 
 	@note varchar(max) output, 
-	@cust_discount money, 
-	@receipt_type_id int, 
+	@cust_discount money = null, 
+	@receipt_type_id int = null, 
 	@sales bit = 'False'
 as 
 begin try
@@ -34,7 +34,6 @@ begin try
 		if @sales = 'True' 
 			begin;
 				select @transactiontype_id = inv.transactiontype_id('SALE MIXED');
-
 			end 
 
 --		create transaction
@@ -72,11 +71,11 @@ begin try
 				select 
 					saleID, barcodeID, amount, price, client_discount, barcode_discount
 				from _s;
-				
+
+-- insert inv.sales_receipts				
 				with _s (saleid, receipttypeid, amount) as (
 					select @transactionID, @receipt_type_id, sum(b.price *(1-b.discount) *(1 -@cust_discount))
-					from @barcodes b
-					
+					from @barcodes b					
 				)
 				insert inv.sales_receipts (saleID, receipttypeID, amount)
 				select saleID, receipttypeID, amount from _s;
@@ -85,10 +84,11 @@ begin try
 			end;
 			
 --		create record in inventory		
-		with _tr as (select top 1 i.transactionID  
-		from inv.inventory i 
-			join @barcodes b on b.barcodeID= i.barcodeID
-		order by i.transactionid desc
+		with _tr (transactionid, barcodeid, num) as (
+			select i.transactionID, i.barcodeID, ROW_NUMBER() over(partition by i.barcodeid order by transactionid desc)
+			from inv.inventory i
+				join @barcodes b on b.barcodeid = i.barcodeID
+			where i.opersign = 1
 		)
 		, s as (
 		select 
@@ -97,13 +97,14 @@ begin try
 				when -1 then isnull(@divisionid, i.divisionid)
 				when 1 then i.divisionID 
 			end divisionid, 
---			i.divisionID,
+		-- i.divisionID,
 			@transactionID transactionid, 
 			-i.opersign opersign,
 			i.barcodeID 
 		from inv.inventory i
 			join _tr t on t.transactionID= i.transactionID
-			join @barcodes b on b.barcodeID= i.barcodeID
+			and t.barcodeid = i.barcodeID
+		where t.num = 1
 		)
 		insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 		select clientID, logstateID, divisionID, transactionID, opersign, barcodeID
@@ -129,23 +130,10 @@ go
 
 set nocount on; 
 declare 
-	@date date = '20220913', 
-	@transaction_division varchar(20) =  '05 УИКЕНД', 
-	@user varchar(50) =  'БАЛУШКИНА А. А.', 
-	@sales bit = 'True', 
-	@cust_discount money = 0.2,  
-	@receipt_type_id int = 1, 
+	@date date = '20220930', 
+	@transaction_division varchar(20) =  '', 
+	@user varchar(50) =  'ФЕДОРОВ А. Н.', 
 	@note varchar(max); 
 declare @barcodes inv.barcode_price_discount_type; 
-insert @barcodes values (658804, 24288, 0.3), (659760, 10560, 0.2); 
---exec inv.on_account_return_p 
---	@barcodes = @barcodes,
---	@date = @date, 
---	@transaction_division = @transaction_division , 
---	@user = @user , 
---	@sales = @sales, 
---	@cust_discount = @cust_discount,  
---	@receipt_type_id = @receipt_type_id, 
---	@note = @note output; 
---select @note; 
-
+insert @barcodes (barcodeid) values (530938), (581841), (659515); 
+--exec inv.on_account_return_p @barcodes = @barcodes, @date = @date, @transaction_division = @transaction_division , @user = @user , @note = @note output; select @note; 
