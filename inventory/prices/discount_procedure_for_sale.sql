@@ -1,6 +1,25 @@
 ﻿USE fanfan
 GO
 
+if OBJECT_ID('cmn.cnt_suffix_f') is not null drop function cmn.cnt_suffix_f
+go 
+create function cmn.cnt_suffix_f (@count int, @word varchar(max)) returns varchar (max) as 
+begin
+	declare @suffix varchar(2);
+	declare @digit int;
+	select @digit = cast(@count/10 as int) % 10;
+	if @digit = 1 
+		select @suffix = 'ов'
+	else
+		select @suffix = case 
+			when @count % 10 = 1 then ''
+			when @count % 10 in (2, 3, 4)  then 'а'
+			else 'ов' end;	
+	return cast(@count as varchar(max)) + ' ' + @word + @suffix
+end 
+go 
+
+
 IF OBJECT_ID('inv.brands_in_shop_f') IS NOT NULL DROP FUNCTION inv.brands_in_shop_f
 GO
 CREATE FUNCTION inv.brands_in_shop_f (@divisionfull VARCHAR(50))
@@ -17,7 +36,8 @@ WITH _prices (styleID, discount, num)  as (
 SELECT 
 	br.brandID, br.brand, s.seasonID, se.season, s.styleID, s.article,
 	i.inventorytyperus category, 
-	s.cost * r.markup * r.rate price, 
+	s.cost * r.markup * r.rate * ISNULL(s.cost_adj, 1) price, 
+	isnull(s.cost_adj, 1) cst_adj,
 	cp.discount
 FROM inv.v_r_inwarehouse v
 	JOIN inv.barcodes b ON b.barcodeID=v.barcodeID
@@ -30,8 +50,10 @@ FROM inv.v_r_inwarehouse v
 	JOIN _current_prices cp ON cp.styleID=s.styleID
 	JOIN inv.current_rate_v r ON r.divisionid= d.divisionID
 							AND r.currencyid= o.currencyID
-
 WHERE D.divisionfullname =  @divisionfull
+go
+select * from inv.brands_in_shop_f('07 ФАНФАН')
+	where styleID = 17808
 go
 
 DECLARE @division VARCHAR(25) = '07 ФАНФАН'
@@ -42,60 +64,91 @@ IF TYPE_ID('inv.barcodes_discounts_type') IS NOT NULL DROP TYPE inv.barcodes_dis
 GO
 CREATE TYPE inv.barcodes_discounts_type AS TABLE (
 	styleid INT, 
-	discount money
+	discount money, 
+	price money
 )
 go
 
-create PROC inv.discounts_record_p 
-	@info inv.barcodes_discounts_type READONLY,  
-	@shop VARCHAR(25) , 
-	@person VARCHAR(50),
-	@note varchar (max) output
-as 
-set nocount on;
-declare @message varchar (max)= 'Just debugging'
-begin try
-	begin TRANSACTION
-		DECLARE @userID INT = (SELECT p.personID FROM org.persons p WHERE p.lfmname= @person);
-		DECLARE @pricesetid INT, @rows int;
-		INSERT inv.pricesets (pricetypeID, pricesetdate, userID, comment)
-		SELECT inv.pricetype_id('SALE'), CURRENT_TIMESTAMP, @userID, 'sale discounts'
-		SET @pricesetid = SCOPE_IDENTITY();
 
-		WITH _prices (styleid, price, discount, num) AS (
-			SELECT i.styleid, P.price, i.discount, 
-				ROW_NUMBER() OVER(PARTITION BY i.styleID ORDER BY P.pricesetID desc )
-			FROM inv.prices p 
-				JOIN @info i ON i.styleid=p.styleID
-		)
-		INSERT inv.prices (pricesetID, styleID, price, discount)
-		SELECT @pricesetid, P.styleid, P.price, P.discount
-		FROM _prices p
-		WHERE p.num = 1;
+CREATE PROC inv.discounts_record_p 
+		@info inv.barcodes_discounts_type READONLY,  
+		@shop VARCHAR(25) , 
+		@person VARCHAR(50),
+		@note varchar (max) output
+	as 
+	set nocount on;
+	declare @message varchar (max)= 'Just debugging'
+	begin try
+		begin TRANSACTION
+			DECLARE @userID INT = (SELECT p.personID FROM org.persons p WHERE p.lfmname= @person);
+
+			DECLARE	@price_typeid int = case (select COUNT(price) from @info where price is not null)
+					when 0 then inv.pricetype_id('SALE') 
+					else inv.pricetype_id('COST ADJUSTMENT') end;
+
+			DECLARE @pricesetid INT, @rows int;
+
+			INSERT inv.pricesets (pricetypeID, pricesetdate, userID, comment)
+			SELECT @price_typeid, CURRENT_TIMESTAMP, @userID,  p.pricetype from inv.pricetypes p where p.pricetypeID = @price_typeid;
+		
+			SET @pricesetid = SCOPE_IDENTITY();
+
+			WITH _prices (styleid, price, discount, cost_adj, num) AS (
+				SELECT i.styleid, P.price, isnull(i.discount, p.discount),
+					isnull(i.price, p.cost_adj), 
+					ROW_NUMBER() OVER(PARTITION BY i.styleID ORDER BY P.pricesetID desc )
+				FROM inv.prices p 
+					JOIN @info i ON i.styleid=p.styleID
+			)
+			INSERT inv.prices (pricesetID, styleID, price, discount, cost_adj)
+			SELECT @pricesetid, P.styleid, P.price, P.discount, p.cost_adj
+			FROM _prices p
+			WHERE p.num = 1;
+
+			if @price_typeid = inv.pricetype_id('COST ADJUSTMENT')
+				begin
+					with _styles (styleid, cost_adj) as (
+						select s.styleID, i.price
+						from inv.styles s 
+							join @info i on i.styleid=s.styleID
+					)
+					update s set s.cost_adj = st.cost_adj
+					from inv.styles s
+						join _styles st on st.styleid=s.styleID
+				end
 	
-		SELECT @rows = @@rowcount;
-		set @note = 'добавлена скидка на ' + CONVERT(VARCHAR(10), @rows) + ' артикулов'
-
---	;throw 50001, @message, 1
-	commit transaction
-end try
-begin catch
-	set @note = ERROR_MESSAGE()
-	rollback transaction
-end catch
+			SELECT @rows = @@rowcount;
+			select @note = p.pricetype  + ': ' + cmn.cnt_suffix_f(@rows, 'артикул') from inv.pricetypes p where p.pricetypeID = @price_typeid
+		
+	--	;throw 50001, @message, 1
+		commit transaction
+	end try
+	begin catch
+		set @note = ERROR_MESSAGE()
+		rollback transaction
+	end catch
 go
 	
 set nocount on; 
 declare @info inv.barcodes_discounts_type, @note varchar(max); 
 declare @shop varchar(25) = '07 ФАНФАН', @person VARCHAR (50) = 'ФЕДОРОВ А. Н.'; 
-insert @info values 
+insert @info (styleid, discount) values 
 (19365, 0), (19366, 0), (19367, 0), (13837, 0), (18323, 0), (18324, 0), 
 (19601, 0), (19602, 0), (19603, 0), (19604, 0), (19614, 0), (19615, 0), 
 (19616, 0), (19617, 0), (19619, 0), (19621, 0), (19622, 0), (19623, 0); 
 --exec inv.discounts_record_p @info, @shop, @person, @note output; select @note;
---SELECT * FROM @info
+SELECT * FROM @info
 --SELECT * FROM inv.pricesets p  ORDER BY 1 desc
 --SELECT inv.pricetype_id('SALE')
+go
+set nocount on; 
+declare @info inv.barcodes_discounts_type, @note varchar(max); 
+declare @shop varchar(25) = '07 ФАНФАН', @person varchar(50) = 'ШЕМЯКИНА Е. В.'; 
+insert @info (styleid, price) values (17808, 5200), (19453, 40001); 
+--exec inv.discounts_record_p @info, @shop, @person, @note output; select @note;
+SELECT * FROM @info
+
+
 
 IF OBJECT_ID('inv.brands_shop_short_f') IS NOT NULL DROP FUNCTION inv.brands_shop_short_f
 GO
@@ -109,4 +162,6 @@ AS RETURN
 		JOIN org.divisions d ON D.divisionID= v.divisionID
 	WHERE D.divisionfullname = @shop
 GO
-SELECT b.brand, b.brandid FROM inv.brands_shop_short_f('07 ФАНФАН') b
+
+
+
