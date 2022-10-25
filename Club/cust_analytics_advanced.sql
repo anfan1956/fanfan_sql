@@ -22,11 +22,11 @@ WITH _CASE_tran_types (sale_type, transactiontypeid) AS (
 )
 , _dates(cust_id, cust_name , trans_id, purch_date, division, sale_type, chain ) AS (
 	SELECT 
-<<<<<<< HEAD
+--<<<<<<< HEAD
 		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.divisionfullname, 
-=======
-		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.division, 
->>>>>>> 7001cff71be31a3afcdd3c3eb1f590e0d31a89dd
+--=======
+--		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.division, 
+-->>>>>>> 7001cff71be31a3afcdd3c3eb1f590e0d31a89dd
 		TT.sale_type , c.chain
 	FROM s 
 		JOIN inv.sales sl ON sl.customerID=s.customerid
@@ -75,3 +75,5 @@ WHERE sd.num =1;
 
 GO
 
+SELECT aa.* FROM cust.analytics_adv() aa order by 1
+select * from sms.phones
