@@ -1508,8 +1508,9 @@ Function ArrayTranspose2(InputArray As Variant) As Variant
 
     ArrayTranspose2 = arrOutput
 End Function
+
 Sub test()
-Dim rn As Range
+Dim rn As Range, ws as worksheet
 Set rn = ActiveCell
 rn = ThisWorkbook.Path
 End Sub
