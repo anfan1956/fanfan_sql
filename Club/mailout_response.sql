@@ -18,7 +18,7 @@ where t.transactiondate>=@date
 order by 1
 
 select * from inv.sales_goods s where s.saleID=@saleid
-
+--just checking the branching
 
 declare @sales_un table (saleid int)
 insert @sales_un values (74333), (74331)
