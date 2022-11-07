@@ -41,7 +41,7 @@ Function lo_from_array(ws As Worksheet, rn As Range, lo_array As Variant, Option
     End With
 End Function
 
-Function vValid(sql As String, ff As Boolean, cap As String) As Variant
+Function vValid(sql As String, ff As Boolean, cap As String, Optional id As Boolean) As Variant
 
     Dim data As Variant
         Call newConnection(ff)
@@ -54,11 +54,19 @@ Function vValid(sql As String, ff As Boolean, cap As String) As Variant
                 With .ComboBox1
                     .Style = fmStyleDropDownList
                     .List = data
+                    If id Then
+                        .ColumnCount = 2
+                    End If
                     .SetFocus
                 End With
                 .Show
                 If Not .cancelled Then
                     vValid = .ComboBox1.Text
+                    If id Then
+                        With .ComboBox1
+                            vValid = .List(.ListIndex, 1)
+                        End With
+                    End If
                 End If
             End With
         cn.Close
@@ -1508,9 +1516,8 @@ Function ArrayTranspose2(InputArray As Variant) As Variant
 
     ArrayTranspose2 = arrOutput
 End Function
-
 Sub test()
-Dim rn As Range, ws as worksheet
+Dim rn As Range
 Set rn = ActiveCell
 rn = ThisWorkbook.Path
 End Sub

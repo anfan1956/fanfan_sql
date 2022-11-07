@@ -1,15 +1,20 @@
 ﻿USE [fanfan]
 GO
 
-ALTER proc [inv].[cash_to_rep_p] (@saleid int ) as
+ALTER proc [inv].[cash_to_rep_p] (@saleid int, @receipttype_id int ) as
 
---проверка
 SET NOCOUNT ON;
-declare @a money;
-select @a = sum (amount) from inv.sales_receipts s where s.receipttypeID = inv.receipttype_id('hard cash') and s.saleID=@saleid;
-if @a  is null return -1
+declare @count int = (select count(*) from inv.sales_receipts sr where sr.saleID= @saleid);
+
+if @count <>1 return -1
 else 
-	update s set s.receipttypeID= inv.receipttype_id('hard cash to rep')
+	update s set s.receipttypeID= @receipttype_id
 	from inv.sales_receipts s
-	where s.saleID=@saleid and s.receipttypeID = inv.receipttype_id('hard cash') 
-	return @a;
+	where s.saleID=@saleid 
+	return @receipttype_id;
+
+go 
+declare @saleid int = 67853;
+select count(*)
+from inv.sales_receipts sr
+where sr.saleID= @saleid
