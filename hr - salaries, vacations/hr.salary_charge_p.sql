@@ -2,6 +2,9 @@
 GO
 /****** Object:  StoredProcedure [hr].[salary_charge_p]    Script Date: 24.08.2022 13:31:37 ******/
 
+
+-- проверка encoding
+
 ALTER proc [hr].[salary_charge_p] 
 	@note varchar(max) OUTPUT,
 	@passed_date DATE=null	
