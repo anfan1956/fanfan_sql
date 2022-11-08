@@ -10,9 +10,12 @@ ALTER proc [hr].[salary_charge_p]
 	@passed_date DATE=null	
 as 
 
-	DECLARE @startdate DATE, @update DATE;
-
-	SET @startdate = dateadd(d, 1, hr.last_date())
+	declare 
+	-- упростил процедуру. Сначала беру число с последней неначисленной зарплатой
+	-- если их несколько нужно запускать поочереди вручную
+		@startdate date = (select top 1 salary_date from hr.salary_dates where success is null ),	
+		@update DATE;
+	
 	IF @passed_date IS NOT NULL 
 		BEGIN
 			SET @startdate=@passed_date
@@ -46,7 +49,7 @@ as
 		begin transaction;
 			IF @passed_date IS NULL
 					begin
-						if not( datediff(D, hr.upcoming_date(), cast(CURRENT_TIMESTAMP as date))>=10
+						if not( datediff(D, @startdate, cast(CURRENT_TIMESTAMP as date))>=10
 							and (select success from hr.salary_dates d where d.salary_date=hr.upcoming_date() ) is null)
 							begin
 								select @note = 'either to early or already done'
@@ -116,3 +119,5 @@ as
 		select @note = ERROR_MESSAGE ();
 		rollback transaction
 	end catch
+GO
+
