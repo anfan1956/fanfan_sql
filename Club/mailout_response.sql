@@ -1,6 +1,6 @@
 ﻿use fanfan
 go
-declare @date date = '20221025';
+declare @date date = '20221110';
 declare @saleid int = 74331;
 with _i as (
 	select i.*, c.customerid
@@ -9,20 +9,17 @@ with _i as (
 	where i.smsdate >=@date
 )
 select s.*, i.customerid, i.discount, p.lfmname, t.transactiondate, cp.lfmname 
+--update s set s.sms_promo = 'True'
 from inv.sales s
 	join inv.transactions t on t.transactionID=s.saleID
 	left join _i i on i.customerid= s.customerID
 	join org.persons p on p.personID = s.salepersonID
 	join cust.persons cp on cp.personID=s.customerID
-where t.transactiondate>=@date
+where t.transactiondate>=@date and i.customerid<>1
 order by 1
+go
 
-select * from inv.sales_goods s where s.saleID=@saleid
---just checking the branching
+--alter table inv.sales add sms_promo bit null
 
-declare @sales_un table (saleid int)
-insert @sales_un values (74333), (74331)
-select * from @sales_un
-declare @sales_code table (saleid int)
-insert @sales_code values (74319), (74315), (74316)
-select u.saleid false, r.saleid req from @sales_un u, @sales_code r
+
+select * from inv.sales
