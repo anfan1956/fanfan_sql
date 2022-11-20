@@ -135,7 +135,7 @@ begin
 			with _accountid as (select accountid from acc.accounts where account= @account )
 			insert acc.articles(article, accountid) select upper(@article), accountid from _accountid;
 			select @articleid= SCOPE_IDENTITY();
-			select @note = 'добавлена статья: ' + upper(@account) + ', кор. счет: ' + @account;
+			select @note = 'добавлена статья: ' + upper(@article) + ', кор. счет: ' + @account;
 		end
 	else
 		select @note = 'статья уже в списке статей'
@@ -157,14 +157,14 @@ from acc.accounts a
 	join acc.groups g on g.groupid=a.groupid
 go
 
-select group_name, account from acc.accchart_v order by accountid
+--select group_name, account from acc.accchart_v order by accountid
 
 if OBJECT_ID('pmt.client_bank_accounts_f') is not null drop function pmt.client_bank_accounts_f
 go
 create function pmt.client_bank_accounts_f(@client varchar (50)) returns table as return
 select distinct
 	cn.contractor bank, r.account
-from pmt.registers r 
+from acc.registers_banks r 
 	join org.banks b on b.bankID=r.bankid
 	join org.clients c on c.clientID=r.clientid
 	join org.contractors cn on cn.contractorID=r.bankid
@@ -185,3 +185,4 @@ except select divisionfullname from org.divisions
 except select contractor from s
 go
 
+select * from acc.registers
