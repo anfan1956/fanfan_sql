@@ -22,11 +22,7 @@ WITH _CASE_tran_types (sale_type, transactiontypeid) AS (
 )
 , _dates(cust_id, cust_name , trans_id, purch_date, division, sale_type, chain ) AS (
 	SELECT 
---<<<<<<< HEAD
 		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.divisionfullname, 
---=======
---		s.customerid, p.lfmname, T.transactionID, T.transactiondate, d.division, 
--->>>>>>> 7001cff71be31a3afcdd3c3eb1f590e0d31a89dd
 		TT.sale_type , c.chain
 	FROM s 
 		JOIN inv.sales sl ON sl.customerID=s.customerid
@@ -64,16 +60,21 @@ LEFT JOIN sms.instances i ON I.smsid	=ic.smsid
 	WHERE n.nums_desc = 1
 )
 SELECT 
-	s.cust_id, s.cust_name, s.chain registered,  
+	s.cust_id, s.cust_name, 
+	cast(cust.prime_phone_f(s.cust_id) as bigint) phone,
+	s.chain registered,  
 	s.frst_trans_id, s.frst_date, s.frs_div, e.lst_trans_id, 
-	e.lst_date, e.lst_div, ISNULL(dbo.justdate(sd.smsdate), 0) sms_date
+	e.lst_date, e.lst_div, ISNULL(dbo.justdate(sd.smsdate), 0) sms_date, 
+	v.amount turnover 
+
 FROM _start s
 	JOIN _end e ON e.cust_id= s.cust_id
 	JOIN _sms_dates sd ON sd.cust_id= s.cust_id
+	join cust.turnover_total_v v on v.customerID=s.cust_id
 WHERE sd.num =1;
-
 
 GO
 
-SELECT aa.* FROM cust.analytics_adv() aa order by 1
-select * from sms.phones
+
+
+
