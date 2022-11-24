@@ -2,18 +2,24 @@
 GO
 /****** Object:  StoredProcedure [hr].[salary_charge_p]    Script Date: 24.08.2022 13:31:37 ******/
 
+
+-- проверка encoding
+
 ALTER proc [hr].[salary_charge_p] 
 	@note varchar(max) OUTPUT,
 	@passed_date DATE=null	
 as 
 
-	DECLARE @startdate DATE, @update DATE;
-
-	SET @startdate = dateadd(d, 1, hr.last_date())
-	IF @passed_date IS NOT NULL 
-		BEGIN
-			SET @startdate=@passed_date
-		END
+	declare 
+	-- упростил процедуру. Сначала беру число с последней неначисленной зарплатой
+	-- если их несколько нужно запускать поочереди вручную
+		@startdate date = (select top 1 DATEADD(D, 1, salary_date) from hr.salary_dates where success is not null order by 1 desc),	
+		@update DATE;
+	
+	--IF @passed_date IS NOT NULL 
+	--	BEGIN
+	--		SET @startdate=@passed_date
+	--	END
 
 	SELECT @update = sd.salary_date
 	FROM hr.salary_dates sd
@@ -43,8 +49,9 @@ as
 		begin transaction;
 			IF @passed_date IS NULL
 					begin
-						if not( datediff(D, hr.upcoming_date(), cast(CURRENT_TIMESTAMP as date))>=10
-							and (select success from hr.salary_dates d where d.salary_date=hr.upcoming_date() ) is null)
+						if not( datediff(D, @startdate, cast(CURRENT_TIMESTAMP as date))>=10
+								--and (select success from hr.salary_dates d where d.salary_date=hr.upcoming_date() ) is null
+							)
 							begin
 								select @note = 'either to early or already done'
 								;throw 50001, @note, 1;		
@@ -113,3 +120,5 @@ as
 		select @note = ERROR_MESSAGE ();
 		rollback transaction
 	end catch
+GO
+
