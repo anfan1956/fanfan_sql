@@ -207,7 +207,7 @@ vData = WorksheetFunction.Transpose(rs.GetRows)
         .cbOK.Default = True
         .ComboBox1.List = vData
         .Show
-        If .cancelled Then GoTo Coda
+        If .cancelled Then GoTo coda
         sPass = .TextBox2.Text
     End With
 
@@ -222,7 +222,7 @@ Call newConnection(True)
 '    GoTo coda
 'End If
 
-Coda:
+coda:
 Application.EnableEvents = True
 End Function
 Sub call_authority()
@@ -606,7 +606,7 @@ With frmPass
     .CommandButton2.Default = True
     .Show
     If .cancelled Then
-        GoTo Coda
+        GoTo coda
     End If
     sPass = .TextBox1.Text
 End With
@@ -616,7 +616,7 @@ sSQL = sSQL & " join org.persons p on p.personID=u.userID "
 sSQL = sSQL & "where p.lfmname = '" & username & "'  and password= '" & sPass & "'; "
 sSQL = sSQL & "select isnull(@n, 0);"
 user_id = scalar_value(sSQL, cnn:=cn)
-Coda:
+coda:
 
 End Function
 
@@ -1523,3 +1523,46 @@ rn = ThisWorkbook.Path
 End Sub
 
 
+Function isInArray(str As String, arr As Variant) As Boolean
+   Dim i
+    For i = LBound(arr) To UBound(arr)
+        If arr(i) = str Then
+            isInArray = True
+            Exit Function
+        End If
+    Next i
+    isInArray = False
+
+End Function
+Sub array_clear(arr As Variant, lo As ListObject, Optional all As Boolean)
+    Dim field As String, rn As Range
+        
+        For i = 0 To UBound(arr)
+            field = arr(i)
+            Set rn = rnCell(field, lo)
+            With rn
+                If all Then
+                    .ClearContents
+                    .Validation.Delete
+                Else
+                    .ClearContents
+                End If
+            End With
+        Next
+End Sub
+Sub validate_assing(sql As String, rn As Range)
+    Dim sList As String, vList As Variant
+    vList = var_value(sql)
+    vList = WorksheetFunction.Transpose(vList)
+    vList = WorksheetFunction.Transpose(vList)
+     sList = Join(vList, ", ")
+    If sList <> "" Then
+        With rn.Validation
+            .Delete
+            .Add xlValidateList, , , sList
+        End With
+        vList = Split(sList, ", ")
+        If UBound(vList) = 0 Then rn = sList
+    End If
+
+End Sub
