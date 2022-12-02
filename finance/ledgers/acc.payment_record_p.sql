@@ -15,8 +15,14 @@ set nocount on;
 begin try
 	begin transaction;
 		declare 
-			@register_debet int, @register_credit int, @transactionid int, 
+			@register_debet int, @register_credit int, @transactionid int,@register_buble int, 
 			@personid int, @contractorid int;
+		declare 
+			@account_debet_id int = (select a.accountid from acc.articles a where a.article=@article),
+			@account_credit_id int = acc.account_id('Деньги'), 
+			@account_bubble_id int, 
+			@person_id_debet int, @person_id_credit int;
+
 
 		if @payee = 'ОТСУТСТВУЕТ'
 			begin 
@@ -39,7 +45,17 @@ begin try
 				select @register_credit = registerid from acc.registers where account = @account;
 		
 				if @article = 'ВЫПЛАТЫ ПЕРСОНАЛУ' 
-					select @personid = personID from org.persons where lfmname = @payee;
+					select @person_id_debet = personID from org.persons where lfmname = @payee;
+				else if @article = 'ВОЗВРАТ С ПОДОТЧЕТА' 
+					begin 
+						select @account_bubble_id =@account_credit_id
+						select @account_credit_id=@account_debet_id
+						select @account_debet_id=@account_bubble_id
+						select @register_buble=@register_credit
+						select @register_credit=@register_debet
+						select @register_debet=@register_buble
+						select @person_id_credit = personID from org.persons where lfmname = @payee;
+					end
 				else 
 					select @contractorid = org.contractor_id(@payee);
 
@@ -64,16 +80,15 @@ begin try
 
 		--		table 2: acc.entries
 				with _seed (is_credit, accountid, personid, contractorid, registerid) as(
-					select 'True', acc.account_id('Деньги'), null, null, @register_credit
+					select 'True', @account_credit_id, @person_id_credit, null, @register_credit
 						union
-					select 'False', accountid, @personid, @contractorid, @register_debet
+					select 'False', @account_debet_id, @person_id_debet, @contractorid, @register_debet
 					from acc.articles a
 					where a.article= @article
 					)
 				insert acc.entries(transactionid, is_credit, accountid, registerid, personid, contractorid)
 				select @transactionid, s.is_credit, s.accountid,  s.registerid, s.personid, s.contractorid			
 				from _seed s;
-
 
 		
 				select @note= 'получатель: ' + @payee + ', сумма: '  + FORMAT(@amount, '#,##0.00') + ' ' 
@@ -89,23 +104,18 @@ begin catch
 end catch
 go
 
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221129', '40817810900014646072', 'ФЕДОРОВ А. Н.', 'ОПЛАТА ПО СЧЕТУ', 'ДРИМ ХАУС. ЗАО', 'счет за май', '45245'; select @note;
---go
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221128', '40817810900014646072', 'ФЕДОРОВ А. Н.', 'ВЫПЛАТЫ ПЕРСОНАЛУ', 'БАЛУШКИНА А. А.', 'перевод по карте', '10.258'; select @note;
---go
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221128', '40817810900014646072', 'ФЕДОРОВ А. Н.', 'ВЫПЛАТЫ ПЕРСОНАЛУ', 'ГОРЛОВА А. Р.', 'перевод по карте', '5600'; select @note;
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221201', '40817810900014646072', 'ФЕДОРОВ А. Н.', 'НАЧАЛЬНЫЕ ОСТАТКИ', 'ОТСУТСТВУЕТ', 'коррекция', '4561.23'; select @note;
-declare @note varchar(max); exec acc.payment_record_p @note output, '20221201', '40817810900014646072', 'ФЕДОРОВ А. Н.', 'НАЧАЛЬНЫЕ ОСТАТКИ', 'ОТСУТСТВУЕТ', 'коррекция', '13289.25'; select @note;
-
+--declare @note varchar(max); exec acc.payment_record_p @note output, '20221202', '40817810900014646072', 'ПИКУЛЕВА О. Н.', 'ВОЗВРАТ С ПОДОТЧЕТА', 'ФЕДОРОВ А. Н.', 'без комментария', '65405'; select @note;
 
 if OBJECT_ID('acc.payments_date_f') is not null drop function  acc.payments_date_f
 go 
 create function acc.payments_date_f(@date date) returns table as return
 
-with s (id, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
+with s (id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
 
 select 
-	t.transactionid, c2.contractor, 
+	t.transactionid, 
+	t.transdate,
+	c2.contractor, 
 	a.article, ac.account, 
 	isnull(c3.contractor, p.lfmname), 
 	t.comment, c.contractor, 
@@ -126,11 +136,43 @@ from acc.transactions t
 where cast(t.recorded as date) = isnull(@date, getdate())
 ) 
 select * from s
-
 go
 
-declare @date date = '2022-11-29'
+declare @date date = '2022-12-02'
 --select * from acc.entries
-select * from acc.payments_date_f(default)
-select * from acc.transactions
-select * from acc.beg_entries_v
+select * from acc.payments_date_f(@date)
+select * from acc.transactions order by 1 desc;
+--select * from acc.beg_entries_v
+
+if OBJECT_ID('acc.payments_v') is not null drop view acc.payments_v
+go
+create view acc.payments_v as
+with s (id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор, год, месяц) as (
+	select 
+		t.transactionid, 
+		cast(t.transdate as datetime),
+		c2.contractor, 
+		a.article, ac.account, 
+		isnull(c3.contractor, p.lfmname), 
+		t.comment, c.contractor, 
+		r.account, cr.currencycode, 
+		t.amount, p2.lfmname, 
+		DATEPART(YYYY, transdate), 
+		DATEPART(MM,transdate)
+	from acc.transactions t
+		join acc.entries e on e.transactionid =t.transactionid and e.is_credit = 'True'
+		join acc.registers r on r.registerid= e.registerid
+		join cmn.currencies cr on cr.currencyID= r.currencyid
+		join org.contractors c on r.bankID=c.contractorID
+		join org.contractors c2 on c2.contractorID= r.clientid
+		join acc.articles a on a.articleid=t.articleid
+		join acc.accounts ac on ac.accountid=a.accountid
+		join acc.entries e2 on e2.transactionid =t.transactionid and e2.is_credit = 'False'
+		left join org.contractors c3 on c3.contractorID=e2.contractorid
+		left join org.persons p on p.personID = e2.personid
+		join org.persons p2 on p2.personID= t.bookkeeperid
+) 
+select * from s
+go
+
+--select * from acc.payments_v
