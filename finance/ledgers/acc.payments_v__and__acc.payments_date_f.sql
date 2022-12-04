@@ -9,7 +9,7 @@ with s (id, дата, плательщик, статья, [план счетов
 
 select 
 	t.transactionid, 
-	t.transdate,
+	cast(t.transdate as datetime) transdate,
 	c2.contractor, 
 	a.article, ac.account, 
 	isnull(c3.contractor, p.lfmname), 
