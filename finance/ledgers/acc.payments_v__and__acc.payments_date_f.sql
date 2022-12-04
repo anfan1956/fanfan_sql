@@ -5,34 +5,37 @@ if OBJECT_ID('acc.payments_date_f') is not null drop function  acc.payments_date
 go 
 create function acc.payments_date_f(@date date) returns table as return
 
-with s (id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
-
+with s (id, дата, reg_id, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
 select 
 	t.transactionid, 
 	cast(t.transdate as datetime) transdate,
+	e.registerid,
 	c2.contractor, 
-	a.article, ac.account, 
+	a.article, 
+	ac.account, 
 	isnull(c3.contractor, p.lfmname), 
 	t.comment, c.contractor, 
 	r.account, cr.currencycode, 
-	t.amount, p2.lfmname
+	(1 - 2 * e.is_credit) * t.amount , 
+	p2.lfmname
 from acc.transactions t
-	join acc.entries e on e.transactionid =t.transactionid and e.is_credit = 'True'
+	join acc.entries e on e.transactionid =t.transactionid and e.registerid is not null
 	join acc.registers r on r.registerid= e.registerid
 	join cmn.currencies cr on cr.currencyID= r.currencyid
 	join org.contractors c on r.bankID=c.contractorID
 	join org.contractors c2 on c2.contractorID= r.clientid
 	join acc.articles a on a.articleid=t.articleid
 	join acc.accounts ac on ac.accountid=a.accountid
-	join acc.entries e2 on e2.transactionid =t.transactionid and e2.is_credit = 'False'
+	join acc.entries e2 on e2.transactionid =e.transactionid and e2.is_credit <> e.is_credit
 	left join org.contractors c3 on c3.contractorID=e2.contractorid
 	left join org.persons p on p.personID = e2.personid
 	join org.persons p2 on p2.personID= t.bookkeeperid
-where cast(t.recorded as date) = isnull(@date, getdate())
-) 
+where t.transdate= isnull(@date, getdate())
+)
 select * from s
 go
-
+declare @date date = '20221201';
+select * from acc.payments_date_f(@date)
 
 
 if OBJECT_ID('acc.payments_v') is not null drop view acc.payments_v
