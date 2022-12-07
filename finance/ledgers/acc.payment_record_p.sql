@@ -63,15 +63,16 @@ begin try
 				with s (currencyid, clientid) as (
 					select currencyid, clientid from acc.registers where account = @account
 				)		
-				insert acc.transactions(transdate, bookkeeperid, currencyid, articleid, clientid, amount, document )
+				insert acc.transactions(transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document )
 				select 
 					@date, 
 					org.person_id(@bookkеeper), 
 					s.currencyid, 
 					a.articleid, 
 					s.clientid, 
-					@amount, 
-					@comment
+					@amount,
+					case when @article <> 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end, 
+					case when @article = 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end
 				from acc.articles a
 					cross apply s
 				where a.article= @article;
