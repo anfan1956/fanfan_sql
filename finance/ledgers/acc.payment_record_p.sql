@@ -111,10 +111,11 @@ if OBJECT_ID('acc.payments_date_f') is not null drop function  acc.payments_date
 go 
 create function acc.payments_date_f(@date date) returns table as return
 
-with s (id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
+with s (id, reg_id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
 
 select 
 	t.transactionid, 
+	e.registerid,
 	t.transdate,
 	c2.contractor, 
 	a.article, ac.account, 
@@ -139,6 +140,7 @@ where cast(t.recorded as date) = isnull(@date, getdate())
 select * from s
 go
 
+select id, reg_id, дата, статья, [план счетов], получатель, документ, плательщик, банк, [счет/банк], валюта, сумма, оператор from acc.payments_date_f('20221207')
 declare @date date = '2022-12-02'
 --select * from acc.entries
 select * from acc.payments_date_f(@date)
