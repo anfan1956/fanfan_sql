@@ -63,7 +63,7 @@ begin try
 				with s (currencyid, clientid) as (
 					select currencyid, clientid from acc.registers where account = @account
 				)		
-				insert acc.transactions(transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment )
+				insert acc.transactions(transdate, bookkeeperid, currencyid, articleid, clientid, amount, document )
 				select 
 					@date, 
 					org.person_id(@bookkеeper), 
