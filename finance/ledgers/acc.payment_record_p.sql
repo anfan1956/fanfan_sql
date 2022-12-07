@@ -8,7 +8,8 @@ create proc acc.payment_record_p
 	@bookkеeper varchar(50),
 	@article varchar (150), 
 	@payee varchar (150),
-	@comment varchar (max), 
+	@document varchar(50),
+	@comment varchar (150), 
 	@amount money 
 as
 set nocount on;
@@ -71,8 +72,10 @@ begin try
 					a.articleid, 
 					s.clientid, 
 					@amount,
-					case when @article <> 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end, 
-					case when @article = 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end
+					@comment, 
+					@document
+					--case when @article <> 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end, 
+					--case when @article = 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end
 				from acc.articles a
 					cross apply s
 				where a.article= @article;
@@ -111,18 +114,23 @@ if OBJECT_ID('acc.payments_date_f') is not null drop function  acc.payments_date
 go 
 create function acc.payments_date_f(@date date) returns table as return
 
-with s (id, reg_id, дата, плательщик, статья, [план счетов], получатель, документ, банк, [счет/банк], валюта, сумма, оператор) as (
+with s (id, reg_id, дата, плательщик, статья, [план счетов], получатель, комментарий, документ, банк, [счет/банк], валюта, сумма, оператор) as (
 
 select 
 	t.transactionid, 
 	e.registerid,
 	t.transdate,
 	c2.contractor, 
-	a.article, ac.account, 
+	a.article, 
+	ac.account, 
 	isnull(c3.contractor, p.lfmname), 
-	t.comment, c.contractor, 
-	r.account, cr.currencycode, 
-	t.amount, p2.lfmname
+	t.comment, 
+	t.document,
+	c.contractor, 
+	r.account, 
+	cr.currencycode, 
+	t.amount, 
+	p2.lfmname
 from acc.transactions t
 	join acc.entries e on e.transactionid =t.transactionid and e.is_credit = 'True'
 	join acc.registers r on r.registerid= e.registerid
