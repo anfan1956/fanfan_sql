@@ -19,3 +19,26 @@ select * from _p) p
 unpivot (qty for am in 
 	(m1, m2)
 	) as unpt
+
+
+--example 2
+if OBJECT_ID ('salary') is not null drop table salary
+create table salary (
+personid int,
+com money, 
+fix money
+
+)
+
+insert salary (personid, com, fix)
+values 
+	(1, 20, 30), 
+	(2, 35, 40)
+select * from salary;
+
+select personid, amount, account from 
+(
+	select *
+	from salary
+) f
+unpivot (amount for account in (com, fix)) as unp
