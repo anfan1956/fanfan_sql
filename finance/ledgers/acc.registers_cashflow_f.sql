@@ -77,11 +77,12 @@ create function acc.beg_entries_around_date_f (@date date) returns table as retu
 		select distinct registerid from acc.beg_entries 
 		except select registerid from _before
 	)
-	, _ordered (registerid, entrydate, entryid, num) as (
+	, _ordered (registerid, entrydate, entryid, amount, num) as (
 		select 
 			b.registerid,
 			b.entrydate, 
 			b.entryid, 
+			b.amount, 
 			ROW_NUMBER() over(partition by registerid order by entrydate desc)  num
 		from acc.beg_entries b
 		where entrydate <=@date
@@ -89,7 +90,8 @@ create function acc.beg_entries_around_date_f (@date date) returns table as retu
 		select 
 			b.registerid,
 			b.entrydate, 
-			b.entryid, 
+			b.entryid,
+			b.amount, 
 			ROW_NUMBER() over(partition by b.registerid order by entrydate)  num
 		from acc.beg_entries b
 			join _after be on be.registerid=  b.registerid
