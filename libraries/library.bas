@@ -1,13 +1,13 @@
 Attribute VB_Name = "library"
 Option Explicit
-Public Const VPNcommon = "10.0.0.30"
+Public Const VPNcommon = "10.0.0.33"
 
 Function greeting() As String
     greeting = "Hello, world"
 End Function
-Function cbAdd(left As Integer, top As Integer, width As Integer, height, caption As String, actions As String) As Button
+Function cbAdd(left As Integer, top As Integer, width As Integer, height, caption As String, actions As String) As button
     
-    'РґРѕР±Р°РІР»СЏРµС‚ РєРЅРѕРїРєСѓ РґР»СЏ РёСЃРїРѕР»РЅРµРЅРёСЏ РјР°РєСЂРѕ
+    'добавляет кнопку для исполнения макро
     Dim ws As Worksheet
     Set ws = ActiveSheet
     Set cbAdd = ws.Buttons.Add(left, top, width, height)
@@ -17,23 +17,26 @@ Function cbAdd(left As Integer, top As Integer, width As Integer, height, captio
     End With
 End Function
 
-Function ws_insert(wsname As String) As Worksheet
-    'РџРµСЂРµРІСЃС‚Р°РІР»СЏРµС‚ Р»РёСЃС‚РѕРє Рё РґР°РµС‚ РµРјСѓ РЅР°Р·РІР°РЅРёРµ
+Function ws_insert(wsname As String, Optional zoom As Integer) As Worksheet
+    'Перевставляет листок и дает ему название
     With Application
         .ScreenUpdating = False
         .DisplayAlerts = False
             If worksheet_exist(wsname) Then Worksheets(wsname).Delete
             Set ws_insert = Worksheets.Add
             ws_insert.Name = wsname
+            If zoom > 0 Then
+                ActiveWindow.zoom = zoom
+            End If
         .DisplayAlerts = True
     End With
 End Function
 
 Function lo_from_array(ws As Worksheet, rn As Range, lo_array As Variant, Optional lo_name As String) As ListObject
-    'СЃРѕР·РґР°РµС‚ С‚Р°Р±Р»РёС†Сѓ/header РЅР° СЃС‚СЂР°РЅРёС†Рµ Рё РґР°РµС‚ РµР№ РЅР°Р·РІР°РЅРёРµ
+    'создает таблицу/header на странице и дает ей название
     With rn
-        .value = "Р“СЂР°С„Р°"
-        .Offset(0, 1) = "Р—РЅР°С‡РµРЅРёРµ"
+        .value = "Графа"
+        .Offset(0, 1) = "Значение"
         .Offset(1).Resize(UBound(lo_array) + 1) = WorksheetFunction.Transpose(lo_array)
         Set lo_from_array = ws.ListObjects.Add(xlSrcRange, rn.CurrentRegion, , xlYes, , "tablestylemedium11")
         If lo_name <> "" Then lo_from_array.Name = lo_name
@@ -74,7 +77,7 @@ Function vValid(sql As String, ff As Boolean, cap As String, Optional id As Bool
 End Function
 Function sValid(sql As String, Optional cnn As ADODB.Connection, Optional fanfan As Boolean) As String
 
-    'РЎРѕР·РґР°РµС‚ СЃС‚СЂРѕРєСѓ РґР»СЏ РІР°Р»РёРґР°С†РёРё
+    'Создает строку для валидации
     Dim rs As ADODB.Recordset, vValidation
         If cnn Is Nothing Then
             Call newConnection(fanfan)
@@ -144,8 +147,8 @@ Function pt_onthe_fly( _
         .RowAxisLayout xlTabularRow
         .InGridDropZones = True
         If datafield <> "" Then
-            .AddDataField .PivotFields(datafield), " СЃСѓРјРјР°", xlSum
-            .PivotFields(" СЃСѓРјРјР°").NumberFormat = "#,##.00; -[red]#,##.00;"
+            .AddDataField .PivotFields(datafield), " сумма", xlSum
+            .PivotFields(" сумма").NumberFormat = "#,##.00; -[red]#,##.00;"
         End If
         If IsArray(data_fields) Then
             For Each item In data_fields
@@ -201,8 +204,8 @@ Set rs = cn.Execute(sql)
 vData = WorksheetFunction.Transpose(rs.GetRows)
 
     With frmAttendance
-        .Label1.caption = "РїР°СЂРѕР»СЊ"
-        .caption = "Р°РІС‚РѕСЂРёР·Р°С†РёСЏ РѕС‚С‡РµС‚РЅРѕРіРѕ Р»РёС†Р°: "
+        .Label1.caption = "пароль"
+        .caption = "авторизация отчетного лица: "
         .cbCancel.Cancel = True
         .cbOK.Default = True
         .ComboBox1.List = vData
@@ -218,7 +221,7 @@ sSQL = sSQL & "select isnull(@n, 0);"
 Call newConnection(True)
 'iAccPersonid = scalar_value(sSQL, cnn:=cn)
 'If iAccPersonid = 0 Then
-'    MsgBox "РЅРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ"
+'    MsgBox "неверный пароль"
 '    GoTo coda
 'End If
 
@@ -548,7 +551,7 @@ values = WorksheetFunction.Transpose(rs.GetRows)
         With .Label1
             .top = 20
             .left = 30
-            .caption = "РІС‹Р±РµСЂРёС‚Рµ Р·РЅР°С‡РµРЅРёРµ"
+            .caption = "выберите значение"
             .TextAlign = fmTextAlignLeft
         End With
         .width = 250
@@ -567,7 +570,7 @@ values = WorksheetFunction.Transpose(rs.GetRows)
         End With
         With .cbCancel
             .left = 30
-            .caption = "РѕС‚РјРµРЅР°"
+            .caption = "отмена"
         End With
         .cbOK.left = 150
         .Show
@@ -601,7 +604,7 @@ Function user_id(username As String)
 Dim iUserid As Integer, sSQL As String, sPass As String
 
 With frmPass
-    .caption = "AРІС‚РѕСЂРёР·Р°С†РёСЏ: " & username
+    .caption = "Aвторизация: " & username
     .CommandButton1.Cancel = True
     .CommandButton2.Default = True
     .Show
@@ -657,7 +660,7 @@ Sub keep_pt_filters()
 Dim ws As Worksheet, pt As PivotTable, vFields, dict As Scripting.Dictionary
     Set ws = ActiveSheet
     Set pt = ws.PivotTables(1)
-    vFields = Array("РјРµСЃСЏС†", "РјР°РіР°Р·РёРЅ", "С„РѕСЂРјР°_РѕРїР»Р°С‚С‹")
+    vFields = Array("месяц", "магазин", "форма_оплаты")
     Set dict = pt_hiddens(ws, pt)
 End Sub
 Sub pt_filters(ws As Worksheet, pt As PivotTable, vFields)
@@ -691,7 +694,7 @@ Set dict = New Scripting.Dictionary
             End If
     Next
     
-    For Each ptf In pt.RowFields
+    For Each ptf In pt.rowFields
             For Each pti In ptf.PivotItems
                 If pti.Visible = False Then
                     dict(ptf.Name) = dict(ptf.Name) & pti.value & ","
@@ -702,7 +705,7 @@ Set dict = New Scripting.Dictionary
             End If
     Next
     
-    For Each ptf In pt.PageFields
+    For Each ptf In pt.pageFields
             For Each pti In ptf.PivotItems
                     If ptf.CurrentPage <> pti Then
                         dict(ptf.Name) = dict(ptf.Name) & pti.value & ","
@@ -722,9 +725,9 @@ Function user_authorized(data As Variant) As Integer
 Dim sql As String, userid As Integer, password As String
 
 With frmAthorization
-    .caption = "Р°РІС‚РѕСЂРёР·Р°С†РёСЏ"
-    .Label2.caption = "РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ"
-    .Label1.caption = "РїР°СЂРѕР»СЊ"
+    .caption = "авторизация"
+    .Label2.caption = "пользователь"
+    .Label1.caption = "пароль"
     With .TextBox1
         .TabIndex = 1
         .PasswordChar = "*"
@@ -1050,8 +1053,8 @@ Function phone_string(Optional count As Integer) As String
 Dim ws As Worksheet, lo As ListObject, str As String
 Dim lr As ListRow, lc As ListColumn
 
-If worksheet_exists("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ") Then
-    Set ws = Worksheets("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ")
+If worksheet_exists("клиенты для СМС") Then
+    Set ws = Worksheets("клиенты для СМС")
     Set lo = ws.ListObjects("cust_list")
     Set lc = lo.ListColumns("phone")
     With lo
@@ -1078,8 +1081,8 @@ Function phone_string_1( _
 Dim ws As Worksheet, lo As ListObject, str As String, i As Integer
 Dim lr As ListRow, lc As ListColumn, lrcount As Integer, end_row As Integer
 
-If worksheet_exists("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ") Then
-    Set ws = Worksheets("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ")
+If worksheet_exists("клиенты для СМС") Then
+    Set ws = Worksheets("клиенты для СМС")
     Set lo = ws.ListObjects("cust_list")
     Set lc = lo.ListColumns("phone")
     With lo
@@ -1108,8 +1111,8 @@ Function phone_string_2( _
 Dim ws As Worksheet, lo As ListObject, str As String, i As Integer
 Dim lr As ListRow, lc As ListColumn, lrcount As Integer, end_row As Integer
 
-If worksheet_exists("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ") Then
-    Set ws = Worksheets("РєР»РёРµРЅС‚С‹ РґР»СЏ РЎРњРЎ")
+If worksheet_exists("клиенты для СМС") Then
+    Set ws = Worksheets("клиенты для СМС")
     Set lo = ws.ListObjects("cust_list")
     Set lc = lo.ListColumns("phone")
     With lo
@@ -1182,14 +1185,14 @@ Sub tst()
 
 Dim vButtons As Variant, action As String, ws As Worksheet
 vButtons = Array( _
-    "РЅР° РіР»Р°РІРЅСѓСЋ", _
-    "РЅРѕРІС‹Р№ РѕСЂРґРµСЂ", _
-    "СЃРєР°РЅРёСЂРѕРІР°С‚СЊ Р±Р°СЂРєРѕРґ", _
-    "Р·Р°РїРёСЃР°С‚СЊ С‡РµРє", _
-    "Р·Р°РїРёСЃР°С‚СЊ РЅР° СЃС‡РµС‚ РєР»РёРµРЅС‚Р°", _
-    "СЃРєРёРґРєР° РЅРµ РІРµСЃСЊ С‡РµРє", _
-    "СЃРєРёРґРєР° РЅР° Р±Р°СЂРєРѕРґ", _
-    "С†РµРЅР° РЅР° Р±Р°СЂРєРѕРґ" _
+    "на главную", _
+    "новый ордер", _
+    "сканировать баркод", _
+    "записать чек", _
+    "записать на счет клиента", _
+    "скидка не весь чек", _
+    "скидка на баркод", _
+    "цена на баркод" _
 )
 
 action = "test_buttons"
@@ -1197,10 +1200,10 @@ Call buttons_add(vButtons, action, 10, 30, 95, 150, ws)
 End Sub
 Sub buttons_add(vButtons As Variant, action As String, but_in_colum As Integer, _
     gap As Integer, position_h, width_v As Integer, Optional ws As Worksheet, _
-    Optional black As Boolean)
+    Optional black As Boolean, Optional color As Long)
 
-Dim bt As Button, n As Integer, k As Integer, j As Integer
-Dim But(0 To 50) As Button
+Dim bt As button, n As Integer, k As Integer, j As Integer
+Dim but(0 To 50) As button
 
     If ws Is Nothing Then
         Set ws = ws_insert("buttons")
@@ -1219,13 +1222,15 @@ Dim But(0 To 50) As Button
     k = but_in_colum
     Do While i + j * k < n
         For i = 0 To k - 1
-            Set But(i + j * k) = ws.Buttons.Add(position_h + j * (width_v + gap), 15 * i, width_v, 15)
-            With But(i + j * k)
+            Set but(i + j * k) = ws.Buttons.Add(position_h + j * (width_v + gap), 15 * i, width_v, 15)
+            With but(i + j * k)
                 .Text = vButtons(i + j * k)
                 .OnAction = action
-                .Font.Color = -16777012
-                .Font.Color = -11489280
-                If black Then .Font.Color = 0
+                .Font.color = -16777012
+                .Font.color = -11489280
+                If color > 0 Then .Font.color = color
+                '.Font.Color = RGB(6, 116, 116)
+                If black Then .Font.color = 0
             End With
             If i + j * k = n - 1 Then
                 Exit For
@@ -1238,11 +1243,11 @@ Dim But(0 To 50) As Button
 End Sub
 Sub test_buttons()
     Dim ButtonText As String
-    ButtonText = ActiveSheet.Shapes(Application.caller).AlternativeText
+    ButtonText = ActiveSheet.Shapes(Application.Caller).AlternativeText
     Select Case ButtonText
-        Case "РЅР° РіР»Р°РІРЅСѓСЋ"
+        Case "на главную"
             MsgBox ButtonText
-        Case "СЃРєРёРґРєР° РЅР° Р±Р°СЂРєРѕРґ"
+        Case "скидка на баркод"
             MsgBox ButtonText
         
     End Select
@@ -1254,7 +1259,7 @@ Dim rn As Range, lc As ListColumn
         If belongs_to_array(rn.Offset(0, -1), except_array) = False Then
             If rn = "" Then
                 rn.Select
-                MsgBox "Р’СЃРµ РїРѕР»СЏ РІ С‚Р°Р±Р»РёС†Рµ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ Р·Р°РїРѕР»РЅРµРЅС‹."
+                MsgBox "Все поля в таблице должны быть заполнены."
                 Exit Function
             End If
         End If
@@ -1385,8 +1390,8 @@ Application.ScreenUpdating = False
             .left = 9000
             .top = 300
         End If
-        .caption = "Р‘РђР РљРћР”"
-        .Label1.caption = "РѕС‚СЃРєР°РЅРёСЂСѓР№С‚Рµ Р±Р°СЂРєРѕРґ"
+        .caption = "БАРКОД"
+        .Label1.caption = "отсканируйте баркод"
         With .cbOK
             .Default = True
         End With
@@ -1407,12 +1412,12 @@ Dim emps, sEmpls As String
     Application.ScreenUpdating = False
     Set ws = ws_insert(ws_name)
     Set rn = ws.Cells(1)
-    items = Array("Р”Р°С‚Р°", "РњР°РіР°Р·РёРЅ", "РџСЂРѕРґР°РІРµС†", "РљР»РёРµРЅС‚", "РљР». С‚РµР»РµС„РѕРЅ")
+    items = Array("Дата", "Магазин", "Продавец", "Клиент", "Кл. телефон")
     fields = Join(items, ", ") & ", " & extra
     If extra = "" Then fields = left(fields, Len(fields) - 2)
     items = Split(fields, ", ")
     Set POS_lo = lo_from_array(ws, rn, items, lo_name)
-    rnCell("Р”Р°С‚Р°", POS_lo) = Date
+    rnCell("Дата", POS_lo) = Date
     
 sql = "select workstation, divisionid, division, workstationid from org.active_divisions_f('" _
     & Format(Date, "yyyyMMdd") & "')"
@@ -1420,7 +1425,7 @@ divisions = return_table(sql)
 If IsArray(divisions) Then
     For i = 0 To UBound(divisions, 2)
         If divisions(0, i) = CompName Then
-            rnCell("РњР°РіР°Р·РёРЅ", POS_lo) = divisions(2, i)
+            rnCell("Магазин", POS_lo) = divisions(2, i)
             divisionid = divisions(1, i)
             workstationid = divisions(3, i)
         End If
@@ -1428,7 +1433,7 @@ If IsArray(divisions) Then
     Next
     sdivision = left(sdivision, Len(sdivision) - 2)
 End If
-Set rn = rnCell("РњР°РіР°Р·РёРЅ", POS_lo)
+Set rn = rnCell("Магазин", POS_lo)
 If sdivision <> "" Then
     rn.Validation.Add xlValidateList, , , sdivision
 End If
@@ -1443,7 +1448,7 @@ If workstationid <> 0 Then
             sEmpls = sEmpls & emps(1, i) & ", "
         Next i
         sEmpls = left(sEmpls, Len(sEmpls) - 2)
-        Set rn = rnCell("РџСЂРѕРґР°РІРµС†", POS_lo)
+        Set rn = rnCell("Продавец", POS_lo)
         rn.Validation.Add xlValidateList, , , sEmpls
         If UBound(emps, 2) = 0 Then rn = sEmpls
     End If
@@ -1453,8 +1458,8 @@ End Function
 Function lo_sale_receipt(rn As Range, ws As Worksheet, saleid As Long, _
         Optional barcodeid As Long) As ListObject
     Dim sql As String, vData As Variant, lc As ListColumn
-    sql = "select Рє.Р±Р°СЂРєРѕРґ, Рє.Р°СЂС‚РёРєСѓР», Рє.РјР°СЂРєР°, Рє.РєР°С‚РµРіРѕСЂРёСЏ, Рє.С†РІРµС‚, Рє.СЂР°Р·РјРµСЂ, Рє.С†РµРЅРЅРёРє, " & _
-        "Рє.РѕРїР»Р°С‡РµРЅРѕ from inv.sale_receipt_func(" & saleid & ") Рє"
+    sql = "select к.баркод, к.артикул, к.марка, к.категория, к.цвет, к.размер, к.ценник, " & _
+        "к.оплачено from inv.sale_receipt_func(" & saleid & ") к"
     Call newConnection(True)
     Set rs = cn.Execute(sql)
     For n = 0 To rs.fields.count - 1
@@ -1464,22 +1469,22 @@ Function lo_sale_receipt(rn As Range, ws As Worksheet, saleid As Long, _
     rn.Offset(1).Resize(UBound(vData, 2) + 1, UBound(vData, 1) + 1) = WorksheetFunction.Transpose(vData)
     Set lo_sale_receipt = ws.ListObjects.Add(xlSrcRange, rn.CurrentRegion, , xlYes, , "TableStyleMedium3")
     With lo_sale_receipt
-        .Name = "СЃРїРёСЃРѕРє_Р±Р°СЂРєРѕРґРѕРІ"
+        .Name = "список_баркодов"
         Set lc = .ListColumns.Add
         With lc
-            .Name = "Рє РІРѕР·РІСЂР°С‚Сѓ"
-            .DataBodyRange.Validation.Add xlValidateList, , , "РґР°, РЅРµС‚"
+            .Name = "к возврату"
+            .DataBodyRange.Validation.Add xlValidateList, , , "да, нет"
         End With
         If barcodeid <> 0 Then
             n = WorksheetFunction.Match(barcodeid, lo_sale_receipt.ListColumns(1).DataBodyRange, 0)
             With lo_sale_receipt.ListRows(n).Range
-                .Cells(.Cells.count) = "РґР°"
+                .Cells(.Cells.count) = "да"
             End With
         End If
         .ShowTotals = True
-        .ListColumns("РѕРїР»Р°С‡РµРЅРѕ").TotalsCalculation = xlTotalsCalculationSum
-        With .ListColumns("Рє РІРѕР·РІСЂР°С‚Сѓ").Total
-            .FormulaR1C1 = "=SUMIF([Рє РІРѕР·РІСЂР°С‚Сѓ],""РґР°"",[РѕРїР»Р°С‡РµРЅРѕ])"
+        .ListColumns("оплачено").TotalsCalculation = xlTotalsCalculationSum
+        With .ListColumns("к возврату").Total
+            .FormulaR1C1 = "=SUMIF([к возврату],""да"",[оплачено])"
             .NumberFormat = Numformatshort
         End With
         .Range.EntireColumn.AutoFit
@@ -1549,7 +1554,11 @@ Sub validate_assing(sql As String, rn As Range)
     vList = var_value(sql)
     vList = WorksheetFunction.Transpose(vList)
     vList = WorksheetFunction.Transpose(vList)
-     sList = Join(vList, ", ")
+    If IsArray(vList) = False Then
+        sList = ""
+    Else
+        sList = Join(vList, ", ")
+    End If
     If sList <> "" Then
         With rn.Validation
             .Delete
@@ -1580,3 +1589,80 @@ Function value_chooser(sql As String, field As String, Optional sql_extended As 
     End With
 
 End Function
+Function pt_table(ws As Worksheet, rn As Range, sql As String, dataFields, Optional ptName As String, _
+        Optional pageFields, Optional rowFields, Optional clmnFields) As PivotTable
+    Dim pche As PivotCache, wb As Workbook, item, rs As ADODB.Recordset
+    
+    Application.ScreenUpdating = False
+    Set wb = ActiveWorkbook
+    Call newConnection(fanfan_base:=True)
+    Set rs = cn.Execute(sql)
+    Set pche = wb.PivotCaches.Add(xlExternal)
+    Set pche.Recordset = rs
+
+    Set pt_table = ws.PivotTables.Add(PivotCache:=pche, TableDestination:=rn, tablename:=ptName)
+    With pt_table
+         wb.ShowPivotTableFieldList = False
+        .RowAxisLayout xlTabularRow
+        .InGridDropZones = True
+        For Each item In dataFields
+            With .PivotFields(item)
+                .Orientation = xlDataField
+                .NumberFormat = "#,##.00; -[red]#,##.00;"
+                .Function = xlSum
+                .caption = " " & item
+            End With
+        Next
+        '.DataPivotField.Orientation = xlColumnField
+            If Not IsMissing(rowFields) Then
+                For Each item In rowFields
+                    With .PivotFields(item)
+                        .Orientation = xlRowField
+                        .Subtotals(1) = False
+                    End With
+                Next
+            End If
+            If Not IsMissing(clmnFields) Then
+                For Each item In clmnFields
+                    With .PivotFields(item)
+                        .Orientation = xlColumnField
+                        .Subtotals(1) = False
+                    End With
+                Next
+            End If
+            If Not IsMissing(pageFields) Then
+                If IsArray(pageFields) Then
+                    For Each item In pageFields
+                        With .PivotFields(item)
+                                .Orientation = xlPageField
+                            .Subtotals(1) = False
+                        End With
+                    Next
+                End If
+            End If
+        
+    End With
+End Function
+Sub tablerows_hide()
+Dim lr As ListRow, rn As Range, lo As ListObject
+Set rn = Selection
+rn.Select
+    If Not rn.ListObject Is Nothing Then
+        Set lo = rn.ListObject
+        For Each lr In lo.ListRows
+            If Not Intersect(lr.Range, rn) Is Nothing Then
+                lr.Range.EntireRow.Hidden = True
+            End If
+        Next
+    End If
+
+End Sub
+Sub tablerows_unhide()
+    Dim ws As Worksheet, lo As ListObject, lr As ListRow
+    Set ws = ActiveSheet
+    For Each lo In ws.ListObjects
+        For Each lr In lo.ListRows
+            lr.Range.EntireRow.Hidden = False
+        Next
+    Next
+End Sub
