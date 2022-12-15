@@ -29,14 +29,20 @@ begin try
 			begin 
 				declare @registerid int = (select registerid from acc.registers where account = @account);
 				
-				with s (entrydate, registerid, amount) as (select @date, @registerid, @amount)
+				with s (entrydate, registerid, amount, bookkeeperid) as (
+					select @date, @registerid, @amount, p.personID
+					from org.persons p 
+					where p.lfmname = @bookkеeper
+				)
 				merge acc.beg_entries as t using s
 				on t.registerid = s.registerid and t.entrydate=s.entrydate
 				when matched and t.amount<>s.amount 
-					then update set t.amount = s.amount
+					then update set 
+						t.amount = s.amount, 
+						t.bookkeeperid = s.bookkeeperid
 				when not matched 
-					then insert (entrydate, registerid, amount)
-					values (entrydate, registerid, amount);
+					then insert (entrydate, registerid, amount, bookkeeperid)
+					values (entrydate, registerid, amount, bookkeeperid);
 				if @@ROWCOUNT >0 select @note = 'начальный остаток регистра обновлен' else select @note = 'остаток регистра уже записан'
 			end
 		else
@@ -45,7 +51,7 @@ begin try
 					select @register_debet = cast(replace (@payee, (left (@payee, 17)), '') as int);
 				select @register_credit = registerid from acc.registers where account = @account;
 		
-				if @article = 'ВЫПЛАТЫ ПЕРСОНАЛУ' 
+				if @article in ('ВЫПЛАТЫ ПЕРСОНАЛУ', 'ВЫДАЧА ПОД ОТЧЕТ') 
 					select @person_id_debet = personID from org.persons where lfmname = @payee;
 				else if @article = 'ВОЗВРАТ С ПОДОТЧЕТА' 
 					begin 
@@ -57,6 +63,8 @@ begin try
 						select @register_debet=@register_buble
 						select @person_id_credit = personID from org.persons where lfmname = @payee;
 					end
+				--else if @article = 'ВЫДАЧА ПОД ОТЧЕТ'
+				--	select @person_id_debet = personID from org.persons where lfmname = @payee;
 				else 
 					select @contractorid = org.contractor_id(@payee);
 
@@ -155,3 +163,4 @@ select * from acc.payments_date_f(@date)
 select * from acc.transactions order by 1 desc;
 --select * from acc.beg_entries_v
 
+--declare @note varchar(max); exec acc.payment_record_p @note output, '20221215', 'hc05УИКЕНД', 'ФЕДОРОВ А. Н.', 'ВЫДАЧА ПОД ОТЧЕТ', 'ФЕДОРОВ А. Н.', '', '', '23'; select @note;
