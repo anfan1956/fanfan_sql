@@ -58,7 +58,15 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		join acc.beg_entries_around_date_f(@date) f 
 			on f.registerid= e.registerid and t.transdate >=f.entrydate
 )
-select f.*, p.lfmname person
+select 
+	f.transid, 
+	cast(transdate as datetime) transdate, 
+	amount,
+	registerid, 
+	shop,
+	transtype, 
+	f.personid, 
+	p.lfmname person
 from _final f
 	join org.persons p on p.personID = f.personid
 go
