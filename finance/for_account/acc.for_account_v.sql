@@ -6,8 +6,16 @@ go
 create view acc.for_account_v as
 	with s (дата, отчетное_лицо, статья, id, reg_id, регистр, банк, сумма, комментарий, документ) as (
 		select 
-			t.transdate, p.lfmname, ar.article,
-			t.transactionid, cor.registerid, r.account r_account, c.contractor bank,
+			cast(t.transdate as datetime), 
+			p.lfmname, ar.article,
+			t.transactionid, 
+			cor.registerid, 
+			iif(substring(r.account, 2,1) LIKE ('c'), 
+				substring(r.account, 3,2) + ' ' + right(r.account, len(r.account) -4), 
+				r.account)
+			
+			, 
+			c.contractor bank,
 			t.amount * (1- 2 * e.is_credit) amount, t.comment, t.document
 			--, sum (t.amount * (1- 2 * e.is_credit)) over (partition by e.personid order by t.transdate, t.transactionid)  rt
 
