@@ -37,7 +37,7 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		f.registerid,
 		acc.shop_f(v.registerid), 
 		'пересчет', 
-		f.bookkeperid
+		f.bookkeeperid
 	from acc.beg_entries_around_date_f (@date) f
 		join acc.registers_hc_v v on v.registerid=f.registerid
 
