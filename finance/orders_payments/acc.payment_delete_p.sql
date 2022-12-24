@@ -13,7 +13,8 @@ set nocount on;
 	begin try
 		begin transaction
 			declare @payments_deleted int;
-
+			
+			delete acc.invoices where invoiceid = @paymentid
 			delete acc.entries where transactionid = @paymentid;
 			delete acc.transactions  where transactionid = @paymentid;
 			select @payments_deleted= @@ROWCOUNT;
