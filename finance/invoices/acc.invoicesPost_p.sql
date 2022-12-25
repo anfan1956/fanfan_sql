@@ -25,42 +25,70 @@ as
 set nocount on;
 	begin try
 		begin transaction
+			
+
 			declare 
 				@transactionid int, 
 				@articleid int = (select articleid from acc.articles where article= @article),
-				@accountid int = (select  accountid from acc.accounts where account= @account_debet);
-			with _s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment) as (
-				select @date, org.person_id(@bookkeeper), cmn.currency_id(@currency), @articleid, org.contractor_id(@client), @amount, @comment
+				@accountid int = (select  accountid from acc.accounts where account= @account_debet), 
+				@payroll bit;
+
+			if @payable_account = 'зарплата к оплате'
+				select @payroll = 'True'
+			else 
+				select @payroll='False';
+
+
+			with _s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document) as (
+				select @date, org.person_id(@bookkeeper), cmn.currency_id(@currency), @articleid, org.contractor_id(@client), @amount, @comment, @document
 			)
-			insert acc.transactions (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment)
+			insert acc.transactions (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
 			select 
-				transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment
+				transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document
 			from _s;
 
 			select @transactionid = SCOPE_IDENTITY();
 
-		with _seed(is_credit, accountid, contractorid) as (
-			select 'True', acc.account_id(@payable_account), org.contractor_id(@vendor)
-			union
-			select 'False', @accountid, org.contractor_id(@vendor)
-		)
-		insert acc.entries (transactionid, is_credit, accountid, contractorid)
-		select @transactionid, is_credit, accountid, contractorid
-		from _seed;
+		if @payroll = 'False'
+			begin
+				with _seed(is_credit, accountid, contractorid) as (
+					select 'True', acc.account_id(@payable_account), org.contractor_id(@vendor)
+					union
+					select 'False', @accountid, org.contractor_id(@vendor)
+				)
+				insert acc.entries (transactionid, is_credit, accountid, contractorid)
+				select @transactionid, is_credit, accountid, contractorid
+				from _seed;
 
-		insert acc.invoices (invoiceid, documentNum, vendorid, currencyid, datedue, periodDate)
-		select 
-			@transactionid, 
-			@document, 
-			org.contractor_id(@vendor), 
-			cmn.currency_id(@currency), 
-			iif(@datedue= '', null, @datedue), 
-			iif(@period= '', null, eomonth(@period, 0)) 
-			;
-		
+			
+				insert acc.invoices (invoiceid, documentNum, vendorid, currencyid, datedue, periodDate)
+				select 
+					@transactionid, 
+					@document, 
+					org.contractor_id(@vendor), 
+					cmn.currency_id(@currency), 
+					iif(@datedue= '', null, @datedue), 
+					iif(@period= '', null, eomonth(@period, 0)) 
+					;
 
-		select @note = 'инвойс № ' + @document  + ' от ' + @vendor + ' на сумму ' 
-			+ format (@amount, '#,##0.00') + ' '  + @currency + ' зарегистрирован';
+				select @note = 'инвойс № ' + @document  + ' от ' + @vendor + ' на сумму ' 
+					+ format (@amount, '#,##0.00') + ' '  + @currency + ' зарегистрирован';
+			end
+
+		if @payroll = 'True'
+			begin
+				with _seed(is_credit, accountid, personid) as (
+					select 'True', acc.account_id(@payable_account), org.person_id(@vendor)
+					union
+					select 'False', @accountid, org.person_id(@vendor)
+				)
+				insert acc.entries (transactionid, is_credit, accountid, personid)
+				select @transactionid, is_credit, accountid, personid
+				from _seed;				
+					select @note = 'начисление: ' + @document  + ' сотрудник: ' + @vendor + ' на сумму ' 
+						+ format (@amount, '#,##0.00') + ' '  + @currency + ' сделано ' + format(@date, 'dd.MM.yyyy', 'ru');
+			end
+
 --		throw 50001, @note, 1;
 		commit transaction
 	end try
@@ -70,6 +98,27 @@ set nocount on;
 	end catch
 go
 declare @note varchar(max); 
-	--exec acc.invoicesPost_p @note output, 'счета к оплате', 'аренда', '20221224', 'RUR', 'КРОКУС СИТИ МОЛЛ', 'АРЕНДА: СЧЕТА', 'да', '20221101', '20221205', 'одлоыв', 'за ноябрь', 'ИП ФЕДОРОВ', 'ФЕДОРОВ А. Н.', '124'; 
+/*
+exec acc.invoicesPost_p 
+	@note output, 
+	'зарплата к оплате', 
+	'зарплата', 
+	'20221226', 
+	'RUR', 
+	'БЕЗЗУБЦЕВА Е. В.', 
+	'НАЧИСЛЕНИЕ ОТПУСКНЫХ', 
+	'', '', '', 
+	'cash', 
+	'тест', 
+	'Проект Ф', 
+	'ПИКУЛЕВА О. Н.', 
+	'12222'; 
 select @note;
-select * from acc.invoices;
+*/
+select t.*, e.*
+from acc.transactions t
+	join acc.entries e on e.transactionid = t.transactionid
+order by 1 desc
+
+--exec acc.payment_delete_p @note output, 1331
+
