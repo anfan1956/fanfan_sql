@@ -1,58 +1,84 @@
-﻿if OBJECT_ID('acc.registers_cashflow_f')  is not null drop function acc.registers_cashflow_f
+﻿declare @date date = getdate();
+if OBJECT_ID('acc.registers_cashflow_f')  is not null drop function acc.registers_cashflow_f
 go
 
 create function acc.registers_cashflow_f (@date date) returns table as return
 
-
-
-	with _s as (
-		select 
-			--hardcoding 'returns' (transactiontypeid =13
-			t.transactionID,
-			sr.amount  * iif(t.transactiontypeID=13, -1, 1) amount,
-			s.divisionID, 
-			d.divisionfullname shop,
-			a.registerid, 
-			t.transactiondate, 
-			tt.transactiontype,
-			a.com_rate, 
-			s.salepersonID, 
-			ROW_NUMBER() over (partition by a.registerid, t.transactionid order by a.datestart desc) num
-		from inv.sales_receipts sr
-			join inv.transactions t on t.transactionID= sr.saleID
-			join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
-			join inv.sales s on s.saleID=sr.saleID
-			join fin.receipttypes rt on rt.receipttypeID=sr.receipttypeID
-			join org.divisions d on d.divisionID=s.divisionID
-			join acc.registers r on r.clientid=d.clientID
-			join acc.acquiring a on a.registerid=r.registerid and t.transactiondate>=a.datestart and a.datefinish is null
-		where rt.r_type_rus = 'карта' 
-		)
-		, _fintype (ftype) as (
-			select 'sale' union select 'commission'
-		)
-		, _with_commissions(transactionid, transdate, accountid, articleid, amount, registerid, comment, personid ) as (
-			select 
-				s.transactionid,
-				cast(s.transactiondate as date) transdate, 
-				case f.ftype 
-					when 'sale'  then acc.account_id('выручка')
-					else acc.account_id('эквайринг') end,
-					acc.article_id('РОЗНИЧНАЯ ВЫРУЧКА'),
-				case when 
-						f.ftype = 'sale' then s.amount			
-						when f.ftype = 'commission' and s.transactiontype <> 'return' then s.amount * - s.com_rate
-				end amount, 
-				s.registerid, 
-				s.shop,
-				s.salepersonID
-			from _s s 
-				join org.persons p on p.personID = s.salepersonID
-				cross apply _fintype f
-			where s.num=1 
-		)
-
-	, _ext_e as (
+with _s as (
+	select 
+		s.saleID, 
+		s.divisionID, 
+		s.customerID, 
+		s.salepersonID, 
+		sr.amount, 
+		rd.registerid, 
+		t.transactiondate, 
+		t.transactiontypeID
+	from inv.sales_receipts sr
+		join inv.transactions t on t.transactionID = sr.saleID
+		join inv.sales s on s.saleID=sr.saleID
+		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
+		join acc.registerid_divisionid_v rd on rd.divisionID=s.divisionID 
+	where rt.r_type_rus = 'наличные'
+)
+, _all_acq_registers (saleid, divisionid, customerid, salespersonid, amount, registerid, transactiondate, transtypeid, rate, num) as (
+	select 
+		s.saleID, 
+		s.divisionID, 
+		s.customerID, 
+		s.salepersonID, 
+		sr.amount, 
+		rd.registerid, 	
+		t.transactiondate, 
+		t.transactiontypeID, 
+		a.com_rate,
+		ROW_NUMBER () over (partition by s.saleid order by a.datestart desc)		
+	from inv.sales_receipts sr
+		join inv.transactions t on t.transactionID = sr.saleID
+		join inv.sales s on s.saleID=sr.saleID
+		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
+		join org.divisions d on d.divisionID=s.divisionID
+		join acc.registers rd on rd.clientid = d.clientID
+		join acc.acquiring a on a.registerid=rd.registerid and a.datestart<=t.transactiondate
+	where rt.r_type_rus = 'карта'
+)
+, _seed (accountid, factor, date_factor) as ( 
+	select acc.account_id('выручка'), 1.0000, 0
+	union all 
+	select acc.account_id('эквайринг'), -1.0000, 0
+	union all
+	select acc.account_id('эквайринг'), 1.0000, 1
+	union all
+	select acc.account_id('фин. расходы'), null, 1
+	)
+, united as (
+	select 
+		saleid, divisionid, customerid, salespersonid, 
+		amount 	* isnull(s.factor, -a.rate) amount, 
+		registerid, 
+		DATEADD(DD, s.date_factor, transactiondate) transactiondate, 
+		a.transtypeid,	
+		s.accountid 
+	from _all_acq_registers a
+		cross apply _seed s
+	where num = 1
+	union all 
+	select *, acc.account_id('выручка')
+	from _s s
+)
+, _final as (
+	select 
+		u.saleid, 
+		u.divisionid, 
+		u.customerid, 
+		u.salespersonid, 
+		u.amount * iif(tt.transactiontypeID=13, -1, 1) amount , 
+		registerid, transactiondate, transactiontype, u.accountid
+	from united u 
+		join inv.transactiontypes tt on tt.transactiontypeID= u.transtypeid
+	where u.transactiondate >=@date
+)
+, _ext_e as (
 	-- extend entries to include fields from t.transactions
 		select 
 			e.*, t.transdate, t.amount, t.articleid, t.comment
@@ -88,13 +114,21 @@ create function acc.registers_cashflow_f (@date date) returns table as return
 			cross apply acc.articles a
 		where 
 			a.article = 'НАЧАЛЬНЫЕ ОСТАТКИ'
-	union all
-		select 
-			w.registerid, w.transactionid, w.transdate, w.amount, w.accountid, w.articleid, w.comment, w.personid
-		from _with_commissions w 
-		join acc.beg_entries_around_date_f(@date) d on d.registerid=w.registerid and w.transdate>=d.entrydate and d.num = 1
-	)
-
+		union all
+		select  
+			registerid, 
+			saleid, 
+			cast (transactiondate as date) transactiondate, 
+			f.amount, 
+			f.accountid, 
+			acc.article_id('РОЗНИЧНАЯ ВЫРУЧКА') articleid,
+			divisionfullname, 
+		--	customerid, 
+--			transactiontype, 
+			salespersonid 
+		from _final f
+			join org.divisions d on d.divisionID=f.divisionid
+)
 	select 
 		s.registerid, 
 		s.transactionid, 
@@ -108,7 +142,7 @@ create function acc.registers_cashflow_f (@date date) returns table as return
 		r.account счет_банк, 
 		isnull(p.lfmname, '') получатель, 
 		isnull(s.comment, '') комментарий
-	from s
+from s
 		join acc.accounts a on a.accountid=s.accountid
 		join acc.articles ar on ar.articleid=s.articleid
 		join acc.registers r on s.registerid = r.registerid
@@ -119,7 +153,7 @@ create function acc.registers_cashflow_f (@date date) returns table as return
 go
 
 --declare  @registerid int = 7
-declare @date date = '20221201';
-select * from acc.registers_cashflow_f(@date) f where f.registerid in  (8, 17)
-order by 3;
+declare @date date = '20221201'; 
+select * from acc.registers_cashflow_f(@date) f order by 3;
+
 go
