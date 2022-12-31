@@ -4,7 +4,12 @@ go
 
 create function acc.registers_cashflow_f (@date date) returns table as return
 
-with _s as (
+with 
+_dates (registerid, entrydate) as (
+	select registerid, entrydate
+	from acc.beg_entries_around_date_f(@date)
+)
+, _s as (
 	select 
 		s.saleID, 
 		s.divisionID, 
@@ -19,6 +24,7 @@ with _s as (
 		join inv.sales s on s.saleID=sr.saleID
 		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
 		join acc.registerid_divisionid_v rd on rd.divisionID=s.divisionID 
+		join _dates dt on dt.registerid= rd.registerid and t.transactiondate>=dt.entrydate
 	where rt.r_type_rus = 'наличные'
 )
 , _all_acq_registers (saleid, divisionid, customerid, salespersonid, amount, registerid, transactiondate, transtypeid, rate, num) as (
@@ -39,6 +45,7 @@ with _s as (
 		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
 		join org.divisions d on d.divisionID=s.divisionID
 		join acc.registers rd on rd.clientid = d.clientID
+		join _dates dt on dt.registerid=rd.registerid and t.transactiondate>=dt.entrydate
 		join acc.acquiring a on a.registerid=rd.registerid and a.datestart<=t.transactiondate
 	where rt.r_type_rus = 'карта'
 )
@@ -51,7 +58,7 @@ with _s as (
 	union all
 	select acc.account_id('фин. расходы'), null, 1
 	)
-, united as (
+, _united as (
 	select 
 		saleid, divisionid, customerid, salespersonid, 
 		amount 	* isnull(s.factor, -a.rate) amount, 
@@ -74,9 +81,8 @@ with _s as (
 		u.salespersonid, 
 		u.amount * iif(tt.transactiontypeID=13, -1, 1) amount , 
 		registerid, transactiondate, transactiontype, u.accountid
-	from united u 
+	from _united u 
 		join inv.transactiontypes tt on tt.transactiontypeID= u.transtypeid
-	where u.transactiondate >=@date
 )
 , _ext_e as (
 	-- extend entries to include fields from t.transactions
