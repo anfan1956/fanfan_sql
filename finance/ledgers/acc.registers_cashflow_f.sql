@@ -3,11 +3,13 @@ if OBJECT_ID('acc.registers_cashflow_f')  is not null drop function acc.register
 go
 
 create function acc.registers_cashflow_f (@date date) returns table as return
+-- exclude 1c accounts from POS
 
 with 
 _dates (registerid, entrydate) as (
-	select registerid, entrydate
-	from acc.beg_entries_around_date_f(@date)
+	select f.registerid, f.entrydate
+	from acc.beg_entries_around_date_f(@date) f
+		join acc.registers r on r.registerid= f.registerid
 )
 , _s as (
 	select 
@@ -18,7 +20,8 @@ _dates (registerid, entrydate) as (
 		sr.amount, 
 		rd.registerid, 
 		t.transactiondate, 
-		t.transactiontypeID
+		t.transactiontypeID, 
+		dt.entrydate
 	from inv.sales_receipts sr
 		join inv.transactions t on t.transactionID = sr.saleID
 		join inv.sales s on s.saleID=sr.saleID
@@ -27,7 +30,7 @@ _dates (registerid, entrydate) as (
 		join _dates dt on dt.registerid= rd.registerid and t.transactiondate>=dt.entrydate
 	where rt.r_type_rus = 'наличные'
 )
-, _all_acq_registers (saleid, divisionid, customerid, salespersonid, amount, registerid, transactiondate, transtypeid, rate, num) as (
+, _all_acq_registers (saleid, divisionid, customerid, salespersonid, amount, registerid, transactiondate, transtypeid, entrydate, rate, num) as (
 	select 
 		s.saleID, 
 		s.divisionID, 
@@ -37,6 +40,7 @@ _dates (registerid, entrydate) as (
 		rd.registerid, 	
 		t.transactiondate, 
 		t.transactiontypeID, 
+		dt.entrydate, 
 		a.com_rate,
 		ROW_NUMBER () over (partition by s.saleid order by a.datestart desc)		
 	from inv.sales_receipts sr
@@ -64,7 +68,8 @@ _dates (registerid, entrydate) as (
 		amount 	* isnull(s.factor, -a.rate) amount, 
 		registerid, 
 		DATEADD(DD, s.date_factor, transactiondate) transactiondate, 
-		a.transtypeid,	
+		a.transtypeid, 
+		a.entrydate, 	
 		s.accountid 
 	from _all_acq_registers a
 		cross apply _seed s
@@ -80,7 +85,10 @@ _dates (registerid, entrydate) as (
 		u.customerid, 
 		u.salespersonid, 
 		u.amount * iif(tt.transactiontypeID=13, -1, 1) amount , 
-		registerid, transactiondate, transactiontype, u.accountid
+		registerid, transactiondate, 
+		transactiontype, 
+		u.entrydate, 
+		u.accountid
 	from _united u 
 		join inv.transactiontypes tt on tt.transactiontypeID= u.transtypeid
 )
@@ -93,11 +101,12 @@ _dates (registerid, entrydate) as (
 			join acc.entries e2 on e2.transactionid=e.transactionid and e2.is_credit <> e.is_credit
 		where e.registerid is not null
 	)
-	, s (registerid, transactionid, transdate, amount, accountid, articleid, comment, personid) as (
+	, s (registerid, transactionid, transdate, entrydate, amount, accountid, articleid, comment, personid) as (
 		select 
 			e.registerid, 
 			e.transactionid, 
 			e.transdate, 
+			d.entrydate, 
 			cast (e.amount * (1-2* e.is_credit) as money), 
 			e2.accountid,
 			e.articleid, 
@@ -110,7 +119,8 @@ _dates (registerid, entrydate) as (
 		select 
 			e.registerid, 
 			e.entryid, 
-			e.entrydate, 
+			e.entrydate,
+			d.entrydate, 
 			e.amount, 
 			acc.account_id('деньги'), 
 			a.articleid, 
@@ -125,6 +135,7 @@ _dates (registerid, entrydate) as (
 			registerid, 
 			saleid, 
 			cast (transactiondate as date) transactiondate, 
+			f.entrydate, 
 			f.amount, 
 			f.accountid, 
 			acc.article_id('РОЗНИЧНАЯ ВЫРУЧКА') articleid,
@@ -139,7 +150,9 @@ _dates (registerid, entrydate) as (
 		s.registerid, 
 		s.transactionid, 
 		cast (s.transdate as datetime) дата, 
+		s.entrydate дата_но, 
 		s.amount сумма, 
+		r.currencyid, 
 		a.account план_счетов, 
 		ar.article статья, 
 		sum (s.amount) over (partition by s.registerid order by s.transdate, transactionid) reg_total, 
@@ -155,6 +168,7 @@ from s
 		join org.contractors c on c.contractorID=r.bankid
 		join org.contractors c2 on c2.contractorID = r.clientid
 		left join org.persons p on p.personID = s.personid
+where left(r.account, 2)<>'1c'
 
 go
 
@@ -162,4 +176,3 @@ go
 declare @date date = '20221201'; 
 select * from acc.registers_cashflow_f(@date) f order by 3;
 
-go
