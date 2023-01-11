@@ -15,8 +15,14 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 	, _month_scope (datestart, dateend) as (
 		select dateadd(DD, 1, EOMONTH(@date, -@number)), EOMONTH(@date, 0)
 	)
+	, _quater_scope (datestart,dateend) as (
+		select 
+			dateadd(DD, 1, eomonth(@date,-((month(@date)-1)%3 + ((@number-1) *3)+1) )) datestart, 
+			eomonth(DATEADD(QQ, 1,  eomonth(@date,-(month(@date)-1)%3-1)), 0) datefinish
+		)
 	, _year_scope (datestart, dateend) as (
 		select DATEFROMPARTS(YEAR(@date)-@number + 1, 1,1) , EOMONTH(@date, 0)
+
 	)
 	, _seed (accountid, is_credit, daysshift, markup) as (
 		select 
