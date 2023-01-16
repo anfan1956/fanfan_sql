@@ -36,7 +36,7 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 		from acc.accounts a
 		where a.account in ('выручка', 'деньги', 'себестоимость', 'товар')
 		), 
-	_tb (saleid, salesdate, amount, accountid, typeid, registerid, datestart, days_off, rate)  as (
+	_tb (saleid, salesdate, amount, clientid, bankid, accountid, typeid, registerid, datestart, days_off, rate)  as (
 		select 
 			sr.saleID, 
 			cast(t.transactiondate as date),
@@ -44,7 +44,9 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 				sr.amount * 
 				iif(t.transactiontypeID= 13, -1, 1) * 
 				(1- 2 * is_credit) * a.markup
-			),
+			), 
+			dv.clientid, 
+			c.contractorID,
 			a.accountid, 
 			ac.acqTypeid,	
 			ac.registerid, 
@@ -57,6 +59,10 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 				else 0 end
 		from inv.transactions t 
 			join inv.sales_receipts sr on sr.saleID=t.transactionID
+			join inv.sales s on s.saleID=t.transactionID
+			join org.divisions dv on dv.divisionID=s.divisionID
+			join acc.registers r on r.registerid =sr.registerid
+			join org.contractors c on c.contractorID=r.bankid
 			join acc.rectypes_acqTypes ra on ra.receipttypeid=sr.receipttypeID
 			join acc.acquiring ac 
 				on ac.registerid = sr.registerid 
@@ -64,17 +70,20 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 				and ac.datestart<=cast(transactiondate as date)
 			cross apply _day_scope od
 			cross apply _month_scope d
+			cross apply _quater_scope qd
 			cross apply _year_scope yd	
 			cross apply _seed a
 		where cast(t.transactiondate as date) between 
 			case @scope 
 				when 'day' then od.datestart
 				when 'month' then d.datestart 
+				when 'quater' then qd.datestart 
 				when 'year' then yd.datestart end
 			and 
 				case @scope 
 				when 'day' then od.dateend
 				when 'month' then d.dateend
+				when 'quater' then qd.dateend
 				when 'year' then yd.dateend end
 		group by 
 			a.accountid, 
@@ -84,12 +93,18 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 			ac.datestart, 
 			ac.days_off,
 			sr.saleID, 
+			dv.clientID, 
+			c.contractorID, 
 			ac.rate
 		)
-	, _numbered (saleid, salesdate, amount, accountid, typeid, registerid, datestart, days_off,num, rate) as (
+	, _numbered (saleid, salesdate, amount, clientid, bankid, accountid, typeid, registerid, datestart, days_off,num, rate) as (
 		select 
 			t.saleid,
-			t.salesdate, t.amount, t.accountid, t.typeid, t.registerid, datestart, days_off,
+			t.salesdate, 
+			t.amount, 
+			t.clientid, 
+			t.bankid, 
+			t.accountid, t.typeid, t.registerid, datestart, days_off,
 			ROW_NUMBER () over ( partition by t.saleid, t.salesdate, t.accountid, t.registerid, t.typeid order by t.datestart desc), 
 			t.rate
 		from _tb t 
@@ -105,7 +120,7 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 		union all 
 		select acc.account_id('деньги'), 1, 1, null
 		)
-	, _final (saleid, salesdate, typeid, registerid, days_off, transdate, amount, accountid, num) as (
+	, _final (saleid, salesdate, typeid, registerid, days_off, transdate, amount, accountid, contractorid,  num) as (
 		select 
 			saleid, salesdate, 
 			typeid, registerid, days_off, 
@@ -114,6 +129,9 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 			isnull(cast(se.rate as decimal(5, 4)),cast( n.rate as decimal(5,4)))
 				, amount), 
 			isnull(se.acq_accountid, n.accountid) accountid, 
+			case 
+				when se.acq_accountid is null then n.clientid
+				else n.bankid end, 
 			num
 		from _numbered n 
 			left join  _acquiring_seed se on n.accountid = acc.account_id('деньги')
@@ -125,15 +143,18 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 		amount, 
 		registerid, 
 		f.accountid, 
-		acc.article_id('РОЗНИЧНАЯ ВЫРУЧКА') articleid
-		--, a.account, g.group_name, section
+		acc.article_id('РОЗНИЧНАЯ ВЫРУЧКА') articleid, 
+		f.contractorid, 
+		'contractor' party
 	from _final f
-		--join acc.accounts a on a.accountid=f.accountid
-		--join acc.groups g on g.groupid= a.groupid
-		--join acc.sections s on s.groupid=a.groupid
 go
 
-declare @date date ='20231230';
+declare @date date ='20230130';
 declare @scope varchar(10) 
-select @scope = 'year'; 
-select * from acc.sales_rollout_f(@date, @scope, 2) where registerid =19
+select @scope = 'quater'; 
+select s.*
+	--, a.account 
+from acc.sales_rollout_f(@date, @scope, 1) s
+--join acc.accounts a on a.accountid= s.accountid
+
+
