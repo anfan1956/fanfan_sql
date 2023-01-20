@@ -1,4 +1,5 @@
-﻿if OBJECT_ID('acc.beg_entries_around_date_f ') is not null drop function acc.beg_entries_around_date_f 
+﻿declare @date date = '20221128';
+if OBJECT_ID('acc.beg_entries_around_date_f ') is not null drop function acc.beg_entries_around_date_f 
 go
 create function acc.beg_entries_around_date_f (@date date) returns table as return
 with _before as (
@@ -19,7 +20,7 @@ where b.entrydate <=@date
 )
 , _all_after as (
 	select a.registerid, isnull(b.entrydate, @date) entrydate, isnull(b.entryid, 0) entryid, b.amount, b.bookkeeperid,
-			ROW_NUMBER() over(partition by b.registerid order by b.entrydate) num
+			ROW_NUMBER() over(partition by a.registerid order by b.entrydate) num
 	from _after a 
 		left join acc.beg_entries b on b.registerid =a.registerid
 )
@@ -28,9 +29,13 @@ where b.entrydate <=@date
 	union all 
 	select * from _before_1
 )
-select * from _combined c 
+select 
+	c.registerid, c.entrydate, c.entryid, isnull(c.amount, 0) amount, 
+	ISNULL(c.bookkeeperid, org.person_id('interbot f. ')) bookkeeperid, 
+	c.num from _combined c 
+
 go
 
 declare @date date = '20221128';
-select * from acc.beg_entries_around_date_f(@date)
-order by 1
+select * from acc.beg_entries_around_date_f(@date) order by 1
+
