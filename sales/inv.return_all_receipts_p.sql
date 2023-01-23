@@ -65,6 +65,7 @@ begin try
 
 -- создаем чеки возврата в соответствии с тем, как была произведена оплата
 -- в случае смешанной оплаты сначала возвращаем на кредитку, потом наличку
+-- добавил регистр
 		with s as (
 			select r.receipttypeID, 
 				s.amount, 
@@ -89,6 +90,23 @@ begin try
 			isnull(@amount - lag(prim) over(order by net_rank), prim) amount
 		from t;
 
+-- делаем обновление регистров возврата по начальной продаже
+		with _sale as (
+			select sr.*
+			from inv.sales_receipts sr 
+				join inv.sales s on s.saleID=sr.saleID	
+			where s.saleID = @saleid
+		)
+		, _return as (
+			select sr.*
+			from inv.sales_receipts sr 
+				join inv.sales s on s.saleID=sr.saleID	
+			where s.saleID = @returnid
+		)
+		update r set r.registerid=s.registerid
+		from _sale s
+			join _return r on s.receipttypeID= r.receipttypeID
+		;
 
 -- записываем  в  inv.sales_goods с обратным знаком
 		insert inv.sales_goods(saleID, barcodeID, amount, price, client_discount, barcode_discount)
@@ -117,15 +135,11 @@ begin try
 		where 
 			i.transactionID = @saleid 
 			and i.logstateID = inv.logstate_id('SOLD');
-	
--- а вот здесь не нужно обновлять всех клиентов, а только того, кто делает возврат
--- похоже, вообще никого обновлять не нужно
-		--exec cust.totals_update;		
-	select @note = '№ возврата - ' + format(@returnid, '0') + '; ' + STRING_AGG(convert(varchar(max), rt.r_type_rus +'- ' + format(sr.amount, '#,##0;' ) ),  ';  ' ) 
+
+	select @note = '№ возврата - ' + format(@returnid, '0') + '; ' + STRING_AGG(convert(varchar(max), rt.r_type_rus +' - ' + format(sr.amount, '#,##0.00;' ) ),  '; ' ) 
 	from inv.sales_receipts sr 
 		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
-	where sr.saleID= @returnid
-
+	where sr.saleID= @returnid;
 	--;throw 50001, @note, 1
 	commit transaction
 end try
@@ -134,16 +148,3 @@ begin catch
 	rollback transaction
 end catch
 go
-
-
---set nocount on; declare @note varchar (max), @userid int = 1; declare @divisionid int = 18; 
---declare @date datetime = getdate();declare @info inv.barcode_type; insert @info values (653772), (655350); 
---exec INV.return_all_receipts_p 
---	@info = @info, 
---	@userid = @userid, 
---	@date = @date, 
---	@divisionid = @divisionid, 
---	@note = @note output; 
---select @note
-
-
