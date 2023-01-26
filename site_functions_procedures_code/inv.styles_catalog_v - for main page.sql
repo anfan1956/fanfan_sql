@@ -18,7 +18,9 @@ ALTER view [inv].[styles_catalog_v] as
 	select distinct 
 		case o.gender 
 			when 'm' then 'МУЖ'
-			when 'f' then 'ЖЕН' end gender,
+			when 'f' then 'ЖЕН' 
+			when null then 'NA'
+			end gender,
 		v.brand, v.category, v.article,
 		--v.styleID,	
 		sp.parent_styleid styleid,
