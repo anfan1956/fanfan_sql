@@ -1,4 +1,5 @@
-﻿
+﻿use fanfan
+go
 if OBJECT_ID('hr.salary_charge2_p') is not null drop proc hr.salary_charge2_p
 go
 create proc hr.salary_charge2_p @note varchar(max) output as 
@@ -14,6 +15,13 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 		if hr.salary_next_date_f() >getdate()
 			begin
 				select @note = 'it is too early';
+				throw 50001, @note, 1
+			end;
+
+		if (select count(*) from org.attendance_check_v) > 0/*other conditiion*/
+			begin
+				select @note = 'failed attempt. please run org.attendance_check_v';
+
 				throw 50001, @note, 1
 			end;
 
@@ -52,7 +60,7 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			, _hours as (
 				select a.personid, sum(CONVERT(money, a.t_verified)* (1-2*checktype)*24) wk_hours
 				from _attd a
-				where a.t_verified>=@fistDate and a.t_verified<=@lastDate
+				where cast(a.t_verified as date)>=@fistDate and cast(a.t_verified as date)<=@lastDate
 				group by a.personID
 			)
 			, _hour_share as (
@@ -151,18 +159,10 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	begin catch
 		select @note = ERROR_MESSAGE();
 		rollback transaction 
+		insert hr.salary_jobs_log (result, logtime, salary_date) select @note, CURRENT_TIMESTAMP,  DATEADD(dd, -10,  hr.salary_next_date_f());
 	end catch
 
 go
 declare @salary_date date = '20221130'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 --declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
-
---select top 1 * from acc.transactions order by 1 desc
---select * from acc.entries
-
-select * from acc.transactions t
-	join acc.entries e on e.transactionid= t.transactionid	
-where articleid = 13 
-	and comment = 'ШЕМЯКИНА Е. В.'
-order by 1 desc 
