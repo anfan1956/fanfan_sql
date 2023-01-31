@@ -26,22 +26,13 @@ select
 	--time_out, 
 	wd.divisionfullname division, 
 	b.procid, 
-	ROW_NUMBER() over(partition by b.barcodeid order by b.date_checked desc) num
+	ROW_NUMBER() over(partition by b.barcodeid, p.personid order by b.date_checked desc) num
 from _persons p
 	join hst.barcodes_read b on b.date_checked > p.time_in and b.date_checked < isnull(time_out, getdate())
 	join org.persons pr on pr.personID = p.personID
 	join org.workstations_divisions_current_v wd on wd.workstationid=p.workstationID
-		and wd.datestart < @date	
+		and wd.datestart < @date and wd.workstationid=b.workstationid
 where checktype =1
---group by 	
---	b.barcodeid,
---	p.personID, 
---	pr.lfmname, 
---	--b.date_checked, 
---	--p.workstationID, 
---	--time_in, 
---	--time_out, 
---	wd.divisionfullname
 )
 select 
 	c.barcodeid, c.personID, 
@@ -68,4 +59,5 @@ where
 go
 
 declare @date date = '2023-01-31'
-select * from hst.barcodes_checking_f(@date)
+select * from hst.barcodes_checking_f(getdate())
+order by 4
