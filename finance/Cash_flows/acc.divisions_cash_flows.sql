@@ -1,9 +1,11 @@
-﻿
+﻿use fanfan
+go
+
 if OBJECT_ID('acc.divisions_cash_f') is not null drop function acc.divisions_cash_f
 go 
 
 create function acc.divisions_cash_f (@date date) returns table as return
-with _final (transid, transdate, amount, registerid, shop, transtype, personid) as (
+with _final (transid, transdate, amount, registerid, shop, transtype, personid, comment) as (
 	select 
 		s.saleID,
 		cast(t.transactiondate as date),
@@ -11,7 +13,8 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		r.registerid,
 		d.divisionfullname,
 		tt.transactiontype, 
-		s.salepersonID
+		s.salepersonID,
+		rt.r_type_rus
 	from inv.sales_receipts sr
 		join inv.transactions t on t.transactionID= sr.saleID
 		join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
@@ -28,7 +31,8 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		cast(t.transactiondate as date), 
 		tt.transactiontype,
 		r.registerid, 	 
-		s.salepersonID
+		s.salepersonID, 
+		rt.r_type_rus
 	union all 
 	select
 		f.entryid,
@@ -37,10 +41,10 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		f.registerid,
 		acc.shop_f(v.registerid), 
 		'пересчет', 
-		f.bookkeeperid
+		f.bookkeeperid, 
+		'нач. остатки'
 	from acc.beg_entries_around_date_f (@date) f
 		join acc.registers_hc_v v on v.registerid=f.registerid
-
 	union all 
 	select 
 		t.transactionid,
@@ -49,7 +53,8 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid) 
 		e.registerid, 
 		acc.shop_f(e.registerid), 
 		a.article, 
-		cor.personid
+		cor.personid, 
+		t.comment
 	from acc.transactions t
 		join acc.entries e on e.transactionid = t.transactionid
 		join acc.entries cor on cor.transactionid =e.transactionid and cor.is_credit<>e.is_credit
@@ -66,12 +71,13 @@ select
 	shop,
 	transtype, 
 	f.personid, 
-	p.lfmname person
+	p.lfmname person, 
+	f.comment
 from _final f
-	join org.persons p on p.personID = f.personid
+	left join org.persons p on p.personID = f.personid
 go
 
-declare @date date = '20221201';
+declare @date date = getdate()
 --declare @note varchar(max), @paymentid int = 1160; exec acc.payment_delete_p @note output,	@paymentid; select @note;
 select * from acc.divisions_cash_f(@date)
-
+select * from acc.beg_entries_around_date_f(@date)
