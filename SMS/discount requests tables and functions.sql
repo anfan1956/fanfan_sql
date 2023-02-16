@@ -145,8 +145,8 @@ values (getdate(), '20230228', 'multi use event', .3, .05);
 declare 
 	@phoneid int = 6577, 
 	@date date = getdate();
-update r set r.used = 'True' from sms.promocodes_requests r where requestid= 1;
-declare @customerid int = 17425, @note varchar(max); exec sms.promocode_request @customerid, @note output; select @note;
+--update r set r.used = 'True' from sms.promocodes_requests r where requestid= 1;
+--declare @customerid int = 17425, @note varchar(max); exec sms.promocode_request @customerid, @note output; select @note;
 select * from sms.promoevents
 select * from sms.promocodes_requests
 
