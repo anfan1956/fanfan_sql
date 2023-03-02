@@ -1,25 +1,25 @@
-﻿if OBJECT_ID ('sms.promocodes_requests') is not null drop table sms.promocodes_requests
-if OBJECT_ID('sms.promoevents') is not null drop table sms.promoevents
-create table sms.promoevents (
-	eventid int not null identity primary key,
-	datestart date not null,
-	datefinish date not null,
-	details varchar(155) not null,
-	firstdiscount decimal (4,3) not null, 
-	nextdiscount decimal (4,3) null, 
-	eventclosed bit not null default('False'), 
-	constraint uq_promoevents unique (datestart, details)
-)
-go
-create table sms.promocodes_requests (
-	requestid int not null identity primary key, 
-	phoneid int not null foreign key references sms.phones (phoneid),
-	requestdate datetime not null,
-	eventid int not null foreign key references sms.promoevents (eventid),
-	used bit not null default (0),
-	promocode char(6) not null, 
-	discount decimal(4,3) null
-)
+﻿--if OBJECT_ID ('sms.promocodes_requests') is not null drop table sms.promocodes_requests
+--if OBJECT_ID('sms.promoevents') is not null drop table sms.promoevents
+--create table sms.promoevents (
+--	eventid int not null identity primary key,
+--	datestart date not null,
+--	datefinish date not null,
+--	details varchar(155) not null,
+--	firstdiscount decimal (4,3) not null, 
+--	nextdiscount decimal (4,3) null, 
+--	eventclosed bit not null default('False'), 
+--	constraint uq_promoevents unique (datestart, details)
+--)
+--go
+--create table sms.promocodes_requests (
+--	requestid int not null identity primary key, 
+--	phoneid int not null foreign key references sms.phones (phoneid),
+--	requestdate datetime not null,
+--	eventid int not null foreign key references sms.promoevents (eventid),
+--	used bit not null default (0),
+--	promocode char(6) not null, 
+--	discount decimal(4,3) null
+--)
 if OBJECT_ID('sms.promoevents_merge') is not null drop proc sms.promoevents_merge
 if type_ID('sms.promoevents_type') is not null drop type sms.promoevents_type 
 
@@ -60,15 +60,17 @@ go
 
 if OBJECT_ID('sms.promo_discount_f') is not null drop function sms.promo_discount_f
 go
-create function sms.promo_discount_f (@phoneid int, @date date) returns table as  return
-	select s.discount, s.promocode
-	from sms.promocodes_requests s
-		join sms.promoevents e on e.eventid=s.eventid
-	where s.phoneid = @phoneid 
-		and e.datestart <=@date and e.datefinish>= @date
-		and e.eventclosed = 0 and s.used = 'False';
+create function sms.promo_discount_f (@promocode varchar(6), @customerid int ) returns dec(4,3) as
+	begin 
+		declare @discount dec(4,3)
+		select @discount = discount 
+		from sms.instances i
+		join sms.instances_customers ic on ic.smsid= i.smsid
+		where customerid= @customerid and ic.promocode =  @promocode 
+			and i.expirationDate >= cast(getdate()as date)
+		return @discount;
+	end 
 go
-
 
 if OBJECT_ID ('sms.promocode_request') is not null drop proc sms.promocode_request
 go
@@ -138,8 +140,8 @@ create function sms.phone_id(@customerid int) returns int as
 go
 
 
-insert sms.promoevents (datestart, datefinish, details, firstdiscount, nextdiscount)
-values (getdate(), '20230228', 'multi use event', .3, .05);
+--insert sms.promoevents (datestart, datefinish, details, firstdiscount, nextdiscount)
+--values (getdate(), '20230228', 'multi use event', .3, .05);
 
 
 declare 
@@ -151,4 +153,3 @@ select * from sms.promoevents
 select * from sms.promocodes_requests
 
 
-select * from sms.promo_discount_f(@phoneid, @date)
