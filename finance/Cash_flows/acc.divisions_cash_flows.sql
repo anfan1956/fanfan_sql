@@ -24,7 +24,7 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid, 
 		join acc.registers r on r.account= replace('hc' + d.divisionfullname, ' ', '') 
 		join acc.beg_entries_around_date_f(@date) f 
 			on f.registerid= r.registerid and cast(t.transactiondate as date) >=f.entrydate
-	where rt.r_type_rus	 = 'наличные'
+	where rt.r_type_rus	 in ( 'наличные', 'перевод в банк')
 	group by 
 		s.saleID,
 		d.divisionfullname, 
