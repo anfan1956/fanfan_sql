@@ -1,7 +1,6 @@
 ﻿use fanfan
 go
 
-
 if OBJECT_ID('cmn.split_ordered_recursiveCTE') is not null drop function cmn.split_ordered_recursiveCTE
 go 
 create function cmn.split_ordered_recursiveCTE 
