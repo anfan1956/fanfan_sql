@@ -16,9 +16,16 @@ with _s  (styleid, parent_styleid, photo_filename, photo_priority, receipt_date,
 		from _s sa
 	)
 select distinct
-		case o.gender 
-			when 'm' then 'МУЖ'
-			when 'f' then 'ЖЕН' end gender,
+		case 
+			when o.gender = 'm' then 'МУЖ'
+			when o.gender = 'f' then 'ЖЕН' 
+			when o.gender is null then 
+				case when s.gender = 'm' then 'МУЖ'
+				when s.gender = 'f' then 'ЖЕН' 
+				when s.gender= 'u' then 'ЮНИ'
+				when s.gender is null then ''
+				end
+			end gender,
 		v.brand, v.category, v.article, c.color,
 		--v.styleID,	
 		sp.parent_styleid styleID,	
@@ -26,7 +33,8 @@ select distinct
 		s.cost * isnull(s.cost_adj, 1) * cr.rate * cr.markup price, 
 		v.discount,	sp.photo,
 		--datediff(s, d.date, receipt_date) 
-		receipt_date
+		receipt_date, 
+		isnull(wp.discount, 0) promo
 from _p sp
 		join inv.v_goods v  on sp.styleid=v.styleid
 		join inv.v_remains r on r.barcodeID=v.barcodeID
@@ -34,6 +42,9 @@ from _p sp
 		join inv.colors c on c.colorID=sp.colorid		
 		join inv.current_rate_v cr on cr.currencyid=o.currencyID and cr.divisionid = org.division_id('fanfan.store')
 		join inv.styles s on s.styleID=sp.styleid
+		left join web.promo_styles_discounts wp on wp.styleid=sp.parent_styleid
 	where 
 		r.logstateID=8 and r.divisionID in (0, 14, 18, 25, 27) and 
 		sp.parent_styleid=@styleid
+go
+select gender, styleid, price, discount, promo, article, category, brand, color, photo from inv.style_photos_f(19973) ORDER BY photo asc

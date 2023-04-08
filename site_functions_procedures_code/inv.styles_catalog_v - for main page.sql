@@ -16,11 +16,17 @@ ALTER view [inv].[styles_catalog_v] as
 		from _s sa
 	)
 	select distinct 
-		case o.gender 
-			when 'm' then 'МУЖ'
-			when 'f' then 'ЖЕН' 
-			when null then 'NA'
+		case 
+			when o.gender = 'm' then 'МУЖ'
+			when o.gender = 'f' then 'ЖЕН' 
+			when o.gender is null then 
+				case when s.gender = 'm' then 'МУЖ'
+				when s.gender = 'f' then 'ЖЕН' 
+				when s.gender= 'u' then 'ЮНИ'
+				when s.gender is null then ''
+				end
 			end gender,
+
 		v.brand, v.category, v.article,
 		--v.styleID,	
 		sp.parent_styleid styleid,
@@ -28,7 +34,8 @@ ALTER view [inv].[styles_catalog_v] as
 		s.cost * isnull (cost_adj, 1) * cr.rate * cr.markup price,
 		v.discount,	sp.photo_filename,
 		--datediff(s, d.date, receipt_date) 
-		receipt_date
+		receipt_date, 
+		wp.discount promo
 	from 
 		inv.v_goods v
 		join inv.v_remains r on r.barcodeID=v.barcodeID
@@ -36,6 +43,7 @@ ALTER view [inv].[styles_catalog_v] as
 		join inv.orders o on o.orderID=v.orderID
 		join inv.current_rate_v cr on cr.currencyid=o.currencyID and cr.divisionid = org.division_id('fanfan.store')
 		join inv.styles s on s.styleID=v.styleID
+		left join web.promo_styles_discounts wp on wp.styleid=sp.parent_styleid
 		cross apply _date d
 	where 
 		r.logstateID=8 and r.divisionID in (0, 14, 18, 25, 27)
@@ -43,3 +51,4 @@ ALTER view [inv].[styles_catalog_v] as
 GO
 
 
+select gender, styleid, price, discount, promo, article, category, brand, color, photo from inv.style_photos_f(20294) ORDER BY photo asc
