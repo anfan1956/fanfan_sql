@@ -9,7 +9,7 @@ with _comp_all as (
 	select cs.*, p.commission, ROW_NUMBER () over (partition by cs.positionid order by date_start desc)  num
 	from hr.compensation_schedule_21 cs
 		join hr.positions_21 p on p.positionid= cs.positionid
-	where isnull(date_finish, @date)>=@date
+	where isnull(cs.date_finish, @date)>=@date
 )
 , _comp_s (positionid, hour_wage, fixed_wage, date_start, commission) as (
 	select positionid, hour_wage, fixed_wage, date_start, commission 
@@ -21,7 +21,7 @@ with _comp_all as (
 	positionid, 
 	ROW_NUMBER () over (partition by positionid, personid order by date_start desc)  num
 	from hr.schedule_21 s		
-	where isnull(date_finish, @date)>=@date
+	where isnull(s.date_finish, @date)>=@date
 )
 , _emps (personid, person) as ( 
 select distinct e.personid, p.lfmname
@@ -34,5 +34,7 @@ select * from
 	_emps
 go
 
-declare @date date ='20220903';
+declare @date date ='20230331';
 select * from hr.active_emps_on_date(@date)
+
+

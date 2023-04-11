@@ -56,6 +56,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 									 then DATEADD(hh, 22, dbo.justdate(checktime))
 							else checktime end t_verified
 				from org.attendance a
+-- hardcoding Федоров out because I use myself for development
+				where a.personID <>org.person_id('Федоров А. Н.')
 				)
 			, _hours as (
 				select a.personid, sum(CONVERT(money, a.t_verified)* (1-2*checktype)*24) wk_hours

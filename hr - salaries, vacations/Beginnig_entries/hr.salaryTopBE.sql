@@ -60,7 +60,14 @@ from s
 	left join acc.registers r on r.registerid = s.registerid
 	left join org.contractors c on c.contractorID= r.bankid
 )
-select * from _united
+select 
+	--u. * ,
+	u.personid, u.сотрудник, дата, статья, комментарий, 
+	
+	trim(документ) документ, 
+	сумма, reg_id, банк, счет_банк
+from _united u
+where u.personid not in  (org.person_id('РОМАХИН М. Е.'), org.person_id('НЕВЕРОВ А. Д.'))
 go
 
 
@@ -78,4 +85,6 @@ select * from rep.payroll_report_v
 --where v.документ in ('bank', 'cash')
 --)
 --select * from s where num =1
-select * from hr.salary_BegEntries b where b.employeeid =1
+
+
+

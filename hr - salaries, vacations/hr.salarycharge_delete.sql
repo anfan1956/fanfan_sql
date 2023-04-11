@@ -33,7 +33,7 @@ set nocount on;
 	end catch
 go
 
-declare @salary_date date = '2022-11-30'
+declare @salary_date date = '2023-03-31'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date;select @note
 
 
