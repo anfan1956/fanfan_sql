@@ -4,7 +4,7 @@ select * from web.promo_log
 select * from web.promo_styles_discounts
 
 
-select cust.customer_id(@phone)
+
 
 	select d.discount 
 	from web.promo_log p

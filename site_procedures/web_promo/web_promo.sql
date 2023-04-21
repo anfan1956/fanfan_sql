@@ -9,6 +9,7 @@ create table web.promo_events (
 	datefinish date not null,
 	comment varchar(250) null,
 	discount decimal (4,3) null, 
+	eventClosed bit not null default(0)
 	
 );
 
@@ -36,46 +37,49 @@ if OBJECT_ID('web.promo_event_create') is not null drop proc web.promo_event_cre
 go
 create proc web.promo_event_create 
 	@info inv.barcodes_discounts_type readonly,
+	@eventid int,
 	@datestart date, 
 	@datefinish date, 
 	@comment varchar(150),
 	@discount dec (4,3) = null, 
 	@note varchar(max) output
 as	
+-- the actually  not only creates the proc but also merges the styles
 set nocount on;
 	declare 
-		@eventid int, 
 		@rows_affected int, 
 		@r int; 
 	declare @TBL table (act varchar(20));
 	
-	select @eventid = w.eventid from web.promo_events w 
-	where @datefinish = w.datefinish
-	if @eventid is not null
-			begin;
-				with s (eventid, styleid, discount) as (
-					select @eventid, i.styleid, i.discount
-					from @info i
-				)
-				merge web.promo_styles_discounts as t using s
-				on 
-					t.eventid = s.eventid and
-					t.styleid = s.styleid
-				when matched  and
-					t.discount<>s.discount
-				then update set
-					t.discount = s.discount
-				when not matched then 
-					insert (eventid, styleid, discount)
-					values (eventid, styleid, discount)
-				OUTPUT $action INTO @TBL;
+	--select @eventid = w.eventid from web.promo_events w 
+	--where @datefinish = w.datefinish
+	if @eventid <>0
+		begin;
+			with s (eventid, styleid, discount) as (
+				select @eventid, i.styleid, i.discount
+				from @info i
+			)
+			merge web.promo_styles_discounts as t using s
+			on 
+				t.eventid = s.eventid and
+				t.styleid = s.styleid
+			when matched  and
+				t.discount<>s.discount
+			then update set
+				t.discount = s.discount
+			when not matched then 
+				insert (eventid, styleid, discount)
+				values (eventid, styleid, discount)
+			when not matched by source and t.eventid = @eventid
+				then delete
+			OUTPUT $action INTO @TBL;
 
-				select @rows_affected = count(*) from @TBL;
+			select @rows_affected = count(*) from @TBL;
 
-				select @note = 'eventId ' + cast(@eventid as varchar(max)) + ' existed with the same finish date. ' +  
-					cast(@rows_affected as varchar(max)) + ' rows affected';
-				return @eventid;
-			end 
+			select @note = 'eventId ' + cast(@eventid as varchar(max)) + ' existed with the same finish date. ' +  
+				cast(@rows_affected as varchar(max)) + ' rows affected';
+			return @eventid;
+		end 
 
 		insert web.promo_events (datestart, datefinish, comment, discount)
 			select @datestart, @datefinish, @comment, @discount;
