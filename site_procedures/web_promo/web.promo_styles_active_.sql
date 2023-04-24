@@ -10,7 +10,7 @@ with _photos (eventid, styleid, photo, discount,  num) as(
 		ROW_NUMBER() over(partition by p.styleid order by p.photo_filename)
 	from web.promo_events e
 	join web.promo_styles_discounts d on d.eventid=e.eventid
-	join inv.styles_photos p on p.styleid=d.styleid
+	join inv.styles_photos p on p.parent_styleid=d.styleid
 where eventClosed='false'
 	and cast(getdate() as date ) between e.datestart and e.datefinish
 )
@@ -39,3 +39,5 @@ from _photos p
 	join inv.styles s on s.styleID=p.styleid
 	join inv.brands b on b.brandID=s.brandID
 where p.num =1
+go
+ 
