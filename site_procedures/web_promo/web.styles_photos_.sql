@@ -10,7 +10,7 @@ create function web.styles_photos_ (@eventid int) returns table as
 		ROW_NUMBER() over (partition by s.styleid order by p.photo_filename) num
 	from web.promo_events e
 			join web.promo_styles_discounts s on s.eventid=e.eventid
-			join inv.styles_photos p on p.styleid=s.styleid		
+			join inv.styles_photos p on p.parent_styleid=s.styleid		
 	where e.eventid=@eventid
 	)
 	select STRING_AGG(
@@ -24,3 +24,5 @@ select styles_photos from web.styles_photos_(@eventid)
 
 select * from web.promo_events e
 join web.promo_styles_discounts d on d.eventid=e.eventid
+go
+
