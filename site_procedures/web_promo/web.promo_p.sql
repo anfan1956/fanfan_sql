@@ -11,7 +11,8 @@ begin try
 	begin transaction;
 		declare @code char(5) = (select code from cmn.random_5)
 		declare 
-			@r int,
+			@r int, 
+			@logid int,
 			@custid int, 
 			@discount dec(4,3),
 			@datefinish date,
@@ -72,8 +73,16 @@ begin try
 								and w.styleid=@styleid
 
 						insert web.promo_log (eventid, styleid, discount, custid, promocode) 
-						select @eventid, @styleid, @discount, @custid, @code
+						select @eventid, @styleid, @discount, @custid, @code;
+						select @logid = SCOPE_IDENTITY();
+
 						--from web.promo_styles_discounts w;
+						update pl set pl.used =  'True'
+						from web.promo_log pl
+						where pl.custid=@custid 
+							and pl.eventid=@eventid 
+							and pl.styleid= @styleid
+							and pl.logid<@logid
 
 						select @note = 'доп -' + format (@discount, '#,##0%' ) + ' код ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + ': ' + @prString  ;
 					
