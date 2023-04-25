@@ -7,8 +7,11 @@ create view org.attendance_check_v as
 	with t as (
 		select a.*, count (attendanceID) over (partition by cast(checktime as date)) num
 		from org.attendance a
-		where a.personID = 67
-		--and year(checktime) = 2023
+		where 
+			--a.personID = 67		and 
+			year(checktime) = 2023 and 
+			cast(checktime  as date)<cast(getdate() as date) and 
+			a.personID >1
 	)
 	select 
 		--* 
@@ -19,15 +22,9 @@ create view org.attendance_check_v as
 	where t.num % 2 <>0
 go
 
-select a.* 
-from org.attendance_check_v v
-	join org.attendance a on a.personID = v.personID
-		and cast(a.checktime as date) = v.irreg_date
+select * from org.attendance_check_v
 
-select *
-from org.attendance a 
-where a.personID = 67
-	and cast(a.checktime as date ) = '20230104'
+
 
 select * 
 from hr.salary_jobs_log l
