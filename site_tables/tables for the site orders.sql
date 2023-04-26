@@ -23,6 +23,7 @@ constraint pk_cust_logs primary key (personid, log_date, divisionid)
 )
 select personid, log_date, divisionid from cust.logs
 
+if OBJECT_ID('inv.reservation_state_id') is not null drop function inv.reservation_state_id
 if OBJECT_ID ('inv.site_reservations') is not null drop table inv.site_reservations
 if OBJECT_ID ('inv.site_reserve_states') is not null drop table inv.site_reserve_states
 create table inv.site_reserve_states (
@@ -32,11 +33,12 @@ create table inv.site_reserve_states (
 create table inv.site_reservations (
 	reservationid int not null constraint pk_site_reservations primary key clustered
 		constraint fk_reservations_transactions foreign key references inv.transactions(transactionid),
-	userid int not null constraint fk_reservations_users foreign key references cust.users (userid ), 
+	custid int not null constraint fk_reservations_users foreign key references cust.persons (personid ), 
+	expiration datetime not null,
 	reservation_stateid int null constraint fk_reservations_reservationstates foreign key references inv.site_reserve_states(reservation_stateid), 
 	saleid int null constraint fk_reservations_sales foreign key references inv.sales(saleid)
 )
-insert inv.site_reserve_states (reservation_state) values  ('cancelled'), ('executed')
+insert inv.site_reserve_states (reservation_state) values  ('active'), ('cancelled'), ('executed')
 select * from inv.site_reserve_states; select * from inv.site_reservations
 
 if object_id('inv.site_reservation_set') is not null drop table inv.site_reservation_set
@@ -52,10 +54,21 @@ create table inv.site_reservation_set (
 	barcodeid int not  null constraint fk_rs_barcodes foreign key references inv.barcodes (barcodeid),
 	price money not null,
 	barcode_discount decimal (4,3) not null,
-	customer_discount decimal (4,3) not null,
-	order_stateid int not  null constraint fk_rs_rstates foreign key references inv.site_orders_states (order_stateid),
-	constraint pk_site_reservationset primary key clustered (reservationid, barcodeid, order_stateid)
+	promo_discount decimal (4,3) not null,
+	amount money,
+	constraint pk_site_reservationset primary key clustered (reservationid, barcodeid)
 )
+
+go
+create function inv.reservation_state_id (@reservation_state varchar(25)) returns int as 
+begin
+	declare @stateid int;
+		select @stateid= i.reservation_stateid  from inv.site_reserve_states  i where i.reservation_state = @reservation_state
+	return @stateid
+end
+go
+
+
 
 insert inv.site_orders_states values
 ('reserved'), 
@@ -69,4 +82,7 @@ insert inv.site_orders_states values
 select * from inv.site_orders_states
 
 
+
+
 select * from inv.transactiontypes order by 1 desc
+

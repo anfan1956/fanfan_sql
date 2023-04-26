@@ -8,8 +8,8 @@ GO
 
 ALTER proc [inv].[reservation_toggle_p] @reservationid int, @cancel bit = 'TRUE' as
 set nocount on;
-if not exists (select r.reservation_stateid from inv.site_reservations r where r.reservationid=@reservationid and r.reservation_stateid is null)
-	return 0;
+if not exists (select r.reservation_stateid from inv.site_reservations r where r.reservationid=@reservationid and r.reservation_stateid = inv.reservation_state_id('active') )
+	return -13;
 
 declare 
 	@r int, @date datetime = getdate(),
@@ -25,10 +25,11 @@ begin transaction;
 			update r set r.reservation_stateid = inv.reserve_state_id ('cancelled')
 			from inv.site_reservations r
 			where r.reservationid = @reservationid;
+
 			select @date, @userid, @cancellation_typeid;
 
-			update r set r.order_stateid = inv.site_order_state_id ('cancelled')
-			from inv.site_reservation_set r where reservationid=@reservationid;
+			--update r set r.order_stateid = inv.site_order_state_id ('cancelled')
+			--from inv.site_reservation_set r where reservationid=@reservationid;
 
 			insert inv.transactions (transactiondate, userID, transactiontypeID)
 				values (@date, @userid, @cancellation_typeid);
@@ -57,3 +58,6 @@ begin catch;
 	--select ERROR_MESSAGE()
 	rollback transaction
 end catch
+go
+
+declare @r int, @reservationid int = 77142; exec @r = fanfan.inv.reservation_toggle_p @reservationid;
