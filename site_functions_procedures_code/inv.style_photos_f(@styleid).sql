@@ -17,15 +17,15 @@ with _s  (styleid, parent_styleid, photo_filename, photo_priority, receipt_date,
 	)
 select distinct
 		case 
-			when o.gender = 'm' then 'МУЖ'
-			when o.gender = 'f' then 'ЖЕН' 
-			when o.gender is null then 
-				case when s.gender = 'm' then 'МУЖ'
-				when s.gender = 'f' then 'ЖЕН' 
-				when s.gender= 'u' then 'ЮНИ'
-				when s.gender is null then ''
-				end
-			end gender,
+		when isnull(s.gender, o.gender) = 'm' then 'МУЖ'
+		when isnull(s.gender, o.gender) = 'f' then 'ЖЕН' 
+		when isnull(s.gender, o.gender) is null then ''
+			--case when s.gender = 'm' then 'МУЖ'
+			--when s.gender = 'f' then 'ЖЕН' 
+			--when s.gender= 'u' then 'ЮНИ'
+			--when s.gender is null then ''
+			--end
+		end gender,
 		v.brand, v.category, v.article, c.color,
 		--v.styleID,	
 		sp.parent_styleid styleID,	

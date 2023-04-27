@@ -33,14 +33,14 @@ _discounts (styleid, discount, num) as (
 )
 select distinct
 	case 
-		when o.gender = 'm' then 'МУЖ'
-		when o.gender = 'f' then 'ЖЕН' 
-		when o.gender is null then 
-			case when s.gender = 'm' then 'МУЖ'
-			when s.gender = 'f' then 'ЖЕН' 
-			when s.gender= 'u' then 'ЮНИ'
-			when s.gender is null then ''
-			end
+		when isnull(s.gender, o.gender) = 'm' then 'МУЖ'
+		when isnull(s.gender, o.gender) = 'f' then 'ЖЕН' 
+		when isnull(s.gender, o.gender) is null then ''
+			--case when s.gender = 'm' then 'МУЖ'
+			--when s.gender = 'f' then 'ЖЕН' 
+			--when s.gender= 'u' then 'ЮНИ'
+			--when s.gender is null then ''
+			--end
 		end gender,
 	b.brand, 
 	it.inventorytyperus category, 
