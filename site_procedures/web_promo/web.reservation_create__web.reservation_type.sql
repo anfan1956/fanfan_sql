@@ -29,6 +29,13 @@ GO
 	begin try
 		begin transaction
 
+		declare	@barcodes inv.barcode_type;
+		insert @barcodes select barcodeid from @info;
+
+		if inv.available(@barcodes) = 'False'
+			throw 50001, 'некоторые единицы товара сейчас недоступны', 1
+
+
 		declare 
 			@r int, 
 			@reservationid int, 
@@ -43,6 +50,7 @@ GO
 			insert inv.transactions (transactiondate, transactiontypeID, userID)
 			values (@date, inv.transactiontype_id('ON_SITE RESERVATION'), @userid);
 			select @reservationid =SCOPE_IDENTITY();
+
 
 			insert inv.site_reservation_set(reservationid, barcodeid, price, barcode_discount, promo_discount, amount )
 			select @reservationid, i.barcodeid, i.price, i.discount, i.promo_discount, i.to_pay
@@ -81,7 +89,7 @@ GO
 						@job, @mycommand , @servername, 
 						@job_date, @job_time; 
 				if  @r = 0
-					select @note = 'создан новай заказ №: ' + cast(@reservationid as varchar(max))  
+					select @note = 'создан новый заказ №: ' + cast(@reservationid as varchar(max))  
 			--;throw 50001, 'debugging', 1;
 			commit transaction
 		return @reservationid;			

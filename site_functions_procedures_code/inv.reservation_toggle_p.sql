@@ -8,16 +8,21 @@ GO
 
 ALTER proc [inv].[reservation_toggle_p] @reservationid int, @cancel bit = 'TRUE' as
 set nocount on;
-if not exists (select r.reservation_stateid from inv.site_reservations r where r.reservationid=@reservationid and r.reservation_stateid = inv.reservation_state_id('active') )
+
+-- it looks like the procedure is not finished
+
+	if not exists (select r.reservation_stateid from inv.site_reservations r where r.reservationid=@reservationid and r.reservation_stateid = inv.reservation_state_id('active') )
 	return -13;
 
 declare 
-	@r int, @date datetime = getdate(),
+	@r int, 
+	@date datetime = getdate(),
 --	hardcoding logstates 'IN-WAREHOUSE', 'SOLD', 'ИП Федоров'
 	@logstateid int = iif (@cancel = 'TRUE', 8 , 10),
 	@cancellation_typeid int = inv.transactiontype_id('RESERVE CANCELLATION'), 
-	@sales_typeid int = inv.logstate_id('ON_SITE SALE'), 
-	@userid int = org.user_id('INTERBOT'), @transactionid int;
+	--@sales_typeid int = inv.transactiontype_id('ON_SITE SALE'), 
+	--@userid int = org.user_id('INTERBOT'), 
+	@transactionid int;
 begin try
 begin transaction;
 	if @cancel ='TRUE'
@@ -26,14 +31,15 @@ begin transaction;
 			from inv.site_reservations r
 			where r.reservationid = @reservationid;
 
-			select @date, @userid, @cancellation_typeid;
+			--select @date, @userid, @cancellation_typeid;
 
 			--update r set r.order_stateid = inv.site_order_state_id ('cancelled')
 			--from inv.site_reservation_set r where reservationid=@reservationid;
 
 			insert inv.transactions (transactiondate, userID, transactiontypeID)
-				values (@date, @userid, @cancellation_typeid);
+				values (@date, org.user_id('INTERBOT'), @cancellation_typeid);
 			select @transactionid = SCOPE_IDENTITY();
+
 			insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 			select i.clientID, i.logstateID, i.divisionID, @transactionid, i.opersign * (1-2 * @cancel), i.barcodeID 
 			from inv.inventory i where i.transactionID =@reservationid
@@ -42,22 +48,30 @@ begin transaction;
 -- if reservation was automaticall cancelled, return 0
 			select @r = @transactionid
 		end 
-	else 
-		begin
-			update r set r.reservation_stateid = inv.reserve_state_id ('executed')
-			from inv.site_reservations r
-			where r.reservationid = @reservationid;
+	--else 
+	--	begin
+	--		insert inv.transactions(transactiondate, userID, transactiontypeID)
+	--		values (@date, org.user_id('INTERBOT'), inv.transactiontype_id('ON_SITE SALE'))
+	--		set @transactionid = SCOPE_IDENTITY();
+	--		select @transactionid;
 
-			select @r = 1			
-		end
+	--		update r set 
+	--			r.reservation_stateid = inv.reserve_state_id ('executed'),
+	--			r.saleid=@transactionid
+	--		from inv.site_reservations r
+	--		where r.reservationid = @reservationid;
+
+	--		select @r = @transactionid			
+	--	end
 	commit transaction
-	return @r
+--	return @r
 end try
 
 begin catch;
-	--select ERROR_MESSAGE()
+	select ERROR_MESSAGE()
 	rollback transaction
 end catch
 go
 
-declare @r int, @reservationid int = 77142; exec @r = fanfan.inv.reservation_toggle_p @reservationid;
+declare @r int, @reservationid int = 77289; exec @r = fanfan.inv.reservation_toggle_p @reservationid; select @r
+--select * from inv.transactiontypes order by 1 desc

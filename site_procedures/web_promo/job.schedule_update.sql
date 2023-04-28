@@ -1,12 +1,5 @@
 ﻿use fanfan
 go
---select * from web.promo_log
---select * from inv.site_reservations s join inv.site_reserve_states r on r.reservation_stateid=s.reservation_stateid order by 1 desc;
-
---select * from inv.site_reservations r where r.reservation_stateid=inv.reservation_state_id('active')
-
-
-
 
 if OBJECT_ID('job.schedule_update') is not null drop proc job.schedule_update
 go
@@ -48,11 +41,13 @@ begin
 end 
 go
 
+
+
 declare 
-	@minutes int = 1,
-	@procName varchar(max) = 77204, 
+	@minutes int = 120,
+	@procName varchar(max) = 77340, 
 	@note varchar(max);
-exec job.schedule_update @procname, @minutes, @note output;
+--exec job.schedule_update @procname, @minutes, @note output;
 select @note;
 
 select 
@@ -64,4 +59,4 @@ from msdb.dbo.sysjobs j
 		join msdb.dbo.sysjobactivity AS sj on sj.job_id= j.job_id
 where ISNUMERIC( name ) = 1
 
-select * from inv.site_reservations order by 1 desc
+select * from inv.site_reservations

@@ -25,7 +25,7 @@ declare @transactions table(transactionid int);
 insert @transactions
 select t.transactionID 
 from inv.transactions t 
-where t.transactiontypeID in (32, 33) ;
+where t.transactiontypeID in (32, 33, 34) ;
 declare @n int = (select count(*) from @transactions);
 --select t.transactionid, ROW_NUMBER() over(order by transactionid)  num from @transactions t;
 
@@ -48,7 +48,7 @@ go
 
 select t.transactionID 
 from inv.transactions t 
-where t.transactiontypeID in (32, 33) 
+where t.transactiontypeID in (32, 33, 34) 
 
 --exec web.reservations_clear
 
