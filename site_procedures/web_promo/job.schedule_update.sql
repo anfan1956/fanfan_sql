@@ -44,8 +44,8 @@ go
 
 
 declare 
-	@minutes int = 120,
-	@procName varchar(max) = 77340, 
+	@minutes int = 600,
+	@procName varchar(max) = 77401, 
 	@note varchar(max);
 --exec job.schedule_update @procname, @minutes, @note output;
 select @note;
