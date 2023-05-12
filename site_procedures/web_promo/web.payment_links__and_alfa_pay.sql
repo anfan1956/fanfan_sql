@@ -1,4 +1,6 @@
-﻿declare @orderid int =77355;
+﻿use fanfan
+go
+declare @orderid int =77355;
 
 
 if OBJECT_ID('web.link_suffix') is not null drop table web.link_suffix
@@ -119,9 +121,6 @@ set nocount on; declare @orderid int = 77359, @bankid int = org.contractor_id('�
 select * from web.payment_links
 select * from web.link_suffix;
 go
---declare @r int, @string varchar(max) = '77384:3:037cb47a-8a9d-71b9-b076-8c0d00b32438'; exec @r = web.suffix_record @string; select @r;
-select p.prefix + s.suffix 
-from web.payment_links l 
-	join web.link_suffix s on s.linkid= l.linkid 
-	cross apply web.link_prefix p
-where l.orderid=77402
+
+exec web.reservations_clear
+select * from web.promo_log

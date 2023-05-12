@@ -1,28 +1,62 @@
-﻿if OBJECT_ID ('web.order_action_p') is not null drop proc web.order_action_p
+﻿use fanfan
+go
+
+if OBJECT_ID ('web.order_action_p') is not null drop proc web.order_action_p
 go
 create proc web.order_action_p 
 	@orderid int, 
 	@cancel bit, 
 	@note varchar(max) output, 
-	@pmtStr varchar(max)=null
-	
+	@pmtStr varchar(max)=null	
 as
 
 set nocount on;
-declare 
-	@r int,
-	@transactionid int, 
-	@customerid int = (select s.custid  from inv.site_reservations s where s.reservationid=@orderid);
 begin try
-	begin transaction		
+		declare 
+			@r int,
+			@transactionid int, 
+			@reservation_state_id int,
+			@customerid int = (select s.custid  from inv.site_reservations s where s.reservationid=@orderid);
+		declare 
+			@res int, 
+			@JobName varchar(max)= cast(@orderid as varchar(max));
 		declare @date datetime = current_timestamp;
 
-		if @cancel = 'True'	
+		IF EXISTS (SELECT 1 FROM msdb.dbo.sysjobs_view WHERE name = @Jobname)
+			BEGIN
+				exec @res = msdb.dbo.sp_delete_job 
+					@job_name =  @JobName,  
+					@delete_unused_schedule = 'True';	
+			END;
+--		select @@TRANCOUNT
+--		if @@TRANCOUNT>0 ROLLBACK TRANSACTION
+	begin transaction		
+		-- 0. Проверяем состояние заказа
+		select @reservation_state_id = r.reservation_stateid
+		from inv.site_reservations r 
+		where r.reservationid=@orderid
+
+		if @reservation_state_id>1 
+			begin
+				select @note = 'Ошибка. Заказ ' + @JobName + ' уже ' + s.reservation_state
+				from inv.site_reserve_states s where s.reservation_stateid=@reservation_state_id;
+				--'Kill the job'
+				throw 50001, @note, 1
+			end			
+		else if @reservation_state_id is null 
+			begin
+				select @note = 'the order ' + @JobName + ' does not exist';
+				throw 50001, @note, 1;
+			end 
+				
+		if @cancel = 'True'			
+
 			begin
 				-- 1. Create new transaction  -  cancellation
 				insert inv.transactions (transactiondate, transactiontypeID, userID)
 				values (@date, inv.transactiontype_id('RESERVE CANCELLATION'), org.user_id('interbot'));
 				select @transactionid = SCOPE_IDENTITY();
+
 
 				--2. update site reservations to "cancelled"
 				update r set r.reservation_stateid= inv.reservation_state_id('cancelled')
@@ -33,7 +67,9 @@ begin try
 					insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 					select i.clientID, i.logstateID, i.divisionID, @transactionid, -i.opersign , i.barcodeID 
 					from inv.inventory i where i.transactionID =@orderid				
-				select @r =@transactionid
+				select @r =@transactionid;
+				select @note = 'Заказ № ' + cast (@orderid as varchar(max)) + 'удален';
+				throw 50001,@note, 1
 			end
 
 		else if @cancel = 'False'
@@ -114,7 +150,7 @@ begin try
 				--select 3, * from inv.transactions where transactionID>=@transactionid
 
 
-				--4. return the inventory back from the order transaction with the opposite sign
+				--6. return the inventory back from the order transaction with the opposite sign
 					insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 					select 
 						i.clientID, 
@@ -131,26 +167,11 @@ begin try
 						-i.opersign, 
 						i.barcodeID 
 					from inv.inventory i where i.transactionID =@orderid				
-				--select 4, * from inv.transactions where transactionID>=@transactionid
-
-
+				
 				select @r =@transactionid
-			end
-		
-	--'Kill the job'
-		declare 
-			@res int, 
-			@name varchar(max)= cast(@orderid as varchar(max));
+			end		
+	
 
-		exec @res = msdb.dbo.sp_delete_job 
-			@job_name =  @name,  
-			@delete_unused_schedule = 'True'  ;
-		
-		if @res = 1 
-			begin
-				select @note ='there was a problem deleting the job ' + @name;
-				throw 50001,  @note, 1
-			end
 
 		select @note = cast(@r as varchar(max));
 		--throw 50001, @note, 1;
@@ -163,23 +184,39 @@ begin catch
 end catch
 go
 
-declare 
-	@cancel bit = 'False',
-	@orderid varchar(max) = '77301', 
-	@note varchar(max), 
-	@pmtStr varchar(max) = 'ссылка сбп:89778:ТИНЬКОФФ';
+--declare 
+--	@cancel bit = 'false',
+--	@orderid varchar(max) = '77505', 
+--	@note varchar(max),
+--	@pmtStr varchar(max) = null
 
 --exec web.order_action_p 
 --	@orderid =@orderid, 
 --	@cancel = @cancel,
+--	@note = @note output,
+--	@pmtStr= @pmtStr;
+--select @note;
+--go
+--declare 
+--	@cancel bit = 'False', 
+--	@orderid varchar(max) = '77505', 
+--	@note varchar(max), 
+--	@pmtStr varchar(max) = 'по QR-коду:100:АЛЬФА-БАНК'; 
+--exec web.order_action_p 
+--	@orderid =@orderid,     
+--	@cancel = @cancel,      
 --	@note = @note output, 
---	@pmtStr= @pmtStr
---	;
+--	@pmtStr= @pmtStr; 
 --select @note;
 
-select i.*, l.logstate
-from inv.inventory i 
-	join inv.logstates l on l.logstateID=i.logstateID
-where i.transactionID in ( 77259, 77260, 77261)
 
-select * from inv.site_reservations order by 1 desc
+--select * from inv.site_reservations order by 1 desc
+--go
+
+declare @cancel bit = 'False', @orderid varchar(max) = '77528', @note varchar(max), @pmtStr varchar(max) = 'по QR-коду:1.0:АЛЬФА-БАНК'; 
+if @@TRANCOUNT>0 rollback transaction
+exec web.order_action_p @orderid =@orderid,     @cancel = @cancel, @note = @note output, @pmtStr= @pmtStr; select @note;
+
+
+
+select top 1 * from inv.transactions order by 1 desc

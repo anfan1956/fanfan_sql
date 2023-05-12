@@ -6,12 +6,12 @@ from inv.site_reservations r
 select STRING_AGG(cast(reservationid as varchar(max)), ',') from inv.site_reservations r
 where r.reservation_stateid = inv.reservation_state_id('active')
 
---select t.*,  tt.transactiontype
---from inv.transactions t		
---	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
---where 
---	t.transactiontypeID in (32, 33, 34) and
---	t.transactionID>=77216 order by 1 desc;
+select t.*,  tt.transactiontype
+from inv.transactions t		
+	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+where 
+	t.transactiontypeID in (32, 33, 34) and
+	t.transactionID>=77216 order by 1 desc;
 
 --select d.* , e.eventClosed from web.promo_events e join web.promo_styles_discounts d on d.eventid= e.eventid
 
