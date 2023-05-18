@@ -28,8 +28,6 @@ begin try
 					@job_name =  @JobName,  
 					@delete_unused_schedule = 'True';	
 			END;
---		select @@TRANCOUNT
---		if @@TRANCOUNT>0 ROLLBACK TRANSACTION
 	begin transaction		
 		-- 0. Проверяем состояние заказа
 		select @reservation_state_id = r.reservation_stateid
@@ -67,7 +65,6 @@ begin try
 					insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 					select i.clientID, i.logstateID, i.divisionID, @transactionid, -i.opersign , i.barcodeID 
 					from inv.inventory i where i.transactionID =@orderid				
-				select @r =@transactionid;
 				select @note = 'Заказ № ' + cast (@orderid as varchar(max)) + 'удален';
 				throw 50001,@note, 1
 			end
@@ -108,21 +105,32 @@ begin try
 				insert inv.transactions (transactiondate, transactiontypeID, userID)
 				values (@date, inv.transactiontype_id('ON_SITE SALE'), org.user_id('interbot'));
 				select @transactionid = SCOPE_IDENTITY();
-				--select 1, * from inv.transactions where transactionID>=@transactionid
+				select @r = @transactionid;
+
 
 				-- 2. create sale transaction
 				insert inv.sales(saleID, customerID, divisionID, salepersonID)
 				values (@transactionid, @customerid, org.division_id('FANFAN.STORE'), org.user_id('interbot'))
-				--select 2,  * from inv.transactions where transactionID>=@transactionid
+
+	
+				-- 3` prepare the fiscal string
+				declare 
+					@salesPers varchar(max) = 'interbot',
+					@saleid int = @transactionid,
+					@barcodes dbo.id_money_type,
+					@cash money = 0,
+					@sale_type varchar(max) = 'sale';
+
 				
 				-- 3. create sale_goods
 				insert inv.sales_goods( saleID, barcodeID, amount, price, client_discount, barcode_discount )
+				output inserted.barcodeID, inserted.amount into @barcodes
 				select  @transactionid, rs.barcodeid, rs.amount, rs.price, rs.promo_discount, rs.barcode_discount 
 				from inv.site_reservations r 
 					join inv.site_reservation_set rs on rs.reservationid=r.reservationid
 				where r.reservationid=@orderid and r.reservation_stateid=inv.reservation_state_id('active')
-			--select @transactionID, i.barcodeID, i.paid, i.price, @customer_discount, i.discount	
-			--from @info i;
+				select @note = fin.fisc_String(	@salesPers, @saleid, @barcodes, @cash, @sale_type) ;
+
 
 				-- 4. create sales_receipts transaction
 				insert inv.sales_receipts (saleID, receipttypeID, amount, registerid)
@@ -147,7 +155,6 @@ begin try
 					r.saleid = @transactionid
 				from inv.site_reservations r
 				where r.reservationid= @orderid
-				--select 3, * from inv.transactions where transactionID>=@transactionid
 
 
 				--6. return the inventory back from the order transaction with the opposite sign
@@ -169,54 +176,26 @@ begin try
 					from inv.inventory i where i.transactionID =@orderid				
 				
 				select @r =@transactionid
-			end		
-	
+			end		;
 
-
-		select @note = cast(@r as varchar(max));
+		--select @note = cast(@r as varchar(max));
 		--throw 50001, @note, 1;
 	commit transaction
+	return @r;
 end try
 
 begin catch
-	select @note =  ERROR_MESSAGE() 
+	select @note =  ERROR_MESSAGE() 	
 	rollback transaction
+	select @r =0
+	return @r
+	
 end catch
 go
 
---declare 
---	@cancel bit = 'false',
---	@orderid varchar(max) = '77505', 
---	@note varchar(max),
---	@pmtStr varchar(max) = null
-
---exec web.order_action_p 
---	@orderid =@orderid, 
---	@cancel = @cancel,
---	@note = @note output,
---	@pmtStr= @pmtStr;
---select @note;
---go
---declare 
---	@cancel bit = 'False', 
---	@orderid varchar(max) = '77505', 
---	@note varchar(max), 
---	@pmtStr varchar(max) = 'по QR-коду:100:АЛЬФА-БАНК'; 
---exec web.order_action_p 
---	@orderid =@orderid,     
---	@cancel = @cancel,      
---	@note = @note output, 
---	@pmtStr= @pmtStr; 
---select @note;
+declare @r int, @cancel bit = 'False', @orderid varchar(max) = '77624', @note varchar(max), @pmtStr varchar(max) = 'по QR-коду:1.0:АЛЬФА-БАНК'; 
+if @@TRANCOUNT>0 rollback transaction; 
+--exec @r = web.order_action_p	@orderid =@orderid,	@cancel = @cancel, @note = @note output, @pmtStr= @pmtStr; select @r, @note;
 
 
---select * from inv.site_reservations order by 1 desc
---go
-
-declare @cancel bit = 'False', @orderid varchar(max) = '77528', @note varchar(max), @pmtStr varchar(max) = 'по QR-коду:1.0:АЛЬФА-БАНК'; 
-if @@TRANCOUNT>0 rollback transaction
-exec web.order_action_p @orderid =@orderid,     @cancel = @cancel, @note = @note output, @pmtStr= @pmtStr; select @note;
-
-
-
-select top 1 * from inv.transactions order by 1 desc
+--select top 1 * from inv.transactions order by 1 desc

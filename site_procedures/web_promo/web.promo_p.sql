@@ -84,7 +84,7 @@ begin try
 							and pl.styleid= @styleid
 							and pl.logid<@logid
 
-						select @note = 'доп -' + format (@discount, '#,##0%' ) + ' код ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + ': ' + @prString  ;
+						select @note = 'доп -' + format (@discount, '#,##0%' ) + ' промокод ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + ': ' + @prString  ;
 					
 			end
 		else select @note = 'сейчас на этот артикул промокода нет'

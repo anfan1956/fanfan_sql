@@ -31,6 +31,11 @@ declare @n int = (select count(*) from @transactions);
 
 declare @transid int
 declare @i int=1
+declare 
+	@res int, 
+	@JobName varchar(max);
+
+
 while @i<=@n
 begin;
 	with t (transactionid, num) as (
@@ -40,7 +45,15 @@ begin;
 	select @transid = transactionid
 	from t  where num = @i;
 	exec inv.transaction_delete @transid
-	--select @transid
+
+	select	@JobName = cast(@transid as varchar(max));
+
+	IF EXISTS (SELECT 1 FROM msdb.dbo.sysjobs_view WHERE name = @Jobname)
+		BEGIN
+			exec @res = msdb.dbo.sp_delete_job 
+				@job_name =  @JobName,  
+				@delete_unused_schedule = 'True';	
+		END;
 	select @i=@i+1;
 end
 
