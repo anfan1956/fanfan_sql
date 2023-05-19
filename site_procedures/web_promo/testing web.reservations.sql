@@ -32,3 +32,4 @@ select * from web.active_orders_v
 --	join web.promo_styles_discounts d on d.eventid=e.eventid
 
 select * from web.promo_log where custid= 17448 and used = 'False'
+select * from web.promo_events

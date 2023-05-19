@@ -34,6 +34,7 @@ create table inv.site_reservations (
 	reservationid int not null constraint pk_site_reservations primary key clustered
 		constraint fk_reservations_transactions foreign key references inv.transactions(transactionid),
 	custid int not null constraint fk_reservations_users foreign key references cust.persons (personid ), 
+	userid int not null foreign key references org.users (userid), 
 	expiration datetime not null,
 	reservation_stateid int null constraint fk_reservations_reservationstates foreign key references inv.site_reserve_states(reservation_stateid), 
 	saleid int null constraint fk_reservations_sales foreign key references inv.sales(saleid)
@@ -86,3 +87,4 @@ select * from inv.site_orders_states
 
 select * from inv.transactiontypes order by 1 desc
 
+select * from cust.logs

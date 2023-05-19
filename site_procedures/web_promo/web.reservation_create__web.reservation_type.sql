@@ -52,12 +52,12 @@ GO
 			select @reservationid =SCOPE_IDENTITY();
 
 
-			insert inv.site_reservation_set(reservationid, barcodeid, price, barcode_discount, promo_discount, amount )
+			insert inv.site_reservation_set(reservationid, barcodeid, price, barcode_discount, promo_discount, amount  )
 			select @reservationid, i.barcodeid, i.price, i.discount, i.promo_discount, i.to_pay
 			from @info i
 			
-			insert inv.site_reservations(reservationid, custid,reservation_stateid, expiration)
-			select @reservationid, @custid, inv.reservation_state_id('active'), @expiration;
+			insert inv.site_reservations(reservationid, custid,reservation_stateid, expiration, userid)
+			select @reservationid, @custid, inv.reservation_state_id('active'), @expiration, @userid;
 
 
 				with _states (logstateid, opersign) as (

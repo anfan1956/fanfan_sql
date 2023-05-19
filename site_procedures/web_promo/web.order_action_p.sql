@@ -16,7 +16,8 @@ begin try
 			@r int,
 			@transactionid int, 
 			@reservation_state_id int,
-			@customerid int = (select s.custid  from inv.site_reservations s where s.reservationid=@orderid);
+			@customerid int = (select s.custid  from inv.site_reservations s where s.reservationid=@orderid),
+			@userid int = (select userid from inv.site_reservations r where r.reservationid=@orderid);
 		declare 
 			@res int, 
 			@JobName varchar(max)= cast(@orderid as varchar(max));
@@ -52,7 +53,7 @@ begin try
 			begin
 				-- 1. Create new transaction  -  cancellation
 				insert inv.transactions (transactiondate, transactiontypeID, userID)
-				values (@date, inv.transactiontype_id('RESERVE CANCELLATION'), org.user_id('interbot'));
+				values (@date, inv.transactiontype_id('RESERVE CANCELLATION'), @userid);
 				select @transactionid = SCOPE_IDENTITY();
 
 
@@ -103,19 +104,19 @@ begin try
 
 				-- 1. Create new transaction  -  'ON_SITE SALE'
 				insert inv.transactions (transactiondate, transactiontypeID, userID)
-				values (@date, inv.transactiontype_id('ON_SITE SALE'), org.user_id('interbot'));
+				values (@date, inv.transactiontype_id('ON_SITE SALE'), @userid);
 				select @transactionid = SCOPE_IDENTITY();
 				select @r = @transactionid;
 
 
 				-- 2. create sale transaction
 				insert inv.sales(saleID, customerID, divisionID, salepersonID)
-				values (@transactionid, @customerid, org.division_id('FANFAN.STORE'), org.user_id('interbot'))
+				values (@transactionid, @customerid, org.division_id('FANFAN.STORE'), @userid)
 
 	
 				-- 3` prepare the fiscal string
 				declare 
-					@salesPers varchar(max) = 'interbot',
+					@salesPers varchar(max) = (select lfmname from org.persons where personID = @userid),
 					@saleid int = @transactionid,
 					@barcodes dbo.id_money_type,
 					@cash money = 0,

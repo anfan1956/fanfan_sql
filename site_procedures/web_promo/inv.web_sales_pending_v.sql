@@ -1,6 +1,6 @@
-﻿if OBJECT_ID('inv.web_sales_pending_v') is not null drop view inv.web_sales_pending_v
+﻿if OBJECT_ID('inv.webOrders_toShip_v') is not null drop view inv.webOrders_toShip_v
 go
-create view inv.web_sales_pending_v as
+create view inv.webOrders_toShip_v as
 
 	with _trans (barcodeid, transactionid, trtypeid, trtype, salesPersonid) as (
 		select distinct 
@@ -31,12 +31,23 @@ create view inv.web_sales_pending_v as
 		having sum(opersign)>0
 	)
 	select 
-		a.orderid, t.transactiondate, 
-		d.divisionfullname, 
-		u.username,
-		r.custid, l.phone, s.styleID модель,
-		s.article, it.inventorytyperus, rs.price, rs.barcode_discount, rs.promo_discount, rs.amount, sz.size, c.color,
-		a.barcodeid, a.divisionid, 
+		a.orderid, 
+		t.transactiondate [дата заказа], 
+		cast(l.phone as bigint) [кл. телефон], 
+		u.lfmname консультант,
+		s.styleID модель,
+		s.article артикул, 
+		it.inventorytyperus категория, 
+		rs.barcode_discount скидка, 
+		rs.promo_discount [промо скидка], 
+		a.barcodeid баркод, 
+		d.divisionfullname [склад], 
+		sz.size размер, 
+		c.color цвет,
+		rs.price цена, 
+		rs.amount [к оплате], 
+		a.divisionid, 
+		r.custid, 
 		a.salesPersonid 
 	from _all_transactions a
 		join inv.transactions t on t.transactionID=a.orderid		
@@ -49,7 +60,8 @@ create view inv.web_sales_pending_v as
 		join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 		join inv.sizes sz on b.sizeID=sz.sizeID
 		join inv.colors c on c.colorID=b.colorID 
-		join org.users u on u.userID = a.salesPersonid
+		join org.persons u on u.personID = a.salesPersonid
 go	
-select *from inv.web_sales_pending_v
+select *from inv.webOrders_toShip_v 
+--where orderid =0
 
