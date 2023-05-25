@@ -89,10 +89,11 @@ GO
 						@job, @mycommand , @servername, 
 						@job_date, @job_time; 
 				if  @r = 0
-					select @note = 'создан новый заказ №: ' + cast(@reservationid as varchar(max))  
+					select @note = 'создан новый заказ ' + cast(@reservationid as varchar(max))  
 			--;throw 50001, 'debugging', 1;
 			commit transaction
 		return @reservationid;			
+		--return 1
 	end try 
 	begin catch
 			select @note = ERROR_MESSAGE() 
@@ -100,40 +101,4 @@ GO
 			return 0;
 	end catch
 go
-
- 
-set nocount on; 
-declare 
-	@info web.reservation_type; 
-insert @info values 
-	(658765, 29325, 0, 0.12, 25806), 
-	(652307, 40800, 0, 0.12, 35904), 
-	(651524, 31896.25, 0, 0.12, 28068.7); 
-declare 
-	@shop varchar(max) = '08 ФАНФАН', 
-	@r int, 
-	@user varchar (max) = 'ФЕДОРОВ А. Н.', 
-	@phone char(10) = '9167834248', 
-	@note varchar(max), 
-	@wait_minutes int = 1; 
---exec @r = web.reservation_create 
---	@shop=@shop, 
---	@user=@user, 
---	@phone=@phone, 
---	@info = @info, 
---	@note = @note output, 
---	@wait_minutes =	@wait_minutes; 
---	select @r, @note;
-
-			--update r set r.reservation_stateid = inv.reserve_state_id ('cancelled')
-			--from inv.site_reservations r
-			--where r.reservationid = 77140;
-
-select * from inv.inventory i where i.transactionID = @r;
---select * from inv.site_reservation_set;
-select * from inv.site_reservations s join inv.site_reserve_states r on r.reservation_stateid=s.reservation_stateid;
-select t.*, tt.transactiontype
-from inv.transactions t join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
-where t.transactionID>=77144
---exec inv.transaction_delete 77141
 

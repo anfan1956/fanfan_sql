@@ -34,7 +34,8 @@ select distinct
 		v.discount,	sp.photo,
 		--datediff(s, d.date, receipt_date) 
 		receipt_date, 
-		isnull(wp.discount, 0) promo
+		isnull(wp.discount, 0) promo, 
+		inv.style_composition_(sp.parent_styleid) composition
 from _p sp
 		join inv.v_goods v  on sp.styleid=v.styleid
 		join inv.v_remains r on r.barcodeID=v.barcodeID
@@ -47,4 +48,4 @@ from _p sp
 		r.logstateID=8 and r.divisionID in (0, 14, 18, 25, 27) and 
 		sp.parent_styleid=@styleid
 go
-select gender, styleid, price, discount, promo, article, category, brand, color, photo from inv.style_photos_f(19973) ORDER BY photo asc
+select gender, styleid, price, discount, promo, article, category, brand, color, photo, composition from inv.style_photos_f(19973) ORDER BY photo asc

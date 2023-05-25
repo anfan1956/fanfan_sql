@@ -50,7 +50,9 @@ select distinct
 	s.cost * isnull (cost_adj, 1) * cr.rate * cr.markup price, 
 	d.discount, 
 	p.photo_filename,
-	p.receipt_date
+	p.receipt_date, 
+	inv.style_composition_(a.styleID) composition
+
 from _avail_styles a 
 	join _photos p on p.styleid=a.styleID
 	join inv.styles s on s.styleID=p.styleid
@@ -63,5 +65,6 @@ where p.num= 1
 
 GO
 select * from inv.styles_catalog_v
+where styleid= 20294
 
---select gender, styleid, price, discount, promo, article, category, brand, color, photo from inv.style_photos_f(20294) ORDER BY photo asc
+select gender, styleid, price, discount, promo, article, category, brand, color, photo, composition from inv.style_photos_f(20294) ORDER BY photo asc

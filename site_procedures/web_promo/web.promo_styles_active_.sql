@@ -1,4 +1,5 @@
-﻿--select * from web.promo_events; select * from web.promo_styles_discounts;
+﻿use fanfan
+go
 
 
 if OBJECT_ID('web.promo_styles_active_') is not null drop view web.promo_styles_active_
@@ -16,12 +17,18 @@ where eventClosed='false'
 )
 select
 	STRING_AGG( cast(eventid as varchar(max)) +'/' + cast(p.styleid as varchar(max)) +'/'+ photo 
-		+ ':' + b.brand + ':' + format(p.discount*100, '#,##0'), ',') as styles_string
+		+ ':' + b.brand 
+		+ ':' + format(p.discount*100, '#,##0')
+		+ ':' + cast(v.price as varchar(max))
+		, ',') as styles_string
 from _photos p 
 	join inv.styles s on s.styleID=p.styleid
 	join inv.brands b on b.brandID=s.brandID
+	join web.stylesPrices_discounts_v v on v.styleID=p.styleid
 where p.num =1
 go
+
+
 
 select styles_string from web.promo_styles_active_;
 
@@ -41,3 +48,9 @@ from _photos p
 where p.num =1
 go
  
+select cc.composition
+from inv.styles s 
+	join inv.compositions c on c.compositionID=s.compositionID
+	join inv.v_compositions cc on cc.compositionID=c.compositionID
+where s.styleID=19166
+
