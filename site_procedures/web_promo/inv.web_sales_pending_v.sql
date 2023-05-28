@@ -62,7 +62,7 @@ create view inv.webOrders_toShip_v as
 		join inv.site_reservations r on r.reservationid=a.orderid
 		join inv.site_reservation_set rs on rs.reservationid=a.orderid and rs.barcodeid=a.barcodeid
 		join cust.customers_list_v l on l.personID=r.custid
-		join org.divisions d on d.divisionID=a.divisionid
+		join org.divisions d on d.divisionID=r.pickupShopid
 		join inv.barcodes b on b.barcodeID=a.barcodeid
 		join inv.styles s on s.styleID=b.styleID
 		join inv.brands br on br.brandID=s.brandID
