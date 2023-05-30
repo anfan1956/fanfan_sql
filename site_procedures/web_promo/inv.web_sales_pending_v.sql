@@ -46,7 +46,7 @@ create view inv.webOrders_toShip_v as
 		rs.barcode_discount скидка, 
 		rs.promo_discount [промо скидка], 
 		a.barcodeid баркод, 
-		d.divisionfullname [склад], 
+		isnull(d.divisionfullname, 'доставка') [склад], 
 		sz.size размер, 
 		c.color цвет,
 		rs.price цена, 
@@ -62,7 +62,7 @@ create view inv.webOrders_toShip_v as
 		join inv.site_reservations r on r.reservationid=a.orderid
 		join inv.site_reservation_set rs on rs.reservationid=a.orderid and rs.barcodeid=a.barcodeid
 		join cust.customers_list_v l on l.personID=r.custid
-		join org.divisions d on d.divisionID=r.pickupShopid
+		left join org.divisions d on d.divisionID=r.pickupShopid
 		join inv.barcodes b on b.barcodeID=a.barcodeid
 		join inv.styles s on s.styleID=b.styleID
 		join inv.brands br on br.brandID=s.brandID
@@ -71,9 +71,6 @@ create view inv.webOrders_toShip_v as
 		join inv.colors c on c.colorID=b.colorID 
 		join org.persons u on u.personID = a.salesPersonid
 go	
---select *from inv.webOrders_toShip_v where orderid =0
 
-select 
-*
---	orderid, модель, баркод, цена 
-from inv.webOrders_toShip_v --where orderid = 77767
+
+select * from inv.webOrders_toShip_v
