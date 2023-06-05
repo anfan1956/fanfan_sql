@@ -26,6 +26,8 @@ select personid, log_date, divisionid from cust.logs
 if OBJECT_ID('inv.reservation_state_id') is not null drop function inv.reservation_state_id
 if OBJECT_ID ('inv.site_reservations') is not null drop table inv.site_reservations
 if OBJECT_ID ('inv.site_reserve_states') is not null drop table inv.site_reserve_states
+
+
 create table inv.site_reserve_states (
 	reservation_stateid int not null identity constraint pk_site_reserve_states primary key clustered, 
 	reservation_state varchar (25) not null constraint uq_reservestate unique
@@ -37,9 +39,12 @@ create table inv.site_reservations (
 	userid int not null foreign key references org.users (userid), 
 	expiration datetime not null,
 	reservation_stateid int null constraint fk_reservations_reservationstates foreign key references inv.site_reserve_states(reservation_stateid), 
+	--if pickukpShopid is null then no pickup, delivery has to be ordered
+	pickupShopid int  null constraint fk_reservations_pickups foreign key references org.divisions (divisionid), 
 	saleid int null constraint fk_reservations_sales foreign key references inv.sales(saleid)
 )
 insert inv.site_reserve_states (reservation_state) values  ('active'), ('cancelled'), ('executed')
+
 select * from inv.site_reserve_states; select * from inv.site_reservations
 
 if object_id('inv.site_reservation_set') is not null drop table inv.site_reservation_set
@@ -88,3 +93,5 @@ select * from inv.site_orders_states
 select * from inv.transactiontypes order by 1 desc
 
 select * from cust.logs
+
+EXEC sp_fkeys @pktable_name = 'site_reservations', @pktable_owner = 'inv'

@@ -123,4 +123,7 @@ select * from web.link_suffix;
 go
 
 exec web.reservations_clear
-select * from web.promo_log
+select * from web.promo_log where custid = 17448 and used = 0
+
+
+

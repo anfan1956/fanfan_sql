@@ -45,8 +45,10 @@ create view inv.webOrders_toShip_v as
 		it.inventorytyperus категория, 
 		rs.barcode_discount скидка, 
 		rs.promo_discount [промо скидка], 
+		.03 самовывоз, 
 		a.barcodeid баркод, 
-		isnull(d.divisionfullname, 'доставка') [склад], 
+		isnull(d.divisionfullname, 'доставка') [склад получения], 
+		d2.divisionfullname [перемещение из],
 		sz.size размер, 
 		c.color цвет,
 		rs.price цена, 
@@ -70,7 +72,12 @@ create view inv.webOrders_toShip_v as
 		join inv.sizes sz on b.sizeID=sz.sizeID
 		join inv.colors c on c.colorID=b.colorID 
 		join org.persons u on u.personID = a.salesPersonid
+		join org.divisions d2 on d2.divisionID=a.divisionid
 go	
 
 
 select * from inv.webOrders_toShip_v
+select * 
+from inv.site_reservations r
+	join inv.site_reservation_set rs on rs.reservationid=r.reservationid
+ 
