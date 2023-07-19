@@ -38,7 +38,7 @@ with _art (article, brandid) as (
 		r.divisionid, d.divisionfullname, b.barcodeID, 
 		it.inventorytyperus
 )
-	select sz.size, s.sizeid, cl.color, s.qty, s.price, s.styleid, s.division, s.barcodeid, s.category
+	select sz.size, s.sizeid, cl.color, cl.colorID, s.qty, s.price, s.styleid, s.division, s.barcodeid, s.category
 	from _s s
 	join inv.sizes sz on sz.sizeID=s.sizeid
 	join inv.colors cl on cl.colorID=s.colorid

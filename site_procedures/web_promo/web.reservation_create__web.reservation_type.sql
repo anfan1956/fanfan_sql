@@ -79,6 +79,17 @@ GO
 					select clientid, divisionid, transactionid, barcodeid, logstateid, opersign
 					from s;
 
+--						fill in delivery parcells
+--						when the payment is done then update web.deleveryLogs with delivered
+					update l set l.orderid = @reservationid
+					from @info i 
+						join web.deliveryLogs l on l.logid= i.logid
+
+					if (select logid from @info) is not null
+					insert web.delivery_parcels (logid, barcodeid)
+					select i.logid, barcodeid
+					from @info i
+
 
 --						select  @transactionid;
 				declare @start_date datetime = dateadd(MINUTE, @wait_minutes, @date ) 
@@ -107,28 +118,16 @@ GO
 go
 
 set nocount on; 
+declare @info web.reservation_type; 
+insert @info values 
+	(658777, 19872, 0, 0.37, 0, 6, 12519.36), 
+	(658789, 19872, 0, 0.37, Null, 7, 12519.36); 
 declare 
-	@info web.reservation_type; 
-	insert @info values 
-		(658777, 19872, 0, 0.37, 0.03, 20, 12143.7792), 
-		(652303, 27648, 0, 0.12, 0.03, 21, 23600.3328), 
-		(651316, 20520, 0, 0.19, 0.03, Null, 16122.564), 
-		(658789, 19872, 0, 0.37, 0.03, Null, 12143.7792); 
-declare 
-	@shop varchar(max) = '08 ФАНФАН', 
-	@r int, 
-	@user varchar (max) = 'БЕЗЗУБЦЕВА Е. В.', 
-	@phone char(10) = '9167834248', 
-	@note varchar(max), 
-	@wait_minutes int = 60, 
-	@pickupShopid int = 18; 
---exec @r = web.reservation_create @shop=@shop, @user=@user, @phone=@phone, @info = @info, @note = @note output, @wait_minutes = @wait_minutes, @pickupShopid = @pickupShopid; 
---select @note note, @r orderid;
---insert web.delivery_parcels (logid, addressid, barcodeid)
-select i.logid, 1 addressid, i.barcodeid 
-	from web.deliveryLogs d
-	join @info i on i.logid=d.logid
+	@shop varchar(max) = '08 ФАНФАН', @r int, @user varchar (max) = 'ИВАНОВА Т. К.', @phone char(10) = '9167834248', 
+	@note varchar(max), @wait_minutes int = 120, @pickupShopid int = 0; 
+--exec @r = web.reservation_create @shop=@shop, @user=@user, @phone=@phone, @info = @info, @note = @note output, @wait_minutes = @wait_minutes, @pickupShopid = @pickupShopid; select @note note, @r orderid;
 
 select * from web.deliveryLogs
 select * from web.delivery_parcels
 select * from web.deliveryAddresses
+select web.order_paid_(77866)

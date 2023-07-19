@@ -9,7 +9,7 @@ as
 
 begin try
 	begin transaction;
-		declare @code char(5) = (select code from cmn.random_5)
+		declare @code char(6) = (select code from cmn.random_6)
 		declare 
 			@r int, 
 			@logid int,
@@ -75,6 +75,8 @@ begin try
 						insert web.promo_log (eventid, styleid, discount, custid, promocode) 
 						select @eventid, @styleid, @discount, @custid, @code;
 						select @logid = SCOPE_IDENTITY();
+						declare @count int = (select count(*) from web.promo_log where logid =@logid);
+
 
 						--from web.promo_styles_discounts w;
 						update pl set pl.used =  'True'
@@ -85,7 +87,6 @@ begin try
 							and pl.logid<@logid
 
 						select @note = 'дополнительно -' + format (@discount, '#,##0%' ) + ' по промокоду ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + '. ' + @prString  ;
-					
 			end
 		else select @note = 'сейчас на этот артикул промокода нет'
 --		throw 50001, @note, 1;
@@ -97,3 +98,7 @@ begin catch
 	rollback transaction
 end catch	
 go
+
+
+set nocount on;declare @phone char (10) ='9167834248', @styleId int = 19996, @note varchar(max); exec web.promo_p @phone, @styleId, @note output; select @note;
+select * from web.promo_log order by 1 desc
