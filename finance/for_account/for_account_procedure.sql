@@ -43,7 +43,7 @@ begin transaction
 			@bookkeeper varchar(25) = (select myData from @data where id = 2),
 			@person varchar(25) = (select myData from @data where id = 3), 
 			@currency char(3) = (select myData from @data where id =4),
-			@article varchar(150) = (select myData from @data where id = 5),
+			@article varchar(150) = (select myData from @data where id = 5),			
 			@contractor varchar(50) = (select myData from @data where id = 6), 
 			@document varchar(50) = (select myData from @data where id = 7), 
 			@comment varchar(150) = (select myData from @data where id = 8),
@@ -52,8 +52,13 @@ begin transaction
 		declare 
 			@personid int = (select personID from org.persons p where p.lfmname = @person),
 			@currencyid int = (select currencyID from cmn.currencies where currencycode= @currency),
-			@contractorid int = (select contractorID from org.contractors where contractor = @contractor);
-
+			@contractorid int = (select contractorID from org.contractors where contractor = @contractor),
+			@payeeid int = null;
+			if @article= 'ВЫПЛАТЫ ПЕРСОНАЛУ' 
+				begin
+					select @payeeid = personid from org.persons where lfmname =  @contractor;
+					select @contractorid= null
+				end;
 		with s(transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document) as (
 			select @date, CURRENT_TIMESTAMP, personID, 643, a.articleid, 269, @amount, @comment, @document 
 				from org.persons p 
@@ -75,7 +80,8 @@ begin transaction
 			@transid, s.is_credit, 
 			isnull(s.accountid, a.accountid), 
 			case s.is_credit
-				when 'True' then @personid end,
+				when 'True' then @personid 
+				else @payeeid end,
 			case s.is_credit
 				when 'False' then @contractorid end
 		from acc.articles a 			
@@ -98,6 +104,4 @@ declare @note varchar (max);
 declare @accountable varchar(max) = '20230310,ПИКУЛЕВА О. Н.,ФЕДОРОВ А. Н.,RUR,КУРЬЕР,НЕТ/КА,бд,за перевозку джинсов из 08,650';
 --select * from acc.transactions
 --exec acc.account_for_account_p @accountable,  @note output; select @note;
-declare @transid int = 2042; 
-select * from acc.transactions t order by 1 desc;
---exec acc.payment_delete_p  @note output, @transid;
+go

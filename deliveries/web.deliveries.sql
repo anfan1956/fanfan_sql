@@ -16,7 +16,8 @@ empid int not null foreign key references org.users (userid),
 divisionid int not null foreign key references org.divisions (divisionid),
 addressid int null foreign key references web.deliveryAddresses (addressid),
 custid int not null foreign key references cust.persons (personid),
-recipient varchar(100) null,
+recipient varchar(100) null, 
+recipient_phone char(10) null,
 orderid int null foreign key references inv.site_reservations (reservationid),
 delivered bit 
 )
@@ -30,7 +31,7 @@ primary key (logid,  barcodeid)
 select * from web.deliveryLogs 
 
 
-insert web.deliveryLogs(empid, divisionid, custid)
+--insert web.deliveryLogs(empid, divisionid, custid)
 select org.person_id('Федоров А. Н.'), org.division_id('08 ФАНФАН'), cust.customer_id('9167834248')
 select SCOPE_IDENTITY() ident
 
@@ -44,6 +45,7 @@ create proc web.delivery_register
 	@address_string varchar(max), 
 	@logid int, 
 	@fio varchar(100), 
+	@phone char(10), 
 	@note varchar(max) output
 as
 
@@ -65,7 +67,7 @@ begin try
 	from web.deliveryAddresses a 
 	where a.address_string=@address_string;
 
-	update l set l.addressid = @addresid, l.recipient = @fio
+	update l set l.addressid = @addresid, l.recipient = @fio, l.recipient_phone=@phone
 	from web.deliveryLogs l
 	where l.logid= @logid;
 
@@ -86,10 +88,12 @@ declare
 	@fio varchar(100) = 'Федоров Иван Александрович', 
 	@logid int =1;
 select @address = 'г Москва, Ленинский пр-кт, д 52, кв 44';
-exec web.delivery_register @address, @logid, @fio, @note output; select @note;
-	
+--exec web.delivery_register @address, @logid, @fio, @note output; select @note;
+go	
+set nocount on; declare @note varchar(max); exec web.delivery_register 'г Москва, Ленинский пр-кт, д 52, кв 431', '42', 'Федорова Ирина Владимировна', '9857278054', @note output; select @note;
 
 select * from web.deliveryAddresses
 select * from web.deliveryLogs
+
 
 

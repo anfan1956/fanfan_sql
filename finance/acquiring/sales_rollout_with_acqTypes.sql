@@ -28,11 +28,11 @@ create function acc.sales_rollout_f(@date date, @scope varchar(10), @number int)
 		select 
 			a.accountid, 
 			case  when a.account in ('выручка', 'товар') then 1
-				else 0 end, 
+				else 0 end, -- is_credit
 			case  when a.account in ('выручка', 'товар') then 1
-				else null end, 
+				else null end, -- daysshift
 			case  when a.account in ('выручка', 'деньги') then 1
-				else 0.4 end 
+				else 0.4 end --markupd
 		from acc.accounts a
 		where a.account in ('выручка', 'деньги', 'себестоимость', 'товар')
 		), 
@@ -156,5 +156,4 @@ select s.*
 	--, a.account 
 from acc.sales_rollout_f(@date, @scope, 1) s
 --join acc.accounts a on a.accountid= s.accountid
-
 
