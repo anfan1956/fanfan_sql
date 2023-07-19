@@ -74,14 +74,13 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 				f.personid, 
 				f.fixed_wage/2 fixed, 
 				isnull(h.share * @commission, 0) commission ,
-				isnull(f.hour_wage * h.wk_hours, 0) hourly, 
-				isnull(f.MW_hour* h.wk_hours, f.MW/2) min_wage, 
-				isnull(f.MW_hour* h.wk_hours, f.MW/2) * (hr.parameter_value_f('ставка НДФЛ', null)) PIT,
-				isnull(f.MW_hour* h.wk_hours, f.MW/2) * (hr.parameter_value_f('ЕСН', null)) SocTax
+				isnull(h.wk_hours, 0) * isnull(f.hour_wage, 0)  hourly, 
+				isnull( h.wk_hours, 0)* f.MW_hour  + MW/2 min_wage, 
+				(isnull( h.wk_hours, 0)* f.MW_hour  + MW/2) * (hr.parameter_value_f('ставка НДФЛ', null)) PIT,
+				(isnull( h.wk_hours, 0)* f.MW_hour  + MW/2) * (hr.parameter_value_f('ЕСН', null)) SocTax
 			from 
 			hr.compensation_latest_f()f
-				left join _hour_share h on h.personid=f.personid
-			)
+				left join _hour_share h on h.personid=f.personid			)
 			, _final as (
 			select 
 				s.personid, 

@@ -95,7 +95,7 @@ select
 	s.fixed_wage, 
 	s.hour_wage, 
 	s.positionname, 
-	s.has_MW * hr.parameter_value_f('минималка/мес', null) MW,
+	s.has_MW * hr.parameter_value_f('минималка/мес', null)* (1-isnull(sign(s.hour_wage), 0)) MW,
 	s.has_MW * hr.parameter_value_f('минималка/час', null) * isnull(sign(s.hour_wage), 0) MW_hour,
 	p.lfmname 
 from s 

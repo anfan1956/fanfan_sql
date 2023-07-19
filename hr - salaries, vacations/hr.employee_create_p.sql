@@ -83,10 +83,13 @@ begin try
 			select personid, positionid, date_start, has_MW from s;
 
 --	5. create user			
-			with s (userID, username, password, roleID)  as 
+			with _code(code) as (select code from cmn.random_5)
+			, s (userID, username, password, roleID)  as 
 				(
-					select p.personID,  p.lfmname,  '25456', 5
-					from org.persons p where p.personID=@personID
+					select p.personID,  p.lfmname,  cast(c.code as char(5)), 5
+					from org.persons p 
+						cross apply _code c
+					where p.personID=@personID
 				)
 			insert org.users (userID, username, password, roleID)
 			select userID, username, password, roleID from s;
@@ -103,6 +106,17 @@ begin try
 				)
 			insert org.contractors(contractor, inn)
 				select contractor, inn  from s;
+--8. insert beginnig entries
+		;
+		with _stype(salarytypeid) as (select 1 union select 2)
+		select  distinct
+			@datestart, t.salarytypeid, 0, p.clientid
+		from hr.schedule_21 s
+			join hr.positions_21 p on p.positionid=s.positionid
+			cross apply _stype t
+			where s.personid = @personID
+
+	
 
 
 		end;
@@ -119,15 +133,15 @@ go
 			
 
 set nocount on; declare 
-	@fname varchar( 25 )='Анастасия',
-	@mname varchar( 25 )='Александровна',
-	@lname varchar( 25 )='Третьякова',
-	@birthdate date='19781029',
+	@fname varchar( 25 )='Наталия',
+	@mname varchar( 25 )='Владимировна',
+	@lname varchar( 25 )='Лазарева',
+	@birthdate date='19750820',
 	@gender char( 3 )='жен',
-	@inn varchar( 25 )='773370082832',
-	@position varchar (25)='консультант/совм', 
-	@has_MW bit='false',
-	@datestart date='20230508',
+	@inn varchar( 25 )='01854903964',
+	@position varchar (25)='консультант', 
+	@has_MW bit='true',
+	@datestart date='20230708',
 	@note varchar( max );
 declare @companies dbo.var_type;
 insert @companies values ('Проект Ф'),( 'ИП Федоров')

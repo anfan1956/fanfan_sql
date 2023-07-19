@@ -16,6 +16,7 @@ create function hr.salaryTopBE_date_f (@date date) returns table as return
 	select 
 		s.personid,
 		cast(s.entrydate as datetime) entrydate, 
+
 		acc.article_id('ЗАРПЛАТА - НАЧ. ОСТАТКИ') articleid,
 		s.document, 
 		'начальные остатки' comment, 
@@ -62,8 +63,13 @@ from s
 )
 select 
 	--u. * ,
-	u.personid, u.сотрудник, дата, статья, комментарий, 
-	
+	u.personid, 
+	u.сотрудник, 
+	дата, 
+	datepart (YYYY, u.дата) год,
+	datepart (MM, u.дата) месяц,
+	статья, 
+	комментарий, 
 	trim(документ) документ, 
 	сумма, reg_id, банк, счет_банк
 from _united u
@@ -74,7 +80,7 @@ go
 declare @date date = '20221201';
 select * from rep.salaryReport_BEdate_f(@date) s
 --where s.personid =1
-select * from rep.payroll_report_v
+--select * from rep.payroll_report_v
 --select * from hr.salary_BegEntries s where employeeid = 1; select * from hr.salaryTopBE_date_f(@date) where personid = 1;
 
 --with s (personid, дата, документ, комментарий, num) as (
