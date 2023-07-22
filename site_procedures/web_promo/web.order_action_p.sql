@@ -174,7 +174,11 @@ begin try
 						@transactionid, 
 						-i.opersign, 
 						i.barcodeID 
-					from inv.inventory i where i.transactionID =@orderid				
+					from inv.inventory i where i.transactionID =@orderid			
+				--7. return the payment link to 'executed'
+					update l set l.stateid = web.paymentLinkState_id('executed')
+					from web.payment_links l where l.orderid = @orderid
+
 				
 				select @r =@transactionid
 			end		;

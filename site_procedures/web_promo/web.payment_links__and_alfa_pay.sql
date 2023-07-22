@@ -67,7 +67,7 @@ set nocount on;
 				end ;
 			--select @num;
 			insert  web.payment_links (orderid, sequenceid, bankid, duration, stateid) 
-			values (@orderid, @num, @bankid, @duration, web.pmtLinkState_id('active'))
+			values (@orderid, @num, @bankid, @duration, web.paymentLinkState_id('active'))
 			--select * from web.payment_links;
 			select @r = SCOPE_IDENTITY();
 
@@ -118,12 +118,12 @@ declare @r int, @string varchar(max) = '77376:1:037c6cd4-778d-7bb9-9953-d19300b3
 go
 set nocount on; declare @orderid int = 77359, @bankid int = org.contractor_id('АЛЬФА-БАНК'), @duration int = 10, @r int, @note  varchar (max); 
 --exec @r = web.link_generate @orderid = @orderid, @bankid = @bankid, @duration = @duration, @note = @note output; select @r, @note;
-select * from web.payment_links
+select l.*, s.linkState from web.payment_links l join web.payment_link_states s on s.stateid=l.stateid
 select * from web.link_suffix;
 go
 
-exec web.reservations_clear
-select * from web.promo_log where custid = 17448 and used = 0
+--exec web.reservations_clear
+select * from web.promo_log where custid = 17448 and used = 0 order by styleid
 
 
 
