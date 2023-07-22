@@ -43,7 +43,7 @@ create table inv.site_reservations (
 	pickupShopid int  null constraint fk_reservations_pickups foreign key references org.divisions (divisionid), 
 	saleid int null constraint fk_reservations_sales foreign key references inv.sales(saleid)
 )
-insert inv.site_reserve_states (reservation_state) values  ('active'), ('cancelled'), ('executed')
+insert inv.site_reserve_states (reservation_state) values  ('active'), ('cancelled'), ('executed'), ('expired') 
 
 select * from inv.site_reserve_states; select * from inv.site_reservations
 

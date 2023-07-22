@@ -27,7 +27,7 @@ begin try
 begin transaction;
 	if @cancel ='TRUE'
 		begin
-			update r set r.reservation_stateid = inv.reserve_state_id ('cancelled')
+			update r set r.reservation_stateid = inv.reserve_state_id ('expired')
 			from inv.site_reservations r
 			where r.reservationid = @reservationid;
 
