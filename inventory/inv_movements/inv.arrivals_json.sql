@@ -16,8 +16,10 @@ create function inv.arrivals_json(@months as int = 3, @sortfield as varchar(25) 
 
 
 			with s as (
-				select iif(gender = '', 'УНИ', gender) gender, brand, category, article, styleid, photo_filename, receipt_date, price, discount
-				from inv.styles_catalog_v where receipt_date >= DATEADD(mm, -@n, CURRENT_TIMESTAMP)
+				select iif(gender = '', 'УНИ', gender) gender, brand, category, article, c.styleid, photo_filename, receipt_date, price, discount, isnull(promo_discount, 0) promo_discount
+				from inv.styles_catalog_v c
+					left join web.styles_discounts_active_ a on a.styleid=c.styleid
+				where receipt_date >= DATEADD(mm, -@n, CURRENT_TIMESTAMP)
 			)
 			select @arrivals = 
 				(select 
@@ -28,6 +30,7 @@ create function inv.arrivals_json(@months as int = 3, @sortfield as varchar(25) 
 					s.category категория, 
 					format(s.price, '#,##0.00 руб.') цена , 
 					s.discount скидка, 
+					s.promo_discount промо_скидка, 
 					s.photo_filename фото
 
 				from s order by 
@@ -49,3 +52,12 @@ go
 
 select inv.arrivals_json(default, default, default)
 
+
+if OBJECT_ID('web.styles_discounts_active_') is not null drop view web.styles_discounts_active_
+go 
+create view web.styles_discounts_active_ as 
+select p.styleid, p.discount promo_discount
+from web.promo_styles_discounts p
+	join web.promo_events e on e.eventid=p.eventid
+where e.datefinish>=cast (getdate() as date)
+go

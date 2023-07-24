@@ -42,7 +42,7 @@ begin try
 					--from inv.styles s
 					--	join inv.brands b on b.brandID=s.brandID
 					--where s.styleID = @styleid
-					concat(b.brand, ' модель ' + cast(@styleid as varchar(max)), '. телефон магазина: 84959027130 ') 
+					concat(b.brand, ', модель ' + cast(@styleid as varchar(max)), '. телефон: 495-902-7130 ') 
 					from inv.styles s
 						join inv.brands b on b.brandID=s.brandID
 					where s.styleID = @styleid
@@ -86,7 +86,7 @@ begin try
 							and pl.styleid= @styleid
 							and pl.logid<@logid
 
-						select @note = 'дополнительно -' + format (@discount, '#,##0%' ) + ' по промокоду ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + '. ' + @prString  ;
+						select @note = 'Дополнительно -' + format (@discount, '#,##0%' ) + ' по промокоду ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + '. ' + @prString  ;
 			end
 		else select @note = 'сейчас на этот артикул промокода нет'
 --		throw 50001, @note, 1;
