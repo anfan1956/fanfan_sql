@@ -42,7 +42,7 @@ begin try
 					--from inv.styles s
 					--	join inv.brands b on b.brandID=s.brandID
 					--where s.styleID = @styleid
-					concat(b.brand, ' модель ' + cast(@styleid as varchar(max)), ', телефон магазина: 84959027130 ') 
+					concat(b.brand, ' модель ' + cast(@styleid as varchar(max)), '. телефон магазина: 84959027130 ') 
 					from inv.styles s
 						join inv.brands b on b.brandID=s.brandID
 					where s.styleID = @styleid
