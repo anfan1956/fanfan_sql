@@ -109,8 +109,9 @@ begin try
 --8. insert beginnig entries
 		;
 		with _stype(salarytypeid) as (select 1 union select 2)
+		insert hr.salary_BegEntries (employeeid, entrydate, salarytypeid, amount, clientid)
 		select  distinct
-			@datestart, t.salarytypeid, 0, p.clientid
+			@personID, @datestart, t.salarytypeid, 0, p.clientid
 		from hr.schedule_21 s
 			join hr.positions_21 p on p.positionid=s.positionid
 			cross apply _stype t
@@ -162,3 +163,4 @@ insert @companies values ('Проект Ф'),( 'ИП Федоров')
 
 
 select * from org.users order by 1 desc
+select * from hr.salary_BegEntries where employeeid = 1074
