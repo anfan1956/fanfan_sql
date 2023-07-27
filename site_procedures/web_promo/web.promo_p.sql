@@ -42,7 +42,7 @@ begin try
 					--from inv.styles s
 					--	join inv.brands b on b.brandID=s.brandID
 					--where s.styleID = @styleid
-					concat(b.brand, ', модель ' + cast(@styleid as varchar(max)), '. телефон: 495-902-7130 ') 
+					concat(b.brand, ', модель ' + cast(@styleid as varchar(max)), '. Купить - позвоните по телефону 495-902-7130 ') 
 					from inv.styles s
 						join inv.brands b on b.brandID=s.brandID
 					where s.styleID = @styleid
@@ -85,8 +85,10 @@ begin try
 							and pl.eventid=@eventid 
 							and pl.styleid= @styleid
 							and pl.logid<@logid
+						declare @disc money = (select distinct discount from inv.style_photos_f(@styleid));
 
-						select @note = 'Дополнительно -' + format (@discount, '#,##0%' ) + ' по промокоду ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + '. ' + @prString  ;
+						select @note = '-' + format (@discount, '#,##0%' ) + ' по промокоду ' + @code + ' до '  + FORMAT(@datefinish, 'dd.MM.yy') + '. ' + @prString  ;
+						if @disc>0 select @note = 'Дополнительно ' + @note ;			
 			end
 		else select @note = 'сейчас на этот артикул промокода нет'
 --		throw 50001, @note, 1;
@@ -98,7 +100,9 @@ begin catch
 	rollback transaction
 end catch	
 go
+--declare @styleid int = 19363
+declare @styleid int = 19629
 
 
-set nocount on;declare @phone char (10) ='9167834248', @styleId int = 19996, @note varchar(max); exec web.promo_p @phone, @styleId, @note output; select @note;
-select * from web.promo_log order by 1 desc
+set nocount on;declare @phone char (10) ='9167834248', @note varchar(max); exec web.promo_p @phone, @styleId, @note output; select @note;
+	
