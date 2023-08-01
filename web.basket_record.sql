@@ -93,7 +93,7 @@ go
 
 declare @note varchar(max);
 
-DECLARE @json_data NVARCHAR(MAX)
+DECLARE @json_data VARCHAR(MAX)
 SET @json_data = '{
 	"color": "BLUE NAVY", 
 	"size": "XXXL", 
@@ -103,10 +103,9 @@ SET @json_data = '{
 	"price":"29352", 
 	"discount": 0.25
 	}'
-
-exec web.basket_record 
-	@json_data,
-	@note output; select @note;
+go
+set nocount on; declare @note varchar(max); 
+exec web.basket_record '{"color":" 778 LUNAR ROCK","size":"XXL","styleid":"19585","price":"76500","discount":"0.0","phone":"9167834248","qty":1,"promoDiscount":"0.3"}', @note output; select @note;
 
 select * from web.basket;
 select * from web.basketLogs
