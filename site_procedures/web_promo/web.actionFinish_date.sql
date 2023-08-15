@@ -8,7 +8,7 @@ begin
 		where	
 			cast(getdate() as date) between e.datestart and e.datefinish 
 			and eventClosed = 'False'
-	return isnull(@date_string, 'уже прошел')
+	return isnull(@date_string, 'Сейчас нет промо-акций')
 end
 go
 

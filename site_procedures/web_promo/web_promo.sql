@@ -27,7 +27,7 @@ create table web.promo_log (
 	logid int not null identity primary key, 
 	eventid int not null foreign key references web.promo_events(eventid),
 	styleid int constraint fk_promo_log_styles foreign key references inv.styles (styleid), 
-	discount dec(4, 3) not null,
+	discount dec(4, 3) null,
 	custid int not null foreign key references cust.persons (personid),
 	promocode char(6) not null, 
 	used bit default('False'),
