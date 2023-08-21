@@ -21,7 +21,6 @@ _discounts (styleid, discount, num) as (
 		ROW_NUMBER()  over (partition by p.parent_styleid order by p.photo_filename)
 	from inv.styles_photos p 
 )
-
 , _avail_styles as (
 	select  distinct s.styleID, i.logstateID
 	from inv.inventory i
@@ -68,3 +67,5 @@ select * from inv.styles_catalog_v
 where styleid= 20294
 
 select gender, styleid, price, discount, promo, article, category, brand, color, photo, composition from inv.style_photos_f(20294) ORDER BY photo asc
+
+select * from inv.styles_catalog_v where styleid= 18918
