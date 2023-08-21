@@ -14,14 +14,6 @@ create function inv.barcode_sortid_ (@styleid int, @color varchar(max), @size va
 	end
 go
 
-declare 
-
-	@styleid int = 19998, 
-	@color varchar(max) = 'BLU BLACK  08346',
-	@size varchar(max)='XXL'
-
-select inv.barcode_sortid_(@styleid, @color, @size)
-
 if OBJECT_ID('inv.bc_sortid_qtys') is not null drop function inv.bc_sortid_qtys
 go
 create function inv.bc_sortid_qtys (@bc_sortid int) returns table as 
@@ -35,5 +27,13 @@ where
 	g.sort_barcodeID= @bc_sortid and r.logstateID= inv.logstate_id('IN-WAREHOUSE')
 go
 
+
+declare 
+	@styleid int = 19998, 
+	@color varchar(max) = 'BLU BLACK  08346',
+	@size varchar(max)='XXL'
 declare @bc_sortid int = 344792;
+
+
+select inv.barcode_sortid_(@styleid, @color, @size)
 select * from inv.bc_sortid_qtys (@bc_sortid)
