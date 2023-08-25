@@ -63,17 +63,6 @@ end catch
 	
 go
 
-declare 
-	@address varchar(max), 
-	@note varchar (max), 
-	@fio varchar(100) = 'Федоров Иван Александрович', 
-	@logid int = 1;
-select @address = 'г Москва, Ленинский пр-кт, д 52, кв 44';
---exec web.delivery_register @address, @logid, @fio, @note output; select @note;
-go	
---set nocount on; declare @note varchar(max); exec web.delivery_register 'г Москва, Ленинский пр-кт, д 52, кв 431', '2', 'Федорова Ирина Владимировна', '', @note output; select @note;
-
-select * from web.deliveryAddresses
 if OBJECT_ID('web.ticket_address_') is not null drop function web.ticket_address_
 go
 create function web.ticket_address_(@ticketid int ) returns varchar (max) as 
@@ -88,6 +77,19 @@ create function web.ticket_address_(@ticketid int ) returns varchar (max) as
 		return @add_string
 	end
 go
+
+
+declare 
+	@address varchar(max), 
+	@note varchar (max), 
+	@fio varchar(100) = 'Федоров Иван Александрович', 
+	@logid int = 1;
+select @address = 'г Москва, Ленинский пр-кт, д 52, кв 44';
+--exec web.delivery_register @address, @logid, @fio, @note output; select @note;
+go	
+--set nocount on; declare @note varchar(max); exec web.delivery_register 'г Москва, Ленинский пр-кт, д 52, кв 431', '2', 'Федорова Ирина Владимировна', '', @note output; select @note;
+
+select * from web.deliveryAddresses
 select web.ticket_address_('11')
 
 
