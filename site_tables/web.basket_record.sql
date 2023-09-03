@@ -89,34 +89,7 @@ begin catch
 end catch
 go
 
-if OBJECT_ID('inv.parentID_in_basket_JSON') is not null drop function inv.parentID_in_basket_JSON
-go 
-create function  inv.parentID_in_basket_JSON(@js_string varchar(max)) returns int as 
 
-begin
-	declare @q int;
-	with s (parent_styleid, color, size, phone) as (
-		select styleid, color, size, phone
-		from OPENJSON (@js_string)
-		with (
-				color VARCHAR(50) '$.color', 
-				size varchar(50) '$.size', 
-				phone char(10) '$.phone', 
-				styleid VARCHAR(50) '$.styleid'
-				) as jsonValues
-			)
-	select @q = isnull(sum(qty), 0)  
-	from s 
-		join web.basket b on b.custid=cust.customer_id(s.phone)
-		join web.basketLogs l on l.logid=b.logid
-		where 
-			l.parent_styleid=s.parent_styleid
-			and l.color = s.color
-			and l.size= s.size
-		;
-	return @q
-end
-go
 
 
 declare @myStr varchar(max) = 
@@ -131,7 +104,7 @@ if @@TRANCOUNT>0 rollback transaction;
 --select sum(qty) from web.customer_basket_('9167834248')
 
 
---select inv.parentID_in_basket_JSON('{"color":"WHITE","size":"3","styleid":"13530","price":"19125","discount":"0.0","phone":"9167834248","qty":"1","promoDiscount":"0.0","uuid":"6a048147-3384-4a23-8185-7702c610860d"}')
+select inv.parentID_in_basket_JSON('{"color":"WHITE","size":"3","styleid":"13530","price":"19125","discount":"0.0","phone":"9167834248","qty":"1","promoDiscount":"0.0","uuid":"6a048147-3384-4a23-8185-7702c610860d"}')
 
 
 --declare 

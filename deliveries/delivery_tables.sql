@@ -4,7 +4,8 @@ if OBJECT_ID('web.receiver_phones') is not null drop table web.receiver_phones
 go 
 create table web.receiver_phones (
 	phoneid int not null identity primary key,
-	phone char(10) not null
+	phone char(10) not null, 
+	fio varchar(50) null
 )
 
 
@@ -19,14 +20,17 @@ create table web.customer_spots (
 
 
 create table web.delivery_logs (
-	parcelid int not null identity primary key, 
-	orderid int not null foreign key references inv.transactions(transactionid), 
-	barcodeid int not null foreign key references inv.barcodes(barcodeid), 
-	addressid int not null foreign key references cust.persons(personid), 
+	logid int not null identity primary key, 
+	orderid int not null foreign key references inv.transactions(transactionid), 	
+	spotid int  null foreign key references web.customer_spots(spotid),
+	pickupDivId int null foreign key references org.divisions (divisionid),
 	code varchar(6) null, 
 	dateDeliverd datetime null, 
-	unique (orderid, barcodeid, addressid)
+	unique (orderid, spotid)
 )
 
 go 
 select * from inv.site_reservations
+select * from web.delivery_logs
+
+select * from web.customer_spots

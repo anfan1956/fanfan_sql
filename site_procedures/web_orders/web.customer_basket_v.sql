@@ -13,8 +13,8 @@ with s (logid, parentid, brand, category, color, size, price, discount, promoDis
 		isnull(a.promo_discount, 0)		promoDiscount, 
 		bl.qty, 
 		b.custid
-	from web.basketLogs bl
-		join web.basket b on b.logid=bl.logid
+	from web.baskets bl
+		join web.logs b on b.logid=bl.logid
 		join inv.styles s on s.parent_styleid= bl.parent_styleid
 		join inv.brands br on br.brandID=s.brandID
 		join inv.inventorytypes t on t.inventorytypeID=s.inventorytypeID

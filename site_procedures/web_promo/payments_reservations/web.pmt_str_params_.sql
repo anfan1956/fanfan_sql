@@ -14,7 +14,7 @@ create function web.pmt_str_params_(@orderid int, @timeOutSec int, @segid int) r
 begin
 	declare 
 		@str varchar(max), 
-		@phone char(10)= (select  cust.prime_phone_f(v.id_клиента) from web.active_orders_v v where v.id_заказа=@orderid);		
+		@phone char(10)= (select distinct cust.prime_phone_f(v.id_клиента) from web.active_orders_v v where v.id_заказа=@orderid);		
 		with s as (
 		select distinct 
 			CONCAT_WS('-', @orderid,  @segid) orderNumber, 
