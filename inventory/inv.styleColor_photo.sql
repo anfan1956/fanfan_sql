@@ -12,7 +12,7 @@ begin
 		where parent_styleid = @parent_stlyleid 
 		and cmn.norm_(c.color)= cmn.norm_(@color)
 		order by photo_filename 
-	return @photo
+	return isnull(@photo, 'None')
 end
 go
 
