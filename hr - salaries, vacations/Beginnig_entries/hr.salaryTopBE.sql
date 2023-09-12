@@ -25,7 +25,8 @@ create function hr.salaryTopBE_date_f (@date date) returns table as return
 		null registerid
 	from s where num =1 
 go
-
+declare @date date = cast (getdate() as date)
+select * from hr.salaryTopBE_date_f(@date) where personid = 1075
 
 if OBJECT_ID('rep.salaryReport_BEdate_f') is not null drop function rep.salaryReport_BEdate_f
 go
@@ -62,6 +63,7 @@ from s
 	left join org.contractors c on c.contractorID= r.bankid
 )
 select 
+	distinct
 	--u. * ,
 	u.personid, 
 	u.сотрудник, 
@@ -77,9 +79,9 @@ where u.personid not in  (org.person_id('РОМАХИН М. Е.'), org.person_id
 go
 
 
-declare @date date = '20221201';
+declare @date date = '20231201';
 select * from rep.salaryReport_BEdate_f(@date) s
---where s.personid =1
+where s.personid =1075
 --select * from rep.payroll_report_v
 --select * from hr.salary_BegEntries s where employeeid = 1; select * from hr.salaryTopBE_date_f(@date) where personid = 1;
 
