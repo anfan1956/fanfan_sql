@@ -8,6 +8,7 @@ create proc web.promoAllStyles_p
 as
 	set nocount on;
 
+--hardcoded the site link
 begin try
 	begin transaction;
 		declare @code char(6) = (select code from cmn.random_6)
@@ -37,7 +38,7 @@ begin try
 					where p.eventid= @eventid;
 
 				select @prString = 
-					 'http://fanfan.store:8082/promo телефон: 8-495-902-7130' 
+					 'http://fanfan.store/promo телефон: 8-495-902-7130' 
 					from inv.styles s
 						join inv.brands b on b.brandID=s.brandID
 
