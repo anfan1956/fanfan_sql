@@ -2,13 +2,14 @@
 go
 create table cust.notify_prefs
 (
+	prefid int not null identity primary key, 
 	custid int not null foreign key references cust.persons (personid), 
 	decisionDate datetime not null default (current_timestamp), 
 	receipts bit not null, 
 	collections bit not null,
 	sales bit not null, 
 	promos bit not null, 
-	primary key (custid, decisionDate)
+	unique (custid, decisionDate)
 )
 
 
@@ -31,8 +32,28 @@ insert cust.notify_prefs (custid, receipts, collections, sales, promos)
 select cust.customer_id(phone), receipts, collections, sales, promos
 from s;
 select @@ROWCOUNT;
-
 go
+
+if OBJECT_ID('cust.customer_prefs') is not null drop function cust.customer_prefs
+go
+create function cust.customer_prefs (@phone char(10)) returns varchar(max) as
+begin
+	declare @prefs varchar(max);
+	select @prefs = (
+		select 	top 1 receipts, collections, sales, promos from cust.notify_prefs n
+		where n.custid = cust.customer_id(@phone)
+		order by n.prefid desc for json path
+	)
+	if @prefs is null select @prefs = (select 'no prefs' prefs for json path);
+
+	return @prefs
+end 
+go
+
+declare @phone char(10) = '9637633465'
+select cust.customer_prefs (@phone)
+
+
 
 --select * from cust.persons p where p.personID = 17448
 declare @json varchar(max) =
