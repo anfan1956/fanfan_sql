@@ -105,18 +105,22 @@ go
 if OBJECT_ID('web.delivery_addr_js_') is not null drop function web.delivery_addr_js_
 go 
 create function web.delivery_addr_js_(@phone char(10)) returns varchar(max) as 
-	begin
-		declare @adr varchar(max)
-		select @adr = (
-
-		select s.spotid,  da.address_string
-		from web.customer_spots s
-			join web.deliveryAddresses da on da.addressid = s.addressid
-			where s.custid   =  --17448
-				cust.customer_id(@phone)
-			for json path
-		)
-		if @adr is null select @adr = (select 'адреса не зарегистрированы' error for json path)
+	begin;
+		declare @adr varchar(max);
+;with s as (
+select 
+	s.spotid ,a.address_string, ROW_NUMBER() over(partition by a.address_string order by spotid desc) n
+from web.customer_spots s
+	join web.deliveryAddresses a on a.addressid=s.addressid
+where s.custid= cust.customer_id(@phone)
+)
+select @adr = (select * from  (
+select spotid, s.address_string
+from s 
+where n =1
+union 
+select 0, 'добавить адрес'
+) as js order by 1 desc for json path);
 		return @adr
 	end
 go
@@ -132,14 +136,25 @@ select @json =
 --exec web.address_register_json @json; 
 
 declare @phone char(10) = '9167834248'
---select web.delivery_addr_js_(@phone)
+select web.delivery_addr_js_(@phone)
 
 --select * from web.deliveryAddresses ;select * from web.receiver_phones
-
+;with s as (
 select 
-	s.spotid, a.address_string, p.phone, p.fio
+	s.spotid ,a.address_string, ROW_NUMBER() over(partition by a.address_string order by spotid desc) n
 from web.customer_spots s
 	join web.deliveryAddresses a on a.addressid=s.addressid
-	join web.receiver_phones p on p.phoneid=s.receiver_phoneid
 where s.custid= cust.customer_id(@phone)
+)
+select 0 spotid, 'добавить адрес' address_string
+union 
+select spotid, s.address_string
+from s 
+where n =1
+order by 1 desc
+for json path
 
+
+
+
+select * from web.deliveryAddresses

@@ -50,12 +50,12 @@ GO
 			@expiration datetime = dateadd(MINUTE, @wait_minutes, @date) ;
 			if @pickupShopid = 0 select @pickupShopid = null;
 
-
+			--create new transaction - ON-SITE-RESERVATION
 			insert inv.transactions (transactiondate, transactiontypeID, userID)
 			values (@date, inv.transactiontype_id('ON_SITE RESERVATION'), @userid);
 			select @reservationid =SCOPE_IDENTITY();
 
-
+			--create new reservation with the just created transaction number - @reservationid
 			insert inv.site_reservation_set(reservationid, barcodeid, price, barcode_discount, promo_discount, amount  )
 			select @reservationid, i.barcodeid, i.price, i.discount, i.promo_discount, i.to_pay
 			from @info i
@@ -85,10 +85,12 @@ GO
 					from @info i 
 						join web.deliveryLogs l on l.logid= i.logid
 
-					if (select logid from @info) is not null
+					--no delivery parcel is going to be created if logid is null or 0
+					--the null is for standard and 0 for one click procs
+					if (select logid from @info)is not null and (select logid from @info) not in (0)
 					insert web.delivery_parcels (logid, barcodeid)
-					select i.logid, barcodeid
-					from @info i
+
+					select i.logid, barcodeid  from @info i
 
 
 --						select  @transactionid;
@@ -127,7 +129,8 @@ declare
 	@note varchar(max), @wait_minutes int = 120, @pickupShopid int = 0; 
 --exec @r = web.reservation_create @shop=@shop, @user=@user, @phone=@phone, @info = @info, @note = @note output, @wait_minutes = @wait_minutes, @pickupShopid = @pickupShopid; select @note note, @r orderid;
 
-select * from web.deliveryLogs
-select * from web.delivery_parcels
-select * from web.deliveryAddresses
-select web.order_paid_(77866)
+select * from web.deliveryLogs order by 1 desc
+select * from web.delivery_logs
+--select * from web.delivery_parcels
+--select * from web.deliveryAddresses
+--select web.order_paid_(77866)

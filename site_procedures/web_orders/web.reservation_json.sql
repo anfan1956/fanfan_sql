@@ -31,6 +31,7 @@ begin try
 			@divisionid int = org.division_id('fanfan.store'), 
 			@pickupid int,
 			@custid int, 
+			@procName varchar(max),
 			@date datetime = CURRENT_TIMESTAMP;
 		declare @expiration datetime = dateadd(MINUTE, @wait_minutes, @date);
 		declare @data table (
@@ -71,16 +72,18 @@ begin try
 		from inv;					
 		
 		select distinct @pickupid = pickupid from @data d;				
+		select distinct @procName = procName from @data d;				
 		select distinct @spotid = spotid from @data d;				
 		if @pickupid = 0 select @pickupid = null;
 		if @spotid = 0 select @spotid = null;
-		select distinct @phone = phone from @data d;				
+		select distinct @phone = phone from @data d;		
+		
 		select @userid = org.user_id('INTERBOT')	
 		select @custid = cust.customer_id(@phone);
 
 
 		insert inv.transactions (transactiondate, transactiontypeID, userID)
-		values (@date, inv.transactiontype_id('ON_SITE RESERVATION'), @userid);
+		values (@date, inv.transactiontype_id(@procName), @userid);
 		select @reservationid =SCOPE_IDENTITY();
 --		select @reservationid;
 
@@ -183,14 +186,23 @@ end catch
 go
 declare @json varchar(max);
 select @json=
-'[{"phone": "9167834248", "Session": "00f8ec9f-38c1-4ae1-9b8c-8909984e6bd5", "spotid": "0", "procName": "ON_SITE RESERVATION"}, 
-	{"styleid": "13530", "color": "AMBER", "size": "2", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "1"}, 
-	{"styleid": "13530", "color": "WHITE", "size": "3", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "2"}
+--'[{"phone": "9167834248", "Session": "00f8ec9f-38c1-4ae1-9b8c-8909984e6bd5", "spotid": "0", "procName": "ON_SITE RESERVATION"}, 
+--	{"styleid": "13530", "color": "AMBER", "size": "2", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "1"}, 
+--	{"styleid": "13530", "color": "WHITE", "size": "3", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "2"}
+--]'
+'[
+	{"phone": "9637633465", "Session": "00a9f275-fd1e-4b65-a861-10842faca605", "spotid": 0, "pickupid": "27", "orderTotal": 35904, "procName": "ONE_CLICK"}, 
+	{"styleid": 16752, "color": "UMBO", "size": "27", "price": 40800, "discount": 0, "promo": 0.12, "qty": "1", "total": 35904}
 ]'
-
 
 
 --exec web.reservation_json @json
 
 
 
+select * from web.delivery_logs
+select top 6 t.*, tt.transactiontype 
+	from inv.transactions t 
+	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+order by 1 desc
+--select web.pmt_str_params_('False', 78987, 900, next value for web.ordersSequence)

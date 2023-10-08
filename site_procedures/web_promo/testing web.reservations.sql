@@ -7,14 +7,14 @@
 --select STRING_AGG(cast(reservationid as varchar(max)), ',') from inv.site_reservations r
 --where r.reservation_stateid = inv.reservation_state_id('active')
 
---select t.*,  tt.transactiontype
---from inv.transactions t		
---	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
---where 
---	t.transactiontypeID in (32, 33, 34) and
---	t.transactionID>=78000 order by 1 desc;
+select t.*,  tt.transactiontype
+from inv.transactions t		
+	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+where 
+	t.transactiontypeID in (32, 33, 34) and
+	t.transactionID>=78000 order by 1 desc;
 
-exec web.reservations_clear
+--exec web.reservations_clear
 
 --select * 
 --from inv.sales s
@@ -24,3 +24,4 @@ exec web.reservations_clear
 --select * from web.active_orders_v
 --select * from web.promo_log where custid= 17448 and used = 'False'
 ----exec inv.transaction_delete @transid
+
