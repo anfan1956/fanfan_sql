@@ -29,7 +29,7 @@ begin try
 		, t (procName, phone, uuid) as (
 			select procName, phone, uuid
 			from s
-			where phone is not null
+			where phone is not null or uuid is not null
 		)
 		, f (styleid, color, size, qty, procName, phone, uuid) as (
 			select 
@@ -38,7 +38,8 @@ begin try
 				cross apply t 
 			where styleid is not null
 			)
-		insert @inv  select styleid, color, size, qty, procName, phone, uuid from f;		
+		insert @inv  
+		select styleid, color, size, qty, procName, phone, uuid from f;		
 
 		select distinct @proc =  procName from @inv;
 
@@ -149,21 +150,5 @@ go
 
 declare @json varchar(max);
 select @json = 
-
-'[
-	{"phone": "9167834248", "uuid": "7319f8f5-124c-42da-b4c1-b52fa9cd8607", "procName": "insert"}, 
-	{"styleid": 13530, "color": "PLATOON", "size": "2", "qty": "1"}
-]'
-
---exec web.basketAction_2 @json;
-declare @total int, @phone char(10) = '9167834248'
-			select @total =  sum(b.qty)
-				from web.baskets b
-					join web.logs l on l.logid=b.logid
-					where custid = cust.customer_id(@phone)
-					--join @inv i  on (l.custid= cust.customer_id(i.phone) or l.uuid=i.uuid)
-				select @total = isnull(@total, 0);
-				select @total
-
-select * from web.baskets where logid=251
-select web.basketContent_(@phone)
+'[{"uuid": "103ef4dc-5ef4-4c0d-ac16-c832ca67c081", "procName": "insert"}, {"styleid": 19363, "color": "72547", "size": "44", "qty": "1"}]';
+--exec web.basketAction_2 @json

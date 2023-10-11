@@ -1,7 +1,7 @@
 ﻿if OBJECT_ID('web.customer_basket_v') is not null drop view web.customer_basket_v
 go 
 create view web.customer_basket_v  as 
-with s (logid, parentid, brand, category, color, size, price, discount, promoDiscount,  qty, custid) as (
+with s (logid, parentid, brand, category, color, size, price, discount, promoDiscount,  qty, custid, uuid) as (
 	select 
 		bl.logid, 
 		bl.parent_styleid,
@@ -12,7 +12,8 @@ with s (logid, parentid, brand, category, color, size, price, discount, promoDis
 		c.discount, 
 		isnull(a.promo_discount, 0)		promoDiscount, 
 		bl.qty, 
-		b.custid
+		b.custid, 
+		b.uuid
 	from web.baskets bl
 		join web.logs b on b.logid=bl.logid
 		join inv.styles s on s.parent_styleid= bl.parent_styleid
@@ -25,16 +26,16 @@ with s (logid, parentid, brand, category, color, size, price, discount, promoDis
 	group by 
 		bl.logid, bl.parent_styleid, br.brand, t.inventorytyperus, 
 		cmn.norm_( bl.color), bl.size, bl.qty, 
-		b.custid, 
+		b.custid, b.uuid, 
 		c.price,c.discount, 
 		promo_discount 
 	)	select 
 		brand, parentid, category, s.color, size, price, discount, promoDiscount
-		, custid	
+		, custid, uuid	
 		, sum (qty) qty, sum(qty * price * (1-discount) * (1-promoDiscount)) total
 	from s
 	group by 
-		brand, parentid, category, color, size, custid, price, discount, promoDiscount
+		brand, parentid, category, color, size, custid, uuid, price, discount, promoDiscount
 	having sum (qty)<>0
 go 
 
