@@ -19,7 +19,7 @@ begin try
 			@discount dec(4,3),
 			@datefinish date,
 			@prString as varchar(max), 
-			@salesperson varchar(25) = 'INTERBOT', 
+			@salesperson varchar(25) = 'INTERBOT F. ', 
 			@shop varchar(25)= 'FANFAN.STORE';
 
 
@@ -87,9 +87,10 @@ begin catch
 end catch	
 go
 
-declare @note varchar(max), @phone char (10) = '9167834248';
+declare @note varchar(max), @phone char (10) = '9818933422', 
+	@salesperson varchar(25) = 'INTERBOT F. ' 
 
+exec web.promoAllStyles_p @phone, @note output; select @note
 
---exec web.promoAllStyles_p 9167834248, @note output; select @note
-
-select * from web.promo_log order by 1 desc
+--select * from web.promo_log order by 1 desc
+select cust.customer_id(@phone)
