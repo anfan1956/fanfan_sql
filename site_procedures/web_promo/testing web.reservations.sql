@@ -11,7 +11,7 @@ select t.*,  tt.transactiontype
 from inv.transactions t		
 	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
 where 
-	t.transactiontypeID in (32, 33, 34) and
+	t.transactiontypeID in (32, 33, 34, 39) and
 	t.transactionID>=78000 order by 1 desc;
 
 --exec web.reservations_clear

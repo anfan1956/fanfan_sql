@@ -186,23 +186,12 @@ end catch
 go
 declare @json varchar(max);
 select @json=
---'[{"phone": "9167834248", "Session": "00f8ec9f-38c1-4ae1-9b8c-8909984e6bd5", "spotid": "0", "procName": "ON_SITE RESERVATION"}, 
---	{"styleid": "13530", "color": "AMBER", "size": "2", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "1"}, 
---	{"styleid": "13530", "color": "WHITE", "size": "3", "price": "19125", "discount": "0.0", "promo": "0.0", "qty": "2"}
---]'
+
 '[
-	{"phone": "9637633465", "Session": "00a9f275-fd1e-4b65-a861-10842faca605", "spotid": 0, "pickupid": "27", "orderTotal": 35904, "procName": "ONE_CLICK"}, 
-	{"styleid": 16752, "color": "UMBO", "size": "27", "price": 40800, "discount": 0, "promo": 0.12, "qty": "1", "total": 35904}
+	{"spotid": "3", "phone": "9167834248", "orderTotal": 5746, "Session": "5e2d32f0-413b-4d1b-8cf9-ac873b64a40f", "procName": "ONE_CLICK", "pmtSys": "alfabank"}, 
+	{"styleid": 18918, "color": "57411 MARRONE", "size": "XXL", "price": 6384, "discount": 0, "promo": 0.1, "qty": "1", "total": 5746}
 ]'
 
 
 --exec web.reservation_json @json
 
-
-
-select * from web.delivery_logs
-select top 6 t.*, tt.transactiontype 
-	from inv.transactions t 
-	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
-order by 1 desc
---select web.pmt_str_params_('False', 78987, 900, next value for web.ordersSequence)

@@ -11,7 +11,8 @@ begin
 			CONCAT_WS(' # ', 'order',  @orderID) description, 
 			case @full 
 				when 'alfabank' then 100 
-				when 'tinkoff' then 150 
+				when 'tinkoff' then 101 
+				when 'yandex' then 102
 				when 'complete' then
 					cast(ROUND( sum (amount), 0) * 100 as int) end amount, 					
 			@timeOutSec timeOutSec,
