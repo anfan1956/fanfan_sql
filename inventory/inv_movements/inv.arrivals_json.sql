@@ -28,6 +28,7 @@ create function inv.arrivals_json(@months as int = 3, @sortfield as varchar(25) 
 					s.styleid модель, 
 					s.article артикул,
 					s.category категория, 
+					s.gender пол,
 					format(s.price, '#,##0.00 руб.') цена , 
 					s.discount скидка, 
 					s.promo_discount промо_скидка, 
