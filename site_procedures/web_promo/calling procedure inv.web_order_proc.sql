@@ -3,10 +3,11 @@ go
 create function web.promoGoods_js () returns varchar(max) as 
 	begin
 		declare @goods varchar(max);
-		with s (бренд, категория, модель, промо, скидка, цена, артикул, num, фото) as (
+		with s (бренд, категория, модель, пол, промо, скидка, цена, артикул, num, фото) as (
 		select 
 			sc.brand, sc.category,
-			sd.styleid, sd.discount, p.discount, w.price, 
+			sd.styleid, sc.gender, 
+			sd.discount, p.discount, w.price, 
 			sc.article, 
 			ROW_NUMBER() over(partition by p.styleid order by p.pricesetid desc), 
 			sc.photo_filename
@@ -20,7 +21,7 @@ create function web.promoGoods_js () returns varchar(max) as
 			cast(getdate() as date) between e.datestart and e.datefinish 
 			and eventClosed = 'False'
 			)
-		select @goods = (select бренд, категория, модель, артикул, промо, скидка, цена, фото
+		select @goods = (select бренд, категория, модель, артикул, пол, промо, скидка, цена, фото
 		from s 
 		where num =1
 		for json path)
