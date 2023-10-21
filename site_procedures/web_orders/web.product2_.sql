@@ -13,7 +13,7 @@ begin
 		where s.parent_styleid = @parentid
 	)
 
-, product (photo, parentid, brand, inventorytyperus, article, composition, color, price, discount, promo) as (
+, product (photo, parentid, brand, inventorytyperus, article, composition, color, price, discount, promo, gender) as (
 		select distinct 
 			v.photo_filename, 
 			s.parent_styleid, 
@@ -24,7 +24,11 @@ begin
 			pc.color,
 			cast (round(v.price, 0) as int), 
 			v.discount, 
-			isnull(d.discount, 0)			
+			isnull(d.discount, 0), 
+			case s.gender 
+				when 'm' then 'МУЖ'
+				when 'f' then 'ЖЕН'
+					else 'NA' end 
 		from inv.styles s
 			join inv.brands b on b.brandID= s.brandID
 			join inv.inventorytypes it on it.inventorytypeID= s.inventorytypeID
@@ -87,6 +91,7 @@ select @product = (
 		p.photo, 
 		p.parentid styleid, p.brand,  p.inventorytyperus category, 
 		p.article article, 
+		p.gender пол, 
 		UPPER(p.color) color, 
 		p.composition, p.price, p.discount, p.promo,
 		(select  STRING_AGG( size, ',') WITHIN GROUP ( ORDER BY sizeid  ) sizes from 	sizes ) sizes ,
