@@ -40,7 +40,7 @@ begin
 		where s.parent_styleid = @parentid and pc.photo_filename= v.photo_filename
 
 	)
-	, sizes (sizeid, size) as (
+, sizes (sizeid, size) as (
 		select distinct s.sizeid, size 
 		from s 
 			join inv.sizes sz on sz.sizeID=s.sizeID
@@ -52,10 +52,8 @@ begin
 		join inv.barcodes b on b.barcodeID=s.barcodeid
 		join inv.colors c on c.colorID=b.colorID
 	where parent_styleid = @parentid)
-, colors (color, barcodeid, sizeID, qty)  as (
-	select distinct 
-		cmn.norm_(c.color) color, s.barcodeid, 
-		s.sizeID, sum(opersign)
+, colors (color, sizeID, qty)  as (
+	select distinct cmn.norm_(c.color) color, s.sizeID, sum(opersign)
 	from s 
 		join inv.colors c on c.colorID=s.colorID
 		join inv.inventory i on i.barcodeID=s.barcodeID
@@ -63,7 +61,8 @@ begin
 		join org.retail_active_v r on r.divisionid=i.divisionID
 	where 
 		i.logstateID = 8 
-	group by cmn.norm_(c.color), s.sizeID, s.barcodeid
+			--and divisionid in (0,14,18, 25, 27)
+	group by cmn.norm_(c.color), s.sizeID
 	having sum(i.opersign)>0
 	)
 , colors_only (color) as (
@@ -109,8 +108,23 @@ go
 
 declare @start datetime = getdate()
 declare @parentid int
-select @parentid = 19996;
-select web.product2_(@parentid)
+select @parentid = 13530;
+--select web.product2_(@parentid)
+select web.product_(@parentid)
 declare @end datetime = getdate()
 select DATEDIFF(MS, @start, @end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

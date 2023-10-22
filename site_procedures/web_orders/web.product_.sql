@@ -36,12 +36,11 @@ begin
 		where s.parent_styleid = @parentid and pc.photo_filename= v.photo_filename
 
 	)
-	, sizes (sizeid, size) as (
+, sizes (sizeid, size) as (
 		select distinct s.sizeid, size 
 		from s 
 			join inv.sizes sz on sz.sizeID=s.sizeID
 	)
-
 , colors (color, sizeID, qty)  as (
 	select distinct cmn.norm_(color) color, s.sizeID, sum(opersign)
 	from s 
