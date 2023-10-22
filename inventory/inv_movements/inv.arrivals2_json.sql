@@ -20,6 +20,7 @@ create function inv.arrivals2_json(@months as int = 3, @sortfield as varchar(25)
 			)
 			select @arrivals = 
 				(select 
+					datediff(dd,'19700101', receipt_date) dates,
 					format(receipt_date, 'dd MMMM yyyy', 'ru-ru') дата,
 					s.brand бренд, 
 					s.styleid модель, 
@@ -48,4 +49,4 @@ create function inv.arrivals2_json(@months as int = 3, @sortfield as varchar(25)
 	end
 go
 
-select inv.arrivals2_json(default, default, default)
+select inv.arrivals2_json(12, default, default)
