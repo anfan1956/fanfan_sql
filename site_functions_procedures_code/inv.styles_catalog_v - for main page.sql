@@ -18,7 +18,7 @@ _discounts (styleid, discount, num) as (
 		p.styleid, 
 		p.parent_styleid,
 		p.photo_filename, receipt_date, 
-		ROW_NUMBER()  over (partition by p.parent_styleid order by p.photo_filename)
+		ROW_NUMBER()  over (partition by p.parent_styleid order by p.photo_priority desc, p.photo_filename)
 	from inv.styles_photos p 
 )
 , _avail_styles as (
@@ -26,7 +26,7 @@ _discounts (styleid, discount, num) as (
 	from inv.inventory i
 		join inv.barcodes b on b.barcodeID=i.barcodeID
 		join inv.styles s on s.styleID=b.styleID
-	where i.logstateID=inv.logstate_id('in-warehouse') and i.divisionID in (0, 14, 18, 25, 27)
+	where i.logstateID=inv.logstate_id('in-warehouse') and i.divisionID in ( 18, 25, 27)
 	group by s.styleID, i.logstateID
 	having sum(opersign)>0
 )
@@ -68,4 +68,4 @@ where styleid= 20294
 
 select gender, styleid, price, discount, promo, article, category, brand, color, photo, composition from inv.style_photos_f(20294) ORDER BY photo asc
 
-select * from inv.styles_catalog_v where styleid= 18918
+select * from inv.styles_catalog_v where styleid= 19367

@@ -14,7 +14,7 @@ with _colors (color ) as (
 	group by cmn.norm_(c.color) 
 	having sum (i.opersign)>0
 	)
-select photo_filename, upper(cl.color ) color
+select photo_filename, upper(cl.color ) color, photo_priority
 from inv.styles_photos p
 	join inv.barcodes b on b.barcodeID=p.barcodeid
 	join inv.colors c on c.colorID= b.colorID
@@ -23,3 +23,4 @@ where p.parent_styleid =@parentid
 
 
 go
+

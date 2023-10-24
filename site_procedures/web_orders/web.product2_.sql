@@ -68,7 +68,7 @@ begin
 , colors_only (color) as (
 	select distinct upper(cmn.norm_(color)) from colors 
 	)
-, t (photo) as (select photo_filename from web.photos_colors_(@parentid) )
+, t (photo, photo_priority) as (select photo_filename, photo_priority from web.photos_colors_(@parentid) )
 , items (color,  qtys) as (
 	select c.color, 
 	(
@@ -88,15 +88,13 @@ begin
 select @product = (
 	select 
 		p.photo, 
-		p.parentid styleid, p.brand,  p.inventorytyperus category, 
-		p.article article, 
-		p.gender пол, 
-		UPPER(p.color) color, 
-		p.composition, p.price, p.discount, p.promo,
+		p.parentid styleid, p.brand, p.inventorytyperus category, 
+		p.article article, 	p.gender пол, 
+		UPPER(p.color) color, 	p.composition, p.price, p.discount, p.promo,
 		(select  STRING_AGG( size, ',') WITHIN GROUP ( ORDER BY sizeid  ) sizes from 	sizes ) sizes ,
 		(select distinct STRING_AGG( UPPER(color), ',')  colors from 	colors_only ) colors,
-		(select STRING_AGG( t.photo, ',') photo from t) photos, 
-		(select photo_filename img, color from web.photos_colors_(@parentid) for json path ) images, 
+		(select STRING_AGG( t.photo, ',') WITHIN GROUP ( ORDER BY photo_priority  DESC  ) photo from t) photos, 
+		(select photo_filename img, color from web.photos_colors_(@parentid) order by photo_priority desc for json path ) images, 
 		(select * from items for json path) items
 	from product p
 	for json path
@@ -108,9 +106,8 @@ go
 
 declare @start datetime = getdate()
 declare @parentid int
-select @parentid = 13530;
---select web.product2_(@parentid)
-select web.product_(@parentid)
+select @parentid = 19367;
+select web.product2_(@parentid)
 declare @end datetime = getdate()
 select DATEDIFF(MS, @start, @end)
 
