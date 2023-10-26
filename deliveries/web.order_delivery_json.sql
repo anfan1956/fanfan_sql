@@ -13,8 +13,8 @@ begin
 select @details=(
 	select
 		a.address_string адрес, d.divisionfullname магазин, 
-		p.fio имя, 
-		isnull(p.phone, cust.prime_phone_f(r.custid)) телефон, 
+		p.fio получатель, 
+		isnull(p.phone, cust.prime_phone_f(r.custid)) [телефон получателя], 
 		code код 
 	from inv.site_reservations r
 		join web.delivery_logs l on l.orderid=r.reservationid
