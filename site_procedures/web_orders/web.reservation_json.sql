@@ -80,8 +80,7 @@ begin try
 		
 		select @userid = org.user_id('INTERBOT')	
 		select @custid = cust.customer_id(@phone);
-
-
+		if @phone is null select @custid =1
 		insert inv.transactions (transactiondate, transactiontypeID, userID)
 		values (@date, inv.transactiontype_id(@procName), @userid);
 		select @reservationid =SCOPE_IDENTITY();
@@ -124,7 +123,7 @@ begin try
 		from s
 		where num<=s.qty;
 		
-		insert inv.site_reservations(reservationid, custid,reservation_stateid, expiration, userid, pickupShopid)
+		insert inv.site_reservations(reservationid, custid, reservation_stateid, expiration, userid, pickupShopid)
 		select @reservationid, @custid, inv.reservation_state_id('active'), @expiration, @userid, @pickupid;
 --		select * from inv.site_reservations where reservationid= @reservationid;--------------------------------------------------------------------
 
