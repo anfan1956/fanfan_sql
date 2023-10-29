@@ -4,7 +4,8 @@ create view inv.webOrders_toShip_v as
 
 	with _trans (barcodeid, transactionid, trtypeid, trtype, salesPersonid, receipt_id, fiscal_id) as (
 		select distinct 
-			i.barcodeid,  i.transactionID, tr.transactiontypeID, tt.transactiontype, 
+			i.barcodeid,  
+			i.transactionID, tr.transactiontypeID, tt.transactiontype, 
 			s.salepersonID, 
 			s.receiptid, 
 			iif(s.fiscal_id='', '809343', s.fiscal_id)
@@ -38,7 +39,8 @@ create view inv.webOrders_toShip_v as
 	select 
 		a.orderid, 
 		t.transactiondate [дата заказа], 
-		cast(l.phone as bigint) [телефон клиента], 
+		isnull(format(cast(l.phone as bigint) , '+7 (###) ###-##-##'), 'ИНКОГНИТО')
+		[телефон клиента], 
 		u.lfmname консультант,
 		ad.address_string адрес,
 		s.styleID модель,
@@ -64,7 +66,7 @@ create view inv.webOrders_toShip_v as
 		join inv.transactions t on t.transactionID=a.orderid		
 		join inv.site_reservations r on r.reservationid=a.orderid
 		join inv.site_reservation_set rs on rs.reservationid=a.orderid and rs.barcodeid=a.barcodeid
-		join cust.customers_list_v l on l.personID=r.custid
+		left join cust.customers_list_v l on l.personID=r.custid
 		left join org.divisions d on d.divisionID=r.pickupShopid
 		join inv.barcodes b on b.barcodeID=a.barcodeid
 		join inv.styles s on s.styleID=b.styleID
@@ -81,7 +83,7 @@ create view inv.webOrders_toShip_v as
 go	
 
 select * from inv.webOrders_toShip_v v;
-
+declare @orderid int = 79487;
 	with _trans (barcodeid, transactionid, trtypeid, trtype, salesPersonid, receipt_id, fiscal_id) as (
 		select distinct 
 			i.barcodeid,  i.transactionID, tr.transactiontypeID, tt.transactiontype, 
@@ -105,6 +107,7 @@ select * from inv.webOrders_toShip_v v;
 		select barcodeid, transid, salesPersonid, receipt_id, fiscal_id
 		from _trNum where num = 2
 	)
+
 	, _all_transactions (barcodeid, salesPersonid, logstateid, divisionid, orderid, receipt_id, fiscal_id) as (
 		select distinct b.barcodeid, b.salesPersonid, i.logstateID, i.divisionID, b.transid, receipt_id, fiscal_id
 		from _bc_reserv b
@@ -119,6 +122,8 @@ select * from inv.webOrders_toShip_v v;
 		a.orderid, 
 		t.transactiondate [дата заказа], 
 		cast(l.phone as bigint) [телефон клиента], 
+		isnull(format(cast(l.phone as bigint) , '+7 (###) ###-##-##'), 'ИНКОГНИТО')
+		[телефон клиента], 
 		u.lfmname консультант,
 		ad.address_string адрес,
 		s.styleID модель,
@@ -144,7 +149,7 @@ select * from inv.webOrders_toShip_v v;
 		join inv.transactions t on t.transactionID=a.orderid		
 		join inv.site_reservations r on r.reservationid=a.orderid
 		join inv.site_reservation_set rs on rs.reservationid=a.orderid and rs.barcodeid=a.barcodeid
-		join cust.customers_list_v l on l.personID=r.custid
+		left join cust.customers_list_v l on l.personID=r.custid
 		left join org.divisions d on d.divisionID=r.pickupShopid
 		join inv.barcodes b on b.barcodeID=a.barcodeid
 		join inv.styles s on s.styleID=b.styleID
@@ -160,3 +165,4 @@ select * from inv.webOrders_toShip_v v;
 		left join org.divisions di on di.divisionID= dl.pickupDivId
 
 		select * from web.delivery_logs
+

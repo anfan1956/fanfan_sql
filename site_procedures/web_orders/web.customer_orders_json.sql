@@ -2,7 +2,7 @@
 go
 create function web.customer_orders_json (@json varchar(max)) returns varchar(max) as 
 	begin
-		declare @orders varchar(max);
+		declare @orders varchar(max), @phone char(10);
 		with s (phone) as (
 			select phone from 
 			openjson(@json)
@@ -10,6 +10,7 @@ create function web.customer_orders_json (@json varchar(max)) returns varchar(ma
 				phone char(10) '$.phone'
 			) as jsonValues
 		)
+		select @phone = phone from s;
 		select @orders = (
 			select orderid [№ заказа], 
 			format([дата заказа], 'dd.MM.yyyy') дата , 
@@ -20,8 +21,8 @@ create function web.customer_orders_json (@json varchar(max)) returns varchar(ma
 			format(sum(оплачено), '#,##0 руб') оплачено, 
 			'в работе' статус
 		from inv.webOrders_toShip_v w
-			cross apply s
-		where w.[телефон клиента]=s.phone
+--		where w.[телефон клиента]=s.phone
+		where w.custid = cust.customer_id( @phone)
 		group by orderid, [дата заказа], [склад получения]
 		order by orderid desc
 		for json path);
@@ -34,6 +35,7 @@ go
 declare @json varchar(max) = '{"phone":"9167834248"}'
 
 select web.customer_orders_json (@json);
+declare @phone char(10);
 
 with s (phone) as (
 	select phone from 
@@ -42,17 +44,21 @@ with s (phone) as (
 		phone char(10) '$.phone'
 	) as jsonValues
 )
-			select orderid [№ заказа], 
-			format([дата заказа], 'dd.MM.yyyy') дата , 
-			format([дата заказа], 'HH:MM') время, 
-			case [склад получения]
-				when 'доставка'  then 'доставка'
-				else 'самовывоз' end 'способ доставки',
-			format(sum(оплачено), '#,##0 руб') оплачено, 
-			'в работе' статус
-		from inv.webOrders_toShip_v w
-			cross apply s
-		where w.[телефон клиента]=s.phone
-		group by orderid, [дата заказа], [склад получения]
-		order by orderid desc
+select @phone = phone from s;
+
+
+select 
+	orderid [№ заказа], 
+	format([дата заказа], 'dd.MM.yyyy') дата , 
+	format([дата заказа], 'HH:MM') время, 
+	case [склад получения]
+		when 'доставка'  then 'доставка'
+		else 'самовывоз' end 'способ доставки',
+	--format(sum(оплачено), '#,##0 руб') оплачено, 
+	'в работе' статус
+from inv.webOrders_toShip_v w
+--where w.[телефон клиента]=@phone
+where w.custid = cust.customer_id( @phone)
+group by orderid, [дата заказа], [склад получения]
+order by orderid desc
 --select * from s;	
