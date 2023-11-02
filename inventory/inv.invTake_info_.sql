@@ -19,7 +19,17 @@ _b (barcodeid, logstateid, divisionid) as (
 	where i.barcodeID=@barcodeid
 	order by 1 desc
 )
-select b.barcodeid, br.brand, article, it.inventorytyperus, c.color, sz.size, ls.logstate, d.divisionfullname, tt.transactiontype, t.transactiondate
+select 
+	br.brand, 
+	article, 
+	b.barcodeid, 
+	it.inventorytyperus, 
+	c.color, 
+	sz.size, 
+	ls.logstate, 
+	d.divisionfullname, 
+	tt.transactiontype, 
+	t.transactiondate
 from _b b
 	cross apply _lastTran lt
 	join inv.transactions t on t.transactionID=lt.transactionid
