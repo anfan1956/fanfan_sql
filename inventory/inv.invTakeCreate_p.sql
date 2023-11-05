@@ -12,7 +12,7 @@ begin transaction
 				and it.divisionID=org.division_id(@shop) 
 				--and cast(t.transactiondate as date)= cast(getdate() as date)
 			where it.closed is null
-		if @todaysCount = 0 
+		if @todaysCount = 0 or @todaysCount is null
 			begin
 				insert  inv.transactions(transactiondate, transactiontypeID, userID)
 				select getdate(), inv.transactiontype_id('inventory take'), org.person_id(@user)
@@ -32,7 +32,7 @@ begin transaction
 						from inv.transactions t 
 			join inv.inventorytakes it on it.inventorytakeID=t.transactionID 
 				and it.divisionID=org.division_id(@shop) 
-				and cast(t.transactiondate as date)= cast(getdate() as date)
+				--and cast(t.transactiondate as date)= cast(getdate() as date)
 			order by t.transactionID desc
 				select @transid transid,   'продолжаем инвентаризацию № ' + cast (@transid as varchar(max)) msg
 			end
@@ -50,5 +50,3 @@ go
 declare @shop varchar(max) = '07 ФАНФАН', @user varchar(max) = 'Федоров А. Н.'
 --exec inv.invTakeCreate_p @shop, @user
 --exec inv.invTakeCreate_p '07 ФАНФАН', 'Федоров А. Н.'
-
-
