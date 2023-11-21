@@ -1,4 +1,6 @@
-﻿if OBJECT_ID ('inv.invTake_open_info_') is not null drop function inv.invTake_open_info_
+﻿use fanfan
+go
+if OBJECT_ID ('inv.invTake_open_info_') is not null drop function inv.invTake_open_info_
 go
 create function inv.invTake_open_info_(@takeid int) returns table as return
 with 
@@ -48,6 +50,6 @@ from _bc_data b
 	
 go
 
-declare @takeid int =79629
+declare @takeid int =79730
 select * from inv.invTake_open_info_(@takeid)
 

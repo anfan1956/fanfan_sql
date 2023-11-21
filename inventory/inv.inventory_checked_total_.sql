@@ -29,4 +29,4 @@ create function inv.inventory_checked_total_ (@shop varchar(max)) returns table 
 go
 declare @shop varchar (max) = '07 ФАНФАН'
 
-select checked, total from inv.inventory_checked_total_(@shop)
+--select checked, total from inv.inventory_checked_total_(@shop)

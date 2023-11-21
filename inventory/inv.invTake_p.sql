@@ -1,6 +1,6 @@
 ﻿if OBJECT_ID ('inv.invTake_p') is not null drop proc inv.invTake_p
 go 
-create proc inv.invTake_p @takeid int, @barcodeid int as
+create proc inv.invTake_p @takeid int, @barcodeid int, @days int as
 	set nocount on;
 begin try 
 	begin transaction
@@ -11,7 +11,7 @@ begin try
 		select @thiscount =  count (*)
 		from inv.transactions t 
 			join inv.invTake_barcodes i on i.takeid = t.transactionID
-		where i.barcodeID = @barcodeid;
+		where i.barcodeID = @barcodeid and DATEDIFF(DD, t.transactiondate, getdate())<@days;
 
 		if @thiscount = 0
 			begin 			
@@ -21,7 +21,7 @@ begin try
 				select @rows updated_rows, 'баркод учтен сейчас' msg
 			end 
 		else 
-			throw 50001, 'баркод был учтен раньше', 1
+			throw 50001, 'баркод учтен недавно', 1
 		commit transaction
 end try
 begin catch
@@ -34,7 +34,13 @@ end catch
 go
 
 
+--exec inv.invTake_p 79739, 652229, 60;
+		declare @thiscount int, @rows int =0, 
+		@barcodeid int = 652229, @days int = 60
 
+		select @thiscount =  count (*)
+		from inv.transactions t 
+			join inv.invTake_barcodes i on i.takeid = t.transactionID
+		where i.barcodeID = @barcodeid and DATEDIFF(DD, t.transactiondate, getdate())<@days;
 
-
-
+select @thiscount
