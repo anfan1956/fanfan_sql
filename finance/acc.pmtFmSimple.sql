@@ -6,6 +6,7 @@ begin try
 	begin transaction
 		declare @table table (
 			transdate datetime,
+			pmtType varchar(max), 
 			client varchar(max), 
 			payer varchar(max),
 			bank varchar(max),
@@ -22,22 +23,24 @@ begin try
 			SELECT value, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS rn
 			FROM STRING_SPLIT(@info, ',')
 		)
-		insert @table (transdate, client, payer, bank, contractor, article, document, amount, bookkeeper)
+		insert @table (transdate, pmtType, client, payer, bank, contractor, article, document, amount, bookkeeper)
 		select 
 			(select convert(DATE, value, 104) from s where s.rn =1) as date, 
-			(select value from s where s.rn =2) as client, 
-			(select value from s where s.rn =3) as payer, 
-			(select value from s where s.rn =4) as bank, 
-			(select value from s where s.rn =5) as contractor, 
-			(select value from s where s.rn =6) as article, 
-			(select value from s where s.rn =7) as document, 
-			(select cast(value as money) from s where s.rn =8) as amount,
-			(select value from s where s.rn =9) as bookkeeper ;
+			(select value from s where s.rn =2) as pmtType, 
+			(select value from s where s.rn =3) as client, 
+			(select value from s where s.rn =4) as payer, 
+			(select value from s where s.rn =5) as bank, 
+			(select value from s where s.rn =6) as contractor, 
+			(select value from s where s.rn =7) as article, 
+			(select value from s where s.rn =8) as document, 
+			(select cast(value as money) from s where s.rn =9) as amount,
+			(select value from s where s.rn =10) as bookkeeper ;
 --		select * from @table;
 		
 		insert acc.transactions (transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
 		select 
-			t.transdate, CURRENT_TIMESTAMP, personID, 643, a.articleid, clientID, t.amount, 'automated',  t.document
+			t.transdate, CURRENT_TIMESTAMP, personID, 643, a.articleid, clientID, t.amount, 
+			'вид платежа:  ' + t.pmtType ,  t.document
 		from @table t
 			join org.persons p on p.lfmname=bookkeeper
 			join acc.articles a on a.article=t.article
@@ -55,19 +58,23 @@ begin try
 		join s on s.bankid=r.bankid and s.clientid=r.clientid and s.currencyid= r.currencyid		
 		
 
-		;with _seed (is_credit, accountid, registerid ) as (
-			select 1, acc.account_id('деньги, касса'), @regid
+		;with _seed (is_credit, accountid, registerid, personid ) as (
+			select 1, 
+				case when @regid is null then acc.account_id('подотчет')
+					else acc.account_id('деньги, касса') end, 
+			@regid, 
+				case when @regid is null then org.person_id(t.payer) end
+			from @table t
 			union all 
-			select 0, null, null
+			select 0, null, null, null
 		)
-
 		insert acc.entries (transactionid, is_credit, accountid, contractorid, personid, registerid)
 		select 
 			@transid , s.is_credit, isnull (s.accountid, a.accountid), 
 			case 
 				s.is_credit when 1 then null 
 				else c.contractorID end contractorid, 
-			null,
+			s.personid,
 			case s.is_credit 
 				when 1 then s.registerid 
 				else null end registerid
@@ -75,8 +82,8 @@ begin try
 			join acc.articles ar on ar.article=t.article
 			join acc.accounts a on a.accountid=ar.accountid
 			join org.contractors c on c.contractor= t.contractor
-			cross apply _seed s;
-		
+			left join org.persons p on p.lfmname = t.payer
+			cross apply _seed s;		
 --		select * from acc.entries e where e.transactionid =@transid;
 
 		select 1 result, 'recorded transid: ' +  cast (@transid as varchar(max))  msg
@@ -90,6 +97,8 @@ begin catch
 end catch
 go
 
+--exec acc.pmtFmSimple '23.11.2023,подотчет,ИП ФЕДОРОВ,ФЕДОРОВ А. Н.,,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,none,12000,Федоров А. Н.'
+--exec acc.pmtFmSimple '23.11.2023,денежный,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,12вв,900,Федоров А. Н.'
 
 
 

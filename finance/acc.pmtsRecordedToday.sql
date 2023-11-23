@@ -6,7 +6,7 @@ create view acc.pmtsRecordedToday as
 		cast(t.transdate as datetime) ДАТА, 
 		clt.clientRus [Юр. лицо], 
 		a.article СТАТЬЯ, c.contractor К_АГЕНТ, 
-		isnull(cn.contractor, cl.clientRus) ПЛАТЕЛЬЩИК, 
+		isnull(isnull(cn.contractor, cl.clientRus), p2.lfmname) ПЛАТЕЛЬЩИК, 
 		t.amount СУММА, 
 		ac.account ДЕБЕТ, 
 		ac2.account КРЕДИТ, 
@@ -23,10 +23,11 @@ create view acc.pmtsRecordedToday as
 		join acc.accounts ac on ac.accountid=e.accountid
 		join acc.accounts ac2 on ac2.accountid=e2.accountid
 		join org.clients clt on clt.clientID=t.clientid 
-		join acc.registers r on r.registerid=e2.registerid
+		left join acc.registers r on r.registerid=e2.registerid
 		left join org.contractors cn on cn.contractorID=r.clientid
 		left join org.clients cl on cl.clientID=r.clientid
-		join org.contractors con on con.contractorID=r.bankid
+		left join org.contractors con on con.contractorID=r.bankid
+		left join org.persons p2 on p2.personid = e2.personid
 	
 	where cast (getdate() as date)= cast(t.recorded as date)
 go
