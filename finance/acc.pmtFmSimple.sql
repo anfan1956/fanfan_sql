@@ -14,6 +14,7 @@ begin try
 			article varchar(max),
 			document varchar(max),
 			amount varchar(max), 
+			comment varchar(max),
 			bookkeeper varchar(max)
 			);
 		declare @transid int, @regid int;
@@ -23,7 +24,7 @@ begin try
 			SELECT value, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS rn
 			FROM STRING_SPLIT(@info, ',')
 		)
-		insert @table (transdate, pmtType, client, payer, bank, contractor, article, document, amount, bookkeeper)
+		insert @table (transdate, pmtType, client, payer, bank, contractor, article, document, amount, comment, bookkeeper)
 		select 
 			(select convert(DATE, value, 104) from s where s.rn =1) as date, 
 			(select value from s where s.rn =2) as pmtType, 
@@ -34,13 +35,14 @@ begin try
 			(select value from s where s.rn =7) as article, 
 			(select value from s where s.rn =8) as document, 
 			(select cast(value as money) from s where s.rn =9) as amount,
-			(select value from s where s.rn =10) as bookkeeper ;
+			(select value from s where s.rn =10) as comment, 
+			(select value from s where s.rn =11) as bookkeeper ;
 --		select * from @table;
 		
 		insert acc.transactions (transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
 		select 
 			t.transdate, CURRENT_TIMESTAMP, personID, 643, a.articleid, clientID, t.amount, 
-			'вид платежа:  ' + t.pmtType ,  t.document
+			t.pmtType + ': ' + t.comment ,  t.document
 		from @table t
 			join org.persons p on p.lfmname=bookkeeper
 			join acc.articles a on a.article=t.article
@@ -92,7 +94,7 @@ begin try
 	commit transaction
 end try
 begin catch
-	select 0 error, ERROR_MESSAGE() msg;
+	select -1 error, ERROR_MESSAGE() msg;
 	rollback transaction
 end catch
 go
