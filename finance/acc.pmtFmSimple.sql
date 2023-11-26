@@ -58,17 +58,24 @@ begin try
 			)
 		select @regid = registerid from acc.registers r 
 		join s on s.bankid=r.bankid and s.clientid=r.clientid and s.currencyid= r.currencyid		
+--		select @regid regid
 		
 
 		;with _seed (is_credit, accountid, registerid, personid ) as (
 			select 1, 
-				case when @regid is null then acc.account_id('подотчет')
+				case 
+					when @regid is null or t.article='ВОЗВРАТ С ПОДОТЧЕТА'  then acc.account_id('подотчет')
 					else acc.account_id('деньги, касса') end, 
-			@regid, 
-				case when @regid is null then org.person_id(t.payer) end
+				case when t.article <> 'ВОЗВРАТ С ПОДОТЧЕТА' then @regid end, 
+				case when @regid is null or t.article= 'ВОЗВРАТ С ПОДОТЧЕТА' then org.person_id(t.payer) end
 			from @table t
 			union all 
-			select 0, null, null, null
+			select 
+				0, 
+				case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then acc.account_id('деньги, касса') end,
+				case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then @regid end,
+				null
+			from  @table t
 		)
 		insert acc.entries (transactionid, is_credit, accountid, contractorid, personid, registerid)
 		select 
@@ -77,9 +84,7 @@ begin try
 				s.is_credit when 1 then null 
 				else c.contractorID end contractorid, 
 			s.personid,
-			case s.is_credit 
-				when 1 then s.registerid 
-				else null end registerid
+			s.registerid 			
 		from @table t
 			join acc.articles ar on ar.article=t.article
 			join acc.accounts a on a.accountid=ar.accountid
@@ -99,10 +104,10 @@ begin catch
 end catch
 go
 
---exec acc.pmtFmSimple '23.11.2023,подотчет,ИП ФЕДОРОВ,ФЕДОРОВ А. Н.,,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,none,12000,Федоров А. Н.'
+--exec acc.pmtFmSimple '25.11.2023,подотчет,ИП ФЕДОРОВ,БАЛУШКИНА А. А.,,ADOBE INC.,УБОРЩИЦА,бд,500,бд,БАЛУШКИНА А. А.'
 --exec acc.pmtFmSimple '23.11.2023,денежный,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,12вв,900,Федоров А. Н.'
 
-
+--exec acc.pmtFmSimple '24.11.2023,возврат с п/о,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,ФЕДОРОВ А. Н.,ВОЗВРАТ С ПОДОТЧЕТА,бд,10000,бк,ФЕДОРОВ А. Н.'
 
 
 

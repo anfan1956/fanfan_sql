@@ -33,8 +33,10 @@ create function acc.sales_rollout_f1(@date date, @scope varchar(10), @number int
 	union select  acc.account_id('деньги, банк'), acc.account_id('деньги, банк'), 0 
 	union select  acc.account_id('деньги, банк'), acc.account_id('фин. расходы'),  1
 )
-, _acq(datestart, registerid, rate, days_off, acqTypeid, contractorid) as (
-	select a.datestart, a.registerid, a.rate, days_off, a.acqTypeid, r.bankid
+, _acq(datestart, registerid, rate, days_off, acqTypeid, contractorid, num) as (
+	select 
+		a.datestart, a.registerid, a.rate, days_off, a.acqTypeid, r.bankid, 
+		ROW_NUMBER() over(partition by a.registerid, a.acqTypeid, r.bankid order by a.datestart desc)
 	from acc.acquiring a
 		join acc.registers r on r.registerid = a.registerid
 )
@@ -114,6 +116,7 @@ create function acc.sales_rollout_f1(@date date, @scope varchar(10), @number int
 			on a.registerid =s.registerid  
 			and a.acqTypeid=s.acqTypeid
 			and a.datestart<=s.transDate
+			and a.num=1
 		left join _f_charges f on f.accountid=s.accountid
 
 ), 
