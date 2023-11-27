@@ -19,7 +19,6 @@ begin try
 			);
 		declare @transid int, @regid int;
 
-
 		with s (value, rn) as (
 			SELECT value, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS rn
 			FROM STRING_SPLIT(@info, ',')
@@ -60,37 +59,61 @@ begin try
 		join s on s.bankid=r.bankid and s.clientid=r.clientid and s.currencyid= r.currencyid		
 --		select @regid regid
 		
-
-		;with _seed (is_credit, accountid, registerid, personid ) as (
-			select 1, 
-				case 
-					when @regid is null or t.article='ВОЗВРАТ С ПОДОТЧЕТА'  then acc.account_id('подотчет')
-					else acc.account_id('деньги, касса') end, 
-				case when t.article <> 'ВОЗВРАТ С ПОДОТЧЕТА' then @regid end, 
-				case when @regid is null or t.article= 'ВОЗВРАТ С ПОДОТЧЕТА' then org.person_id(t.payer) end
-			from @table t
-			union all 
-			select 
-				0, 
-				case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then acc.account_id('деньги, касса') end,
-				case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then @regid end,
-				null
-			from  @table t
-		)
-		insert acc.entries (transactionid, is_credit, accountid, contractorid, personid, registerid)
-		select 
-			@transid , s.is_credit, isnull (s.accountid, a.accountid), 
-			case 
-				s.is_credit when 1 then null 
-				else c.contractorID end contractorid, 
-			s.personid,
-			s.registerid 			
-		from @table t
-			join acc.articles ar on ar.article=t.article
-			join acc.accounts a on a.accountid=ar.accountid
-			join org.contractors c on c.contractor= t.contractor
-			left join org.persons p on p.lfmname = t.payer
-			cross apply _seed s;		
+		if (select article from @table) = 'ВЫПЛАТЫ ПЕРСОНАЛУ'
+			begin
+				with _seed (is_credit, accountid, registerid, personid) as (
+					select 1, acc.account_id('подотчет'), @regid, p.personID
+					from @table t
+						join org.persons p on p.lfmname = t.payer
+					union all
+					select 0, acc.account_id('зарплата к оплате'), @regid, p.personID
+					from @table t
+						left join org.persons p on p.lfmname= t.contractor
+				)
+				
+				insert acc.entries(transactionid, is_credit, accountid, personid)
+				select 
+					@transid, s.is_credit, isnull(s.accountid, ar.accountid), 
+					s.personid
+					
+				from @table t
+					join acc.articles ar on ar.article=t.article						
+					join org.persons p on p.lfmname=t.contractor						
+				cross apply  _seed s
+			end
+		else
+			begin
+				;with _seed (is_credit, accountid, registerid, personid ) as (
+					select 1, 
+						case 
+							when @regid is null or t.article='ВОЗВРАТ С ПОДОТЧЕТА'  then acc.account_id('подотчет')
+							else acc.account_id('деньги, касса') end, 
+						case when t.article <> 'ВОЗВРАТ С ПОДОТЧЕТА' then @regid end, 
+						case when @regid is null or t.article= 'ВОЗВРАТ С ПОДОТЧЕТА' then org.person_id(t.payer) end
+					from @table t
+					union all 
+					select 
+						0, 
+						case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then acc.account_id('деньги, касса') end,
+						case when t.article='ВОЗВРАТ С ПОДОТЧЕТА' then @regid end,
+						null
+					from  @table t
+				)
+				insert acc.entries (transactionid, is_credit, accountid, contractorid, personid, registerid)
+				select 
+					@transid , s.is_credit, isnull (s.accountid, a.accountid), 
+					case 
+						s.is_credit when 1 then null 
+						else c.contractorID end contractorid, 
+					s.personid,
+					s.registerid 			
+				from @table t
+					join acc.articles ar on ar.article=t.article
+					join acc.accounts a on a.accountid=ar.accountid
+					join org.contractors c on c.contractor= t.contractor
+					left join org.persons p on p.lfmname = t.payer
+					cross apply _seed s;		
+			end 
 --		select * from acc.entries e where e.transactionid =@transid;
 
 		select 1 result, 'recorded transid: ' +  cast (@transid as varchar(max))  msg
@@ -107,7 +130,7 @@ go
 --exec acc.pmtFmSimple '25.11.2023,подотчет,ИП ФЕДОРОВ,БАЛУШКИНА А. А.,,ADOBE INC.,УБОРЩИЦА,бд,500,бд,БАЛУШКИНА А. А.'
 --exec acc.pmtFmSimple '23.11.2023,денежный,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,12вв,900,Федоров А. Н.'
 
---exec acc.pmtFmSimple '24.11.2023,возврат с п/о,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,ФЕДОРОВ А. Н.,ВОЗВРАТ С ПОДОТЧЕТА,бд,10000,бк,ФЕДОРОВ А. Н.'
+--exec acc.pmtFmSimple '27.11.2023,подотчет,ИП ФЕДОРОВ,ФЕДОРОВ А. Н.,,КУЛИКОВСКАЯ С. А.,ВЫПЛАТЫ ПЕРСОНАЛУ,бд,1000,тест,ФЕДОРОВ А. Н.'
 
 
 
