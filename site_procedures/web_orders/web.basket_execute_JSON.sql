@@ -1,5 +1,8 @@
 ﻿declare @phone char (10)= '9167834248';
 
+
+-- this  proc is old is not used. the tables  -  like web.basketLogs - deleted
+
 if OBJECT_ID('web.basket_execute_JSON') is not null drop proc web.basket_execute_JSON
 go
 
