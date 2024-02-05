@@ -21,10 +21,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 		if (select count(*) from org.attendance_check_v) > 0/*other conditiion*/
 			begin
 				select @note = 'failed attempt. please run org.attendance_check_v';
-
 				throw 50001, @note, 1
 			end;
-
 
 			-- calculate total commission charge for the period
 			with 
@@ -104,7 +102,16 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			select 
 				u.personid, u.amount, u.item
 			from _unpivot u;
-			
+
+--select * from @charges;			
+--	 this is a procedure to record charges data to hr.periodCharges table
+			declare @charge hr.chargeType;
+			insert @charge (personid, amount, item)
+			select p.personid, p.amount, p.item
+			from @charges p
+				
+			exec hr.periodCharges_update_ @charge, @lastDate;
+
 --			with s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document ) as (
 			with s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, document, person ) as (
 				select 
@@ -123,16 +130,17 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			output inserted.transactionid, inserted.document, inserted.comment into @transactions
 			select transdate, bookkeeperid, currencyid, articleid, clientid, amount, document, person from s;
 			;
+--select * from @transactions;
 
-
-			with _transactions (transactionid, contractorid, personid) as
+			with _transactions (transactionid, contractorid, personid, document) as
 				(	select 
 						t.transactionid, 
 						case t.document	 
-							when 'PIT' then org.contractor_id('ИФНС по г. Красногорск Московской области')
-							when 'SocTax' then org.contractor_id('ИФНС по г. Красногорск Московской области')
+							when 'PIT' then org.contractor_id('УФК ПО ТУЛЬСКОЙ ОБЛАСТИ')
+							when 'SocTax' then org.contractor_id('УФК ПО ТУЛЬСКОЙ ОБЛАСТИ')
 							end,
-						p.personID
+						p.personID, 
+						t.document
 					from @transactions t
 						join org.persons p on p.lfmname = t.person
 				)
@@ -141,9 +149,17 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 				union all
 				select 'FALSE', acc.account_id('зарплата'))
 			insert acc.entries (transactionid, is_credit, accountid, contractorid, personid)
-			select t.transactionid, s.is_credit, s.accountid, t.contractorid, t.personid  
+			select 
+				t.transactionid, s.is_credit, 
+				case 
+					when t.document in ('PIT', 'SocTax') and s.is_credit='True' then acc.account_id('налоги к оплате')
+					else s.accountid end, 
+				t.contractorid, t.personid  
 			from _transactions t
 				cross apply _seed s;
+
+--select t.*, e.*, a.account from acc.entries e join @transactions t on t.transactionid=e.transactionid join acc.accounts a on a.accountid=e.accountid
+	
 
 			update s set success= 'True', recorded_time =  CURRENT_TIMESTAMP
 			from hr.salary_dates s 
@@ -152,7 +168,7 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			select @note = 'зарплата начислена'
 			insert hr.salary_jobs_log (result, logtime, salary_date) values (@note, CURRENT_TIMESTAMP, @lastDate)
 			;
-			--throw 50001, 'debugging', 1;
+--			throw 50001, 'debugging', 1;
 			
 		commit transaction
 	end try
@@ -164,6 +180,6 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20221130'
+declare @salary_date date = '20231115'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 --declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;

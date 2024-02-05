@@ -54,6 +54,7 @@ j (phone, uuid) as (
 , _prices  as (
 select  
 	st.parent_styleid,p.styleid, 
+	st.article, 
 	p.discount, 
 	st.cost * isnull (st.cost_adj, 1) * cr.rate * cr.markup price, 
 	ROW_NUMBER() over (partition by st.parent_styleid order by p.pricesetid desc) num
@@ -66,10 +67,11 @@ from inv.prices p
 		
 )
 --select * from _prices
-, _h (	марка, модель ,категория, цвет, размер, цена, скидка, промо, [в корзине] , всего, наличие, photo )  as (
+, _h (	марка, модель, артикул, категория, цвет, размер, цена, скидка, промо, [в корзине] , всего, наличие, photo )  as (
 	select distinct
 		br.brand,  
 		a.parent_styleid, 
+		p.article, 
 		it.inventorytyperus,
 		a.color, 
 		a.size, 

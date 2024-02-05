@@ -16,7 +16,7 @@ set nocount on;
 	insert web.email_log(email, emailCode)
 	output inserted.emailCode into @code
 	select @email, code
-	from cmn.random_5
+	from cmn.random_4
 
 	select @r = (select code from @code)
 	return @r

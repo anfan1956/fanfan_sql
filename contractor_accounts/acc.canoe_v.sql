@@ -9,11 +9,13 @@ select
 	format (t.transactiondate, 'dd.MM.yyyy') дата,
 	DATEPART(MM, t.transactiondate) месяц,
 	i.barcodeID, 
+	s.orderID,
 	c.color, 
 	sz.size, 
 	s.gender [муж/жен], 
 	br.brand марка, 
 	s.styleID, 
+	se.season,
 	s.article артикул, 
 	it.inventorytyperus категория, 
 	d.divisionfullname магазин, 
@@ -30,14 +32,19 @@ from inv.transactions t
 	join inv.brands br on br.brandID=s.brandID
 	join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 	join org.divisions d on d.divisionID=i.divisionID
+	join inv.seasons se on se.seasonID=s.seasonID
 
 where t.transactiontypeID in (12, 13) and s.brandID =343 and i.logstateID=inv.logstate_id('sold')
-	and t.transactionID>77013
+	--and t.transactionID>77013 
+	and s.orderID>=75360
 group by 
 	i.barcodeID, t.transactionID, c.color, t.transactiondate, sz.size, s.gender, br.brand, s.styleID, s.article,
-	it.inventorytyperus, d.divisionfullname, s.cost, t.transactiontypeID, it.inventorytypeID
+	it.inventorytyperus, d.divisionfullname, s.cost, t.transactiontypeID, it.inventorytypeID, s.orderID, se.season
 having sum (i.opersign)>0
 go
-select * from acc.canoe_v order by 1 desc
+select * from inv.styles s where s.styleID= 20370
+select * from acc.canoe_v 
+where transid>79805
+order by 1 desc
 
 

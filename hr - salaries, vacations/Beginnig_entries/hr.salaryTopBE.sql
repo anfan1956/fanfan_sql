@@ -2,8 +2,10 @@
 go 
 create function hr.salaryTopBE_date_f (@date date) returns table as return
 with 
- s (personid, entrydate, document, clientid, amount, num) as (
-	select employeeid, entrydate, 
+ s (entryid, personid, entrydate, document, clientid, amount, num) as (
+	select 
+		s.entryid,
+		employeeid, entrydate, 
 		case t.salarytype
 			when 'касса' then 'cash'
 			when 'банк' then 'bank' end, 
@@ -15,6 +17,7 @@ with
 	where s.entrydate<=@date
 	)
 	select 
+		s.entryid,
 		s.personid,
 		cast(s.entrydate as datetime) entrydate, 
 
@@ -41,6 +44,7 @@ active as (
 	)
 ,
 s as (select 
+	e.transactionid,
 	e.personid,
 	cast(t.transdate as datetime) transdate,
 	t.articleid,
@@ -62,8 +66,9 @@ where e.accountid = acc.account_id( 'зарплата к оплате')
 union all 
 select * from hr.salaryTopBE_date_f(@date) 
 )
-, _united (personid, сотрудник, дата, статья, комментарий, документ, сумма, reg_id, банк, счет_банк) as (
+, _united (transid, personid, сотрудник, дата, статья, комментарий, документ, сумма, reg_id, банк, счет_банк) as (
 select 
+	s.transactionid,
 	s.personid, p.lfmname, transdate, article, comment, s.document, amount, 
 	isnull(s.registerid, 0), isnull(c.contractor, '') bank, isnull( r.account, '')
 from s
@@ -74,6 +79,7 @@ from s
 )
 select 
 	distinct
+	u.transid,
 	--u. * ,
 	u.personid, 
 	u.сотрудник, 

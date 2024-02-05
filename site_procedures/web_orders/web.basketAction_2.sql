@@ -125,15 +125,25 @@ begin try
 			end
 		else if @proc in ('insert', 'remove')
 			begin
-				select @this =  b.qty
+				--select @this = 7;
+				
+				if (select  count(b.qty)
 				from web.baskets b
 					join web.logs l on l.logid=b.logid
 					join @inv i  on i.styleid= b.parent_styleid
 						and cmn.norm_(b.color)=cmn.norm_(i.color)
 						and b.size=i.size 
-						and  (l.custid= cust.customer_id(i.phone) or l.uuid=i.uuid)
-				select @this = isnull(@this, 0);
-				select 'success' success ,  @this this, @total total for json path, include_null_values
+						and  (l.custid= cust.customer_id(i.phone) or l.uuid=i.uuid) ) = 0
+				select 'success' success ,  0 this, @total total for json path, include_null_values
+				else
+					select  b.qty this, 'success' success, @total total
+					from web.baskets b
+						join web.logs l on l.logid=b.logid
+						join @inv i  on i.styleid= b.parent_styleid
+							and cmn.norm_(b.color)=cmn.norm_(i.color)
+							and b.size=i.size 
+							and  (l.custid= cust.customer_id(i.phone) or l.uuid=i.uuid) 
+					for json path, include_null_values
 			end 
 		else 
 			begin
@@ -147,8 +157,17 @@ begin catch;
 	rollback transaction
 end catch
 go
-
 declare @json varchar(max);
 select @json = 
-'[{"uuid": "103ef4dc-5ef4-4c0d-ac16-c832ca67c081", "procName": "insert"}, {"styleid": 19363, "color": "72547", "size": "44", "qty": "1"}]';
---exec web.basketAction_2 @json
+'[{"procName": "remove", "phone": "9167834248", "session": "7f44d0a4-2ba8-4ce0-a6a4-4851c316ec6e"}, {"styleid": "9574", "color": "ALUMINIUM", "size": "2", "qty": 1}]'
+exec web.basketAction_2 @json
+
+declare @this int;
+select @this = b.qty
+from web.baskets b
+	join web.logs l on l.logid=b.logid 
+	where b.parent_styleid  = 9574
+select count(@this) this;
+select b.*, l.* from web.baskets b
+	join web.logs l on l.logid=b.logid
+	where b.parent_styleid  = 9574
