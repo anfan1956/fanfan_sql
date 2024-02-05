@@ -5,7 +5,8 @@ create view acc.pmtsRecordedToday as
 		t.transactionid TRANSID, 
 		cast(t.transdate as datetime) ДАТА, 
 		clt.clientRus [Юр. лицо], 
-		a.article СТАТЬЯ, c.contractor К_АГЕНТ, 
+		a.article СТАТЬЯ, 
+		c.contractor К_АГЕНТ, 
 		isnull(isnull(cn.contractor, cl.clientRus), p2.lfmname) ПЛАТЕЛЬЩИК, 
 		t.amount СУММА, 
 		ac.account ДЕБЕТ, 
@@ -19,7 +20,7 @@ create view acc.pmtsRecordedToday as
 		join acc.entries e2 on e2.transactionid=t.transactionid and e2.is_credit='True'
 		join org.persons p on p.personID = t.bookkeeperid
 		join acc.articles a on a.articleid=t.articleid
-		join org.contractors c on c.contractorID=e.contractorid
+		left join org.contractors c on c.contractorID=e.contractorid
 		join acc.accounts ac on ac.accountid=e.accountid
 		join acc.accounts ac2 on ac2.accountid=e2.accountid
 		join org.clients clt on clt.clientID=t.clientid 
@@ -32,4 +33,6 @@ create view acc.pmtsRecordedToday as
 	where cast (getdate() as date)= cast(t.recorded as date)
 go
 
-select * from acc.pmtsRecordedToday
+select top 2 * from acc.pmtsRecordedToday
+order by 1 desc
+select top 5 * from acc.pmtInPeriod('MM', 2) order by 1 desc

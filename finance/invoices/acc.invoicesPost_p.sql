@@ -16,7 +16,7 @@ create proc acc.invoicesPost_p
 	@peirocic varchar(3), 
 	@period date,
 	@datedue char(8), 
-	@document char(8), 
+	@document varchar(50), 
 	@comment varchar (150), 
 	@client varchar (50), 
 	@bookkeeper varchar (50), 

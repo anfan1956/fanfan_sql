@@ -53,7 +53,7 @@ with _final (transid, transdate, amount, registerid, shop, transtype, personid, 
 		e.registerid, 
 		acc.shop_f(e.registerid), 
 		a.article, 
-		cor.personid, 
+		isnull(cor.personid,cor.contractorid), 
 		t.comment
 	from acc.transactions t
 		join acc.entries e on e.transactionid = t.transactionid
@@ -71,13 +71,9 @@ select
 	shop,
 	transtype, 
 	f.personid, 
-	p.lfmname person, 
+	isnull(p.lfmname, c.contractor) person, 
 	f.comment
 from _final f
 	left join org.persons p on p.personID = f.personid
+	left join org.contractors c on c.contractorID=f.personid
 go
-
-declare @date date = getdate()
---declare @note varchar(max), @paymentid int = 1160; exec acc.payment_delete_p @note output,	@paymentid; select @note;
-select * from acc.divisions_cash_f(@date)
-select * from acc.beg_entries_around_date_f(@date)

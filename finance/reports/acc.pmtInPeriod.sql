@@ -7,7 +7,7 @@ create function acc.pmtInPeriod (@period char(2), @num int ) returns table as re
 		isnull(clt.clientRus, 'ИП ФЕДОРОВ') [Юр. лицо], 
 		a.article СТАТЬЯ, 
 		isnull(c.contractor, p2.lfmname) К_АГЕНТ, 
-		isnull(isnull(cn.contractor, cl.clientRus), p2.lfmname) ПЛАТЕЛЬЩИК, 
+		isnull(isnull(cn.contractor, cl.clientRus), p3.lfmname) ПЛАТЕЛЬЩИК, 
 		t.amount СУММА, 
 		ac.account ДЕБЕТ, 
 		ac2.account КРЕДИТ, 
@@ -29,8 +29,9 @@ create function acc.pmtInPeriod (@period char(2), @num int ) returns table as re
 		left join acc.registers r on r.registerid=isnull(e2.registerid, e.registerid)
 		left join org.contractors cn on cn.contractorID=r.clientid
 		left join org.clients cl on cl.clientID=r.clientid
-		left join org.contractors con on con.contractorID=r.bankid
-		left join org.persons p2 on p2.personid = isnull(e2.personid, e.personid)
+		left join org.contractors con on con.contractorID=r.bankid		
+		left join org.persons p2 on p2.personid = isnull(e.personid, e2.personid)
+		left join org.persons p3 on p3.personID = e2.personid
 		
 	
 	where cast(

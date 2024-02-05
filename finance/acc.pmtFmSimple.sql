@@ -17,7 +17,7 @@ begin try
 			comment varchar(max),
 			bookkeeper varchar(max)
 			);
-		declare @transid int, @regid int;
+		declare @transid int, @regid int, @accountid int;
 
 		with s (value, rn) as (
 			SELECT value, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS rn
@@ -36,18 +36,13 @@ begin try
 			(select cast(value as money) from s where s.rn =9) as amount,
 			(select value from s where s.rn =10) as comment, 
 			(select value from s where s.rn =11) as bookkeeper ;
---		select * from @table;
+--select * from @table;
 		
-		insert acc.transactions (transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
-		select 
-			t.transdate, CURRENT_TIMESTAMP, personID, 643, a.articleid, clientID, t.amount, 
-			t.pmtType + ': ' + t.comment ,  t.document
-		from @table t
-			join org.persons p on p.lfmname=bookkeeper
-			join acc.articles a on a.article=t.article
-			join org.clients cl on cl.clientRus=t.client
-		select @transid = SCOPE_IDENTITY();
---		select * from acc.transactions t where t.transactionid=@transid;
+		select @accountid = case  t.pmtType 
+				when 'денежный' then acc.account_id('деньги, касса')
+				else acc.account_id('подотчет') end
+		from @table t;
+--select @accountid accid;
 
 		with s as (select  c.contractorID bankid, isnull(cl.clientID, c2.contractorID) clientid, 643 currencyid
 		from @table t
@@ -57,24 +52,37 @@ begin try
 			)
 		select @regid = registerid from acc.registers r 
 		join s on s.bankid=r.bankid and s.clientid=r.clientid and s.currencyid= r.currencyid		
---		select @regid regid
+--select @regid regid
+
+		insert acc.transactions (transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
+		select 
+			t.transdate, CURRENT_TIMESTAMP, personID, 643, a.articleid, clientID, t.amount, 
+			t.pmtType + ': ' + t.comment ,  t.document
+		from @table t
+			join org.persons p on p.lfmname=bookkeeper
+			join acc.articles a on a.article=t.article
+			join org.clients cl on cl.clientRus=t.client
+		select @transid = SCOPE_IDENTITY();
+--select * from acc.transactions t where t.transactionid=@transid;
+
 		
 		if (select article from @table) = 'ВЫПЛАТЫ ПЕРСОНАЛУ'
 			begin
 				with _seed (is_credit, accountid, registerid, personid) as (
-					select 1, acc.account_id('подотчет'), @regid, p.personID
+					select 1, @accountid, @regid, 
+						case 
+							when @regid is null then p.personID end
 					from @table t
-						join org.persons p on p.lfmname = t.payer
+						left join org.persons p on p.lfmname = t.payer
 					union all
-					select 0, acc.account_id('зарплата к оплате'), @regid, p.personID
+					select 0, acc.account_id('зарплата к оплате'), null, p.personID
 					from @table t
 						left join org.persons p on p.lfmname= t.contractor
-				)
-				
-				insert acc.entries(transactionid, is_credit, accountid, personid)
+				)				
+				insert acc.entries(transactionid, is_credit, accountid, personid, registerid)
 				select 
 					@transid, s.is_credit, isnull(s.accountid, ar.accountid), 
-					s.personid
+					s.personid, s.registerid
 					
 				from @table t
 					join acc.articles ar on ar.article=t.article						
@@ -84,12 +92,12 @@ begin try
 		else
 			begin
 				;with _seed (is_credit, accountid, registerid, personid ) as (
-					select 1, 
+					select 1, --is_credit
 						case 
 							when @regid is null or t.article='ВОЗВРАТ С ПОДОТЧЕТА'  then acc.account_id('подотчет')
-							else acc.account_id('деньги, касса') end, 
-						case when t.article <> 'ВОЗВРАТ С ПОДОТЧЕТА' then @regid end, 
-						case when @regid is null or t.article= 'ВОЗВРАТ С ПОДОТЧЕТА' then org.person_id(t.payer) end
+							else acc.account_id('деньги, касса') end,													-- accountid
+						case when t.article <> 'ВОЗВРАТ С ПОДОТЧЕТА' then @regid end,									-- registerid
+						case when @regid is null or t.article= 'ВОЗВРАТ С ПОДОТЧЕТА' then org.person_id(t.payer) end	-- personid
 					from @table t
 					union all 
 					select 
@@ -114,7 +122,7 @@ begin try
 					left join org.persons p on p.lfmname = t.payer
 					cross apply _seed s;		
 			end 
---		select * from acc.entries e where e.transactionid =@transid;
+--select * from acc.entries e where e.transactionid =@transid;
 
 		select 1 result, 'recorded transid: ' +  cast (@transid as varchar(max))  msg
 
@@ -127,11 +135,4 @@ begin catch
 end catch
 go
 
---exec acc.pmtFmSimple '25.11.2023,подотчет,ИП ФЕДОРОВ,БАЛУШКИНА А. А.,,ADOBE INC.,УБОРЩИЦА,бд,500,бд,БАЛУШКИНА А. А.'
---exec acc.pmtFmSimple '23.11.2023,денежный,ИП ФЕДОРОВ,Федоров А. Н.,ТИНЬКОФФ,КРОКУС СИТИ МОЛЛ,ОПЛАТА ИНВОЙСОВ,12вв,900,Федоров А. Н.'
-
---exec acc.pmtFmSimple '27.11.2023,подотчет,ИП ФЕДОРОВ,ФЕДОРОВ А. Н.,,КУЛИКОВСКАЯ С. А.,ВЫПЛАТЫ ПЕРСОНАЛУ,бд,1000,тест,ФЕДОРОВ А. Н.'
-
-
-
-
+--exec acc.pmtFmSimple '12.12.2023,денежный,ИП ФЕДОРОВ,ИП ФЕДОРОВ,ТИНЬКОФФ,ШЕМЯКИНА Е. В.,ВЫПЛАТЫ ПЕРСОНАЛУ,bank,3226.5,Ком 147.40,ФЕДОРОВ А. Н.'
