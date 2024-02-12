@@ -7,12 +7,15 @@ with s as (
 		sr.receipttypeID, rt.r_type_rus, a.rate aqrate,
 		sg.barcodeID, sg.amount, st.cost, r.rate + 
 		case 
+			--ставка аренды
 			when s.fiscal_id is null then 0
 			else .13*1.2  end  + 
 		case 
+			--ставка эквайринга
 			when s.fiscal_id is null then 0
 			else a.rate  end  +
 		case 
+			--ставка налога с оборота УСН
 			when s.fiscal_id is null then 0
 			else .06  end allComm 		
 	from inv.sales s 
@@ -56,8 +59,9 @@ from acc.transactions t
 	join acc.accounts ac on ac.accountid=e.accountid
 	join org.contractors c on c.contractorID=e.contractorid
 
-where t.saleid = 81062
+where t.transactionid>=7840
 
 
 
-select * from acc.salesConsignment_('20240101') where saleid = 80040
+select * from acc.salesConsignment_('20240101') where saleid = 81073;
+

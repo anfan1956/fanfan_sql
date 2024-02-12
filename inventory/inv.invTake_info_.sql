@@ -22,7 +22,10 @@ _b (barcodeid, logstateid, divisionid) as (
 select 
 	br.brand, 
 	article, 
+	s.cost, 
 	b.barcodeid, 
+	o.orderID,
+	oc.orderclass orderType,
 	it.inventorytyperus, 
 	c.color, 
 	sz.size, 
@@ -35,6 +38,8 @@ from _b b
 	join inv.transactions t on t.transactionID=lt.transactionid
 	join inv.barcodes bc on bc.barcodeID=b.barcodeid
 	join inv.styles s on s.styleID=bc.styleID
+	join inv.orders o on o.orderID=s.orderID
+	join inv.orderclasses oc on oc.orderclassID=o.orderclassID
 	join inv.brands br on br.brandID=s.brandID
 	join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 	join inv.colors c on c.colorID=bc.colorID
@@ -44,5 +49,10 @@ from _b b
 	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
 go
 
-declare @barcodeid int = 663777;
-select * from inv.invTake_info_(@barcodeid)
+declare @barcodeid int = 667861;
+select brand, article, cost, barcodeid, orderID, inventorytyperus, color, size, logstate, divisionfullname, transactiontype,transactiondate  from inv.invTake_info_(@barcodeid)
+select * 
+	from inv.orders o 
+	join inv.orderclasses oc on oc.orderclassID= o.orderclassID
+where orderID = 81079
+

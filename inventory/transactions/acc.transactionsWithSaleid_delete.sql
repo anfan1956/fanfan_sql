@@ -1,5 +1,4 @@
-﻿
-if OBJECT_ID('acc.transactionsWithSaleid_delete') is not null drop proc acc.transactionsWithSaleid_delete
+﻿if OBJECT_ID('acc.transactionsWithSaleid_delete') is not null drop proc acc.transactionsWithSaleid_delete
 go
 create proc acc.transactionsWithSaleid_delete @saleid int as
 
@@ -33,7 +32,7 @@ begin try
 
 			declare @note varchar(max)
 			-- Execute the stored procedure
-			EXEC acc.payment_delete_p @paymentid = @CurrentTransactionID, @note= @note output;
+			EXEC acc.payment_delete_p @paymentid = @CurrentTransactionID
 
 			-- Increment the current row number
 			SET @CurrentRow = @CurrentRow + 1
@@ -50,7 +49,11 @@ end catch
 go
 
 
-if @@TRANCOUNT >0 
-	rollback
-declare @saleid int =81062
-exec acc.transactionsWithSaleid_delete @saleid
+declare @saleid int =81145
+--exec acc.transactionsWithSaleid_delete @saleid
+select * from acc.transactions t 
+	where t.saleid= @saleid
+order by 1 desc
+
+
+

@@ -21,7 +21,8 @@ having sum(i.opersign)>0
 )
 select 
 	isnull(s.orderID, o.orderID) orderid,
-	se.season, br.brand,s.article, 
+	se.season, 
+	br.brand,s.article, 
 	it.inventorytyperus category, c.color, 
 	sz.size, 
 	b.barcodeid, 
@@ -36,13 +37,14 @@ select
 	d.divisionfullname shop
 from _barcodes b
 	join inv.styles s on s.styleID=b.styleid
-	join inv.seasons se on se.seasonid=isnull(s.seasonID, 0)
+	join inv.orders o on o.orderID=s.orderID
+	join inv.seasons se on se.seasonid=isnull(o.seasonID, 0)
 	join inv.brands br on br.brandID=s.brandID
 	join org.divisions d on d.divisionID=b.divisionid
 	join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 	join inv.colors c on c.colorID=b.colorid
 	join inv.sizes sz on sz.sizeID=b.sizeid
-	left join inv.orders o on o.orderID=s.orderID
+	--left join inv.orders o on o.orderID=s.orderID
 	join _s cte on cte.styleID=s.styleID and cte.num=1
 	left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
 	left join cmn.currencies cr on cr.currencyID=s.currencyID
@@ -56,4 +58,10 @@ go
 select 
 	orderid, season, brand, article, category, color, size, barcodeid, price, discount
 from inv.barcodesInShops_v
-where shop = '05 Уикенд'
+where shop = '05 Уикенд' and orderid =81079
+
+
+select * 
+from inv.orders o 
+	join inv.seasons s on s.seasonID=o.seasonID
+where o.orderID= 81079

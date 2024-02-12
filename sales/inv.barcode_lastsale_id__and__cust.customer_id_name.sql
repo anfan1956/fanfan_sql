@@ -31,23 +31,7 @@ begin
 end 
 go
 
-if OBJECT_ID('cust.customer_id_name') is not null drop function cust.customer_id_name
-go
-create function cust.customer_id_name (@saleid int ) returns table as return
-	select 
-		s.customerID, 
-		lfmname customer, 
-		isnull(c.connect, 'N/A') connect, 
-		d.divisionfullname division
-	from inv.sales s 
-		join cust.persons p on p.personID =s.customerID
-		join org.divisions d on d.divisionID=s.divisionID
-		left join cust.connect c on c.personID = s.customerID 
-			and c.connecttypeID=1 and c.prim = 'true'
-	where s.saleID= @saleid
-go
-
-declare @barcodeid int = 658826
+declare @barcodeid int = 666706
 declare @saleid int = inv.barcode_lastsale_id (@barcodeid);
 
 select customerid, customer, connect, division from cust.customer_id_name(@saleid);

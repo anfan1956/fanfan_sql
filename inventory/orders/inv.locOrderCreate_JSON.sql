@@ -75,6 +75,7 @@ declare @showroomid int = (select c.contractorID from @header h
 declare @seasonid int = (select c.seasonID from @header h 
 	join inv.seasons c on c.season=h.Value
 	where h.Field = 'Season')
+	select @seasonid seasonid;
 declare @userid int = (select p.personID from @header h 
 	join org.persons p on p.lfmname=h.Value
 	where h.Field = 'Operator')
@@ -129,25 +130,4 @@ begin catch
 end catch
 go
 		
-
-set nocount on; declare @json varchar(max); select @json = 
-'[
-	{"fields":"Дата","value":"14.01.2024"},
-	{"fields":"Поставщик","value":"E&N suppliers"},
-	{"fields":"Магазин","value":"05 УИКЕНД"},
-	{"fields":"Мультибренд","value":"да"},
-	{"fields":"Валюта","value":"RUR"},
-	{"fields":"Тип заказа","value":"КОНСИГНАЦИЯ"},
-	{"fields":"Наценка","value":"3.2"},
-	{"fields":"Заказ №","value":""},
-	{"fields":"Количество, шт","value":""},
-	{"fields":"Сумма","value":""},
-	{"fields":"Оператор","value":"ФЕДОРОВ Е. А."}
-]'; 
---exec inv.locOrderCreate_JSON @json;
-
---select top 2 * from inv.transactions order by 1 desc
---select * from inv.orders order by 1 desc
---exec inv.transaction_delete 80033
-
 

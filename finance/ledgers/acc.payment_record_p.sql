@@ -1,5 +1,4 @@
-﻿
-if OBJECT_ID('acc.payment_record_p') is not null drop proc acc.payment_record_p
+﻿if OBJECT_ID('acc.payment_record_p') is not null drop proc acc.payment_record_p
 go
 create proc acc.payment_record_p
 	@note varchar(max) output,
@@ -79,7 +78,7 @@ begin try
 					s.currencyid, 
 					a.articleid, 
 					s.clientid, 
-					@amount,
+					iif(@amount<0, -@amount, @amount),
 					@comment, 
 					@document
 					--case when @article <> 'ВЫПЛАТЫ ПЕРСОНАЛУ' then @comment end, 
@@ -87,27 +86,39 @@ begin try
 				from acc.articles a
 					cross apply s
 				where a.article= @article;
-		
+				
+						
 				select @transactionid = SCOPE_IDENTITY();
 
 		--		table 2: acc.entries
 				with _seed (is_credit, accountid, personid, contractorid, registerid) as(
-					select 'True', @account_credit_id, @person_id_credit, null, @register_credit
+					select 1, @account_credit_id, @person_id_credit, null, @register_credit
 						union
-					select 'False', @account_debet_id, @person_id_debet, @contractorid, @register_debet
+					select 0, @account_debet_id, @person_id_debet, @contractorid, @register_debet
 					from acc.articles a
 					where a.article= @article
 					)
 				insert acc.entries(transactionid, is_credit, accountid, registerid, personid, contractorid)
-				select @transactionid, s.is_credit, s.accountid,  s.registerid, s.personid, s.contractorid			
-				from _seed s;
+				select 
+					@transactionid, 
+					case 
+						when @amount>0 then s.is_credit
+						else 1-s.is_credit end is_credit, 
+					s.accountid, s.registerid, s.personid, s.contractorid
+				from _seed s
+--				join acc.accounts a on a.accountid=s.accountid
+				;
 
 		
-				select @note= 'получатель: ' + @payee + ', сумма: '  + FORMAT(@amount, '#,##0.00') + ' ' 
+				select @note= 
+					case 
+						when @amount>0 then 'получатель: ' 
+						else 'плательщик: ' end 
+					+ @payee + ', сумма: '  + FORMAT(abs(@amount), '#,##0.00') + ' ' 
 					+ (select c.currencycode  from acc.registers r join cmn.currencies c on 
 					c.currencyID= r.currencyid where r.account= @account)
 			end 
-		--throw 50001, @note, 1
+--		;throw 50001, @note, 1
 	commit transaction
 end try
 begin catch
@@ -115,52 +126,9 @@ begin catch
 	rollback transaction
 end catch
 go
+declare @transid int = 7858
+--declare @note varchar(max); exec acc.payment_record_p @note output, '20240212', 'hc05УИКЕНД', 'ЛАЗАРЕВА Н. В.', 'РАСЧЕТЫ ПО КОНСИГНАЦИИ', 'E&N suppliers', 'cash', '05 УИКЕНД', '-80800'; select @note;
+--exec acc.payment_delete_p @transid
+select * from acc.transactions t order by 1 desc
 
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221202', '40817810900014646072', 'ПИКУЛЕВА О. Н.', 'ВОЗВРАТ С ПОДОТЧЕТА', 'ФЕДОРОВ А. Н.', 'без комментария', '65405'; select @note;
-
-if OBJECT_ID('acc.payments_date_f') is not null drop function  acc.payments_date_f
-go 
-create function acc.payments_date_f(@date date) returns table as return
-
-with s (id, reg_id, дата, плательщик, статья, [план счетов], получатель, комментарий, документ, банк, [счет/банк], валюта, сумма, оператор) as (
-
-select 
-	t.transactionid, 
-	e.registerid,
-	t.transdate,
-	c2.contractor, 
-	a.article, 
-	ac.account, 
-	isnull(c3.contractor, p.lfmname), 
-	t.comment, 
-	t.document,
-	c.contractor, 
-	r.account, 
-	cr.currencycode, 
-	t.amount, 
-	p2.lfmname
-from acc.transactions t
-	join acc.entries e on e.transactionid =t.transactionid and e.is_credit = 'True'
-	join acc.registers r on r.registerid= e.registerid
-	join cmn.currencies cr on cr.currencyID= r.currencyid
-	join org.contractors c on r.bankID=c.contractorID
-	join org.contractors c2 on c2.contractorID= r.clientid
-	join acc.articles a on a.articleid=t.articleid
-	join acc.accounts ac on ac.accountid=a.accountid
-	join acc.entries e2 on e2.transactionid =t.transactionid and e2.is_credit = 'False'
-	left join org.contractors c3 on c3.contractorID=e2.contractorid
-	left join org.persons p on p.personID = e2.personid
-	join org.persons p2 on p2.personID= t.bookkeeperid
-where cast(t.recorded as date) = isnull(@date, getdate())
-) 
-select * from s
-go
-
-select id, reg_id, дата, статья, [план счетов], получатель, документ, плательщик, банк, [счет/банк], валюта, сумма, оператор from acc.payments_date_f('20221207')
-declare @date date = '2022-12-02'
---select * from acc.entries
-select * from acc.payments_date_f(@date)
-select * from acc.transactions order by 1 desc;
---select * from acc.beg_entries_v
-
---declare @note varchar(max); exec acc.payment_record_p @note output, '20221215', 'hc05УИКЕНД', 'ФЕДОРОВ А. Н.', 'ВЫДАЧА ПОД ОТЧЕТ', 'ФЕДОРОВ А. Н.', '', '', '23'; select @note;
+--exec acc.transactionsWithSaleid_delete 81183

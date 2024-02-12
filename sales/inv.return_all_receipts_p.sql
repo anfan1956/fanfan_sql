@@ -18,10 +18,13 @@ set nocount on;
 declare @message varchar (max)= 'Just debugging'
 begin try
 	begin transaction
-
 		
 		declare @barcodes_count int = (select count(*) from @info);
-		declare @saleid int, @returnid int, @customerid int;	
+		declare @saleid int, @returnid int, @customerid int, @accTranId int, @registerid int;	
+		declare @contractorid int, @trantypeid int;
+		--this table is created for acc.entries to insert
+		declare @transactions table (transid int, clientid int, articleid int, pmtForm varchar(25));
+
 
 -- если эти баркоды были проданы неоднократно, находим последнюю операцию (top 1) где участвовали
 -- все баркоды и операция - не возврат	
@@ -34,6 +37,13 @@ begin try
 		select top 1 @saleid = transactionID 
 		from _s s where s.num=@barcodes_count
 		order by transactionid desc;
+
+		select distinct @contractorid =  o.vendorID
+		from inv.orders o
+			join inv.styles s on s.orderID=o.orderID
+			join inv.barcodes b on b.styleID=s.styleID
+			join @info i on i.barcodeid=b.barcodeID;
+
 
 		if @saleid is null 
 			begin
@@ -92,21 +102,22 @@ begin try
 
 -- делаем обновление регистров возврата по начальной продаже
 		with _sale as (
-			select sr.*
+			select sr.saleID, sr.receipttypeID, sr.amount, sr.registerid
 			from inv.sales_receipts sr 
-				join inv.sales s on s.saleID=sr.saleID	
-			where s.saleID = @saleid
+				--join inv.sales s on s.saleID=sr.saleID	
+			where sr.saleID = @saleid
 		)
 		, _return as (
-			select sr.*
+			select sr.saleID, sr.receipttypeID, sr.amount, sr.registerid
 			from inv.sales_receipts sr 
-				join inv.sales s on s.saleID=sr.saleID	
-			where s.saleID = @returnid
+				--join inv.sales s on s.saleID=sr.saleID	
+			where sr.saleID = @returnid
 		)
 		update r set r.registerid=s.registerid
 		from _sale s
-			join _return r on s.receipttypeID= r.receipttypeID
-		;
+			join _return r on s.receipttypeID= r.receipttypeID;
+		select @registerid =sr.registerid from inv.sales_receipts sr where sr.saleID=@returnid;
+
 
 -- записываем  в  inv.sales_goods с обратным знаком
 		insert inv.sales_goods(saleID, barcodeID, amount, price, client_discount, barcode_discount)
@@ -136,15 +147,65 @@ begin try
 			i.transactionID = @saleid 
 			and i.logstateID = inv.logstate_id('SOLD');
 
+		--создаем запись в accounting transactions
+		insert acc.transactions(transdate, recorded, bookkeeperid, currencyid, articleid, clientid, amount, comment, document, saleid, barcodeid)
+		output inserted.transactionid, inserted.clientid, inserted.articleid, inserted.document into @transactions
+		select 
+			@date transdate, CURRENT_TIMESTAMP recorded, @userid bookkeeperid, t.currencyid, 
+			t.articleid, t.clientid, t.amount, t.comment, t.document, @returnid saleid, t.barcodeid
+		from acc.transactions t where t.saleid = @saleid
+		select @accTranId = SCOPE_IDENTITY();
+--		select * from acc.transactions where transactionid =@accTranId
+--		select * from @transactions;
+
+		-- делаем запись в acc.entries
+		declare @entries table (entryid int);
+
+		with _seed (is_credit, accountid, contractorid, registerid) as (
+			select 'False', acc.account_id ('счета к оплате'), org.contractor_id('E&N suppliers'), null
+			union
+			select 'True', null, null, @registerid
+		)
+		, _entries (transactionid, is_credit, accountid, contractorid) as (
+		select t.transid, s.is_credit, isnull(s.accountid, a.accountid), isnull(s.contractorid, t.clientid)
+		from _seed s
+			cross apply @transactions t 
+			join acc.articles a on a.articleid=t.articleid
+		)
+		merge acc.entries as t using _entries s
+		on t.transactionid = s.transactionid
+		when not matched then 
+		insert (transactionid, is_credit, accountid, contractorid)
+		values(transactionid, is_credit, accountid, contractorid)
+		output inserted.entryid into @entries;
+		--select e.*, a.account, c.contractor from acc.entries e 
+		--	join @entries en on en.entryid=e.entryid
+		--	join acc.accounts a on a.accountid=e.accountid
+		--	join org.contractors c on c.contractorID=e.contractorid;
+
+
 	select @note = '№ возврата - ' + format(@returnid, '0') + '; ' + STRING_AGG(convert(varchar(max), rt.r_type_rus +' - ' + format(sr.amount, '#,##0.00;' ) ),  '; ' ) 
 	from inv.sales_receipts sr 
 		join fin.receipttypes rt on rt.receipttypeID= sr.receipttypeID
 	where sr.saleID= @returnid;
-	--;throw 50001, @note, 1
+	
+
+--	;throw 50001, @note, 1
 	commit transaction
 end try
 begin catch
 	set @note = ERROR_MESSAGE()
+	select @note errorMessage;
 	rollback transaction
 end catch
 go
+set nocount on; declare @note varchar (max), @userid int = 1; declare @divisionid int = 27; 
+declare @date datetime = '20240211'; declare @info inv.barcode_type; 
+insert @info values (666706); 
+--exec INV.return_all_receipts_p @info = @info, @userid = @userid, @date = @date, @divisionid = @divisionid, @note = @note output; select @note
+
+
+
+
+
+

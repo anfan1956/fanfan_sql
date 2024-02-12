@@ -30,7 +30,7 @@ select
 	s.orderID,
 	s.showroom, s.barcodeID,
 	t.document, 
-	t.comment + '; ' + isnull(cast(t.saleid as varchar(max)), c.contractor) comment, 
+	t.comment + '; ' + isnull(isnull(cast(t.saleid as varchar(max)), c.contractor), '') comment, 
 	isnull(
     CASE 
         WHEN ISNUMERIC(SUBSTRING(r.account, 1, 1)) = 1 THEN r.account
