@@ -26,12 +26,14 @@ select
 	it.inventorytyperus category, c.color, 
 	sz.size, 
 	b.barcodeid, 
+
 	round(
 	case o.orderclassID
 		when 3 then cte.price
 		else 
 			ISNULL(s.cost_adj, 1) * s.cost * r.rate* r.markup
 		end, -1) price,
+--	cte.price,
 	s.retail,
 	isnull(cte.discount, 0) discount, 
 	d.divisionfullname shop

@@ -134,18 +134,18 @@ go
 			
 
 set nocount on; declare 
-	@fname varchar( 25 )='Наталия',
-	@mname varchar( 25 )='Владимировна',
-	@lname varchar( 25 )='Лазарева',
-	@birthdate date='19750820',
+	@fname varchar( 25 )='Елена',
+	@mname varchar( 25 )='Анатольевна',
+	@lname varchar( 25 )='Шуршикова',
+	@birthdate date='19781012',
 	@gender char( 3 )='жен',
-	@inn varchar( 25 )='01854903964',
+	@inn varchar( 25 )='771513228408',
 	@position varchar (25)='консультант', 
 	@has_MW bit='true',
-	@datestart date='20230708',
+	@datestart date='20240212',
 	@note varchar( max );
 declare @companies dbo.var_type;
-insert @companies values ('Проект Ф'),( 'ИП Федоров')
+insert @companies values ('Проект Ф')
 
 	--exec hr.employee_create_p
 	--	@companies, 
@@ -162,5 +162,3 @@ insert @companies values ('Проект Ф'),( 'ИП Федоров')
 	--select @note
 
 
-select * from org.users order by 1 desc
-select * from hr.salary_BegEntries where employeeid = 1074
