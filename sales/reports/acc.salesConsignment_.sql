@@ -3,10 +3,15 @@ go
 create function acc.salesConsignment_(@date as date) returns table as return
 with s as (
 	select 
-		sg.saleID, 		
-		sr.receipttypeID, rt.r_type_rus, a.rate aqrate,
-		sg.barcodeID, sg.amount, st.cost, r.rate + 
-		case 
+		sg.saleID, 
+		tr.transactiontypeID, 		
+		sr.receipttypeID, rt.r_type_rus, 
+		a.rate aqrate,
+		sg.barcodeID, 
+		sg.amount * iif(tr.transactiontypeID=13, -1, 1) amount,
+		st.cost
+		, r.rate 
+		+  case 
 			--ставка аренды
 			when s.fiscal_id is null then 0
 			else .13*1.2  end  + 
@@ -18,8 +23,11 @@ with s as (
 			--ставка налога с оборота УСН
 			when s.fiscal_id is null then 0
 			else .06  end allComm 		
+			, ROW_NUMBER() over (partition by s.saleid, a.registerid, a.acqTypeid order by a.datestart desc) num
+
 	from inv.sales s 
 		join inv.sales_goods sg on sg.saleID=s.saleID
+		join inv.transactions tr on tr.transactionID= s.saleID
 		join inv.sales_receipts sr on sr.saleID=s.saleID
 		join fin.receipttypes rt on rt.receipttypeID=sr.receipttypeID
 		join inv.barcodes b on b.barcodeID=sg.barcodeID
@@ -31,7 +39,7 @@ with s as (
 			and a.registerid = sr.registerid 
 			and a.datestart<=t.transactiondate
 	where t.transactiontypeID=inv.transactiontype_id('consignment')
-		and t.transactiondate>=@date
+		and tr.transactiondate>=@date	
 )
 , _final (saleid, barcodeid, форма_опл, выручка, комиссии, себ_ст, прибыль, доля_пр, к_выплате  ) as (
 	select 
@@ -43,25 +51,12 @@ with s as (
 		(amount - amount*allComm - cost) * .6 profit_share,
 		(amount - amount*allComm - cost) * .6 + cost totalPay
 	from s
+	where s.num =1
 )
 select f.* from _final f
+--select * from s;
 go
 
 declare @date date = '20240101'
-select * from acc.salesConsignment_(@date)
-
-
-select t.transactionid, t.transdate, t.recorded, a.article, t.amount, t.comment, t.document, t.saleid, 
-	e.entryid, e.is_credit, ac.account, c.contractor 
-from acc.transactions t
-	join acc.entries e on e.transactionid=t.transactionid
-	join acc.articles a on a.articleid=t.articleid
-	join acc.accounts ac on ac.accountid=e.accountid
-	join org.contractors c on c.contractorID=e.contractorid
-
-where t.transactionid>=7840
-
-
-
-select * from acc.salesConsignment_('20240101') where saleid = 81073;
+select * from acc.salesConsignment_(@date) s where s.barcodeid = 666706;
 

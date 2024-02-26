@@ -12,10 +12,8 @@ begin try
 	begin transaction;
 
 		declare @transactions table (transid int, clientid int, articleid int, pmtForm varchar(25));
---		Select @date startDate;
 
 --		select *, 'checking' from  acc.salesConsignment_(@date);
-
 		with _seed(articleid, amount, saleid, barcodeid, pmtForm)  as (
 			select acc.article_id ('закупочная стоимость'), s.себ_ст, saleid, barcodeid, s.форма_опл
 			from acc.salesConsignment_(@date) s
@@ -29,28 +27,27 @@ begin try
 				se.articleid, d.clientID, se.amount, d.divisionfullname, 
 				se.saleid, se.barcodeid, se.pmtForm
 			from _seed se 
-				join inv.transactions t on t.transactionID=se.saleid
+				join inv.transactions t on t.transactionID=se.saleid 
 				join inv.sales s on s.saleID = se.saleid
 				join org.divisions d on d.divisionID=s.divisionID
 		)	
---select * from _seed;
+--select * from s where s.barcodeid = 666706;
 		merge acc.transactions as t using s
-		on  s.saleid = t.saleid and s.barcodeid= t.barcodeid and s.articleid=t.articleid
-		when matched and t.amount<>s.amount or t.comment<>s.comment or t.document<>s.pmtForm
+			on  t.saleid = s.saleid and t.barcodeid= s.barcodeid and t.articleid=s.articleid
+		when matched 
+			and t.amount<>s.amount or t.comment<>s.comment or t.document<>s.pmtForm
 		then update set 
 			t.amount =s.amount,
 			t.comment=s.comment, 
 			t.document = s.pmtForm
-		when not matched then
+		when not matched 			
+		then 
 			insert  (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, saleid, barcodeid, document)
 			values (s.transdate, s.bookkeeperid, s.currencyid, s.articleid, s.clientid, s.amount, s.comment, s.saleid, s.barcodeid, s.pmtForm)
 			output inserted.transactionid, inserted.clientid, inserted.articleid, s.pmtForm into @transactions;
 ;
 --	select t.* from acc.transactions t join @transactions tr on tr.transid=t.transactionid;
-
-
 		declare @entries table (entryid int);
-
 		with _seed (is_credit, accountid, contractorid) as (
 			select 'True', acc.account_id ('счета к оплате'), org.contractor_id('E&N suppliers') 
 			union
@@ -70,6 +67,7 @@ begin try
 		output inserted.entryid into @entries;
 		--select e.* from acc.entries e join @entries en on en.entryid=e.entryid
 
+--		select * from acc.transactions t where t.barcodeid = 666706
 
 --;		throw 50001, @message, 1
 	
@@ -81,7 +79,8 @@ begin catch
 end catch
 go
 
-declare @date datetime = '20240101';
---exec acc.consignment_record @date 
-
---select * from acc.salesConsignment_(@date)
+declare @date datetime = '20240101', @barcodeid int  = 666706;
+	--exec acc.consignment_record @date 
+select * from acc.transactions where barcodeid = @barcodeid
+select acc.article_id('доля в прибыли'), s.доля_пр, saleid, barcodeid, s.форма_опл
+			from acc.salesConsignment_(@date) s where s.barcodeid = @barcodeid

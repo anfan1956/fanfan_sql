@@ -26,13 +26,15 @@ select
 	b.barcodeid, 
 	o.orderID,
 	oc.orderclass orderType,
-	it.inventorytyperus, 
+	it.inventorytyperus category, 
 	c.color, 
 	sz.size, 
-	ls.logstate, 
-	d.divisionfullname, 
-	tt.transactiontype, 
-	t.transactiondate
+	ls.logstate status, 
+	d.divisionfullname shop, 
+	tt.transactiontype lastTran, 
+	t.transactiondate lastTranDate, 
+	cn.contractor showroom
+
 from _b b
 	cross apply _lastTran lt
 	join inv.transactions t on t.transactionID=lt.transactionid
@@ -47,12 +49,14 @@ from _b b
 	join inv.logstates ls on ls.logstateID=b.logstateid
 	join org.divisions d on d.divisionID= b.divisionid
 	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+	left join org.contractors cn on cn.contractorID=o.showroomID
 go
 
 declare @barcodeid int = 667861;
-select brand, article, cost, barcodeid, orderID, inventorytyperus, color, size, logstate, divisionfullname, transactiontype,transactiondate  from inv.invTake_info_(@barcodeid)
-select * 
-	from inv.orders o 
-	join inv.orderclasses oc on oc.orderclassID= o.orderclassID
-where orderID = 81079
+select 
+	brand, article, cost, barcodeid, orderID, orderType, category, color, size, status, shop, lastTran, lastTranDate, showroom
+from inv.invTake_info_(@barcodeid)
 
+select brand, article, cost, barcodeid, orderID, orderType, category, color, size, status, shop, lastTran, lastTranDate, showroom from inv.invTake_info_(666706)
+;
+go

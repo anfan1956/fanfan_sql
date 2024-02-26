@@ -24,40 +24,60 @@ IF OBJECT_ID('cust.discount_request_f') IS NOT NULL DROP FUNCTION cust.discount_
 GO 
 CREATE FUNCTION cust.discount_request_f(@cust_id INT, @just_barcode BIT, @barcodeid INT = 0, @user VARCHAR(25)='') RETURNS VARCHAR(MAX) AS 
 BEGIN
-	DECLARE @string VARCHAR(MAX);
+	DECLARE @string VARCHAR(MAX);	
+	declare @customer varchar(25) = (select customer from club.customer_discount_f(1));
+
 	IF @just_barcode = 'True'
-	BEGIN
-		SELECT @string = CONCAT(
-			br.brand,
-			' ' , se.season, 
-			' цена ', 
-			FORMAT(inv.barcode_price2(@barcodeid, @user), '#,##0'), 
-			'. Cкидка ', 
-			format( inv.barcode_discount_f(@barcodeid), '0.0%'), '. ',
-			@user, ' запрашивает '
-			)
+		BEGIN
+			SELECT @string = 
+				----CONCAT(
+				--br.brand +
+				--' ' + se.season + 
+				--' цена ' + 
+				--FORMAT(inv.barcode_price2(@barcodeid, @user), '#,##0')  
+				--+ '\nКлиент: ' +  @customer  + ' Cкидка ' + 
+				--format( inv.barcode_discount_f(@barcodeid), '0.0%') + '. ' 
+				--+ '\nзапрашивает скидку '
+				----)
+			CONCAT(br.brand, ' ', se.season, ', ', it.inventorytype, ', \nцена:', format(bp.price, '#,##0'), ' \nскидка: ', format (bp.discount, 'P1') , '\n')
 			FROM inv.barcodes b 
 				JOIN inv.styles s ON s.styleID=b.styleID
 				JOIN inv.brands br ON br.brandID=s.brandID
 				JOIN inv.seasons se ON se.seasonID=s.seasonID
-			WHERE b.barcodeID=@barcodeid;
-    END
+				join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
+				cross apply (select * from inv.barcode_price3 (@barcodeid)) bp
+			where b.barcodeID =@barcodeid
+
+			--FROM inv.barcodes b 
+			--	JOIN inv.styles s ON s.styleID=b.styleID
+			--	JOIN inv.brands br ON br.brandID=s.brandID
+			--	JOIN inv.seasons se ON se.seasonID=s.seasonID
+			--WHERE b.barcodeID=@barcodeid;
+		END
 	ELSE
-	BEGIN
-		SELECT @string = CONCAT (
-		'клиент ', cdf.customer, ', карта - ', FORMAT(discount/100, '0.0%'), 
-		'. ', @user ,
-		' запрашивает '
-		)
-		FROM club.customer_discount_f(@cust_id) cdf
-	end
+		BEGIN
+			SELECT @string = 
+			--CONCAT (
+			'Клиент: ' + cdf.customer + '\nкарта - ' + FORMAT(cdf.discount/100, '#,##0.0%')
+			+  ' запрашивает скидку '
+			--)
+			FROM club.customer_discount_f(@cust_id) cdf
+		end
 	RETURN @string
 END
-GO
+go
+declare @barcodeid int = 666706, @string varchar(max);
+select inv.barcode_discount_f(@barcodeid)
+SELECT cust.discount_request_f(1, 'True', @barcodeid, 'ФЕДОРОВ А. Н.')
 
-DECLARE @barcodeid INT = 648700
-DECLARE @user VARCHAR(25)= 'Федоров А. Н.';
-SELECT cust.discount_request_f(14, 'False', @barcodeid, @user)
+select @string = CONCAT(br.brand, ' ', se.season, ', ', it.inventorytype, ', \nцена:', bp.price, ', скидка: ', bp.discount , '\n')
+			FROM inv.barcodes b 
+				JOIN inv.styles s ON s.styleID=b.styleID
+				JOIN inv.brands br ON br.brandID=s.brandID
+				JOIN inv.seasons se ON se.seasonID=s.seasonID
+				join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
+				cross apply (select * from inv.barcode_price3 (@barcodeid)) bp
+			where b.barcodeID =@barcodeid
 
+select @string
 
-SELECT inv.barcode_price2(@barcodeid, @user), FORMAT( inv.barcode_discount_f(@barcodeid), '0.0%');

@@ -1,7 +1,6 @@
 USE fanfan
 GO
 
-
 if OBJECT_ID('inv.current_stock_v') is not null drop view inv.current_stock_v
 go
 create view inv.current_stock_v as
@@ -17,6 +16,9 @@ create view inv.current_stock_v as
 	select 
 		i.barcodeID, 
 		s.styleID, 
+		s.orderID,
+		cn.contractor шоурум, 
+		cl.orderclassRus orderType,
 		d.divisionfullname магазин, 
 		s.article, 
 		br.brand, 
@@ -27,11 +29,13 @@ create view inv.current_stock_v as
 		s.cost costCUR,
 		s.cost * r.rate cost,
 		round(
-			case o.orderclassID
-				when 3 then cte.price
-				else 
-					ISNULL(s.cost_adj, 1) * s.cost * r.rate* r.markup
-				end, -1) price		
+			cte.price
+			--case o.orderclassID
+			--	when 3 then cte.price
+			--	else 
+			--		ISNULL(s.cost_adj, 1) * s.cost * r.rate* r.markup
+			--	end
+			, -1) price		
 		--lp.price
 	from inv.inventory i
 		join org.divisions d on d.divisionID=i.divisionID
@@ -43,6 +47,8 @@ create view inv.current_stock_v as
 		join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 		left join inv.seasons se on se.seasonID=s.seasonID
 		join inv.orders o on o.orderid=s.orderID
+		left join org.contractors cn on cn.contractorID=showroomID
+		left join inv.orderclasses cl on cl.orderclassID = o.orderclassID
 --		join inv.current_rate_v r on r.currencyid= o.currencyID	
 		left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
 		--join cmn.vCurrentRates r on r.currencyID=o.currencyID
@@ -52,6 +58,9 @@ create view inv.current_stock_v as
 	group by 
 		i.barcodeID, 
 		s.styleID, 
+		s.orderID,
+		cn.contractor, 
+		cl.orderclassRus,
 		s.article,
 		d.divisionfullname, 
 		br.brand, it.inventorytyperus, c.color, sz.size, 
@@ -64,3 +73,5 @@ create view inv.current_stock_v as
 GO
 
 
+select * from inv.current_stock_v
+where магазин = '05 УИКЕНД'

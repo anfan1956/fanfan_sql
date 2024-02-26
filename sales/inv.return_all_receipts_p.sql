@@ -19,6 +19,7 @@ declare @message varchar (max)= 'Just debugging'
 begin try
 	begin transaction
 		
+		declare @fiscal varchar(1);
 		declare @barcodes_count int = (select count(*) from @info);
 		declare @saleid int, @returnid int, @customerid int, @accTranId int, @registerid int;	
 		declare @contractorid int, @trantypeid int;
@@ -34,9 +35,12 @@ begin try
 				join @info f on f.barcodeid= i.barcodeID
 			where i.logstateID = inv.logstate_id('SOLD')				
 		)
-		select top 1 @saleid = transactionID 
+		select top 1 @saleid = transactionID
 		from _s s where s.num=@barcodes_count
 		order by transactionid desc;
+
+		select @fiscal = s.fiscal_id
+		from inv.sales s where s.saleID = @saleid;
 
 		select distinct @contractorid =  o.vendorID
 		from inv.orders o
@@ -70,8 +74,8 @@ begin try
 		select @returnid =SCOPE_IDENTITY();
 
 -- создаем продажу
-		insert inv.sales(saleID, customerID, divisionID, salepersonID)
-		select @returnid, @customerid, @divisionid, @userid; 
+		insert inv.sales(saleID, customerID, divisionID, salepersonID, fiscal_id)
+		select @returnid, @customerid, @divisionid, @userid, @fiscal; 
 
 -- создаем чеки возврата в соответствии с тем, как была произведена оплата
 -- в случае смешанной оплаты сначала возвращаем на кредитку, потом наличку
@@ -178,11 +182,14 @@ begin try
 		insert (transactionid, is_credit, accountid, contractorid)
 		values(transactionid, is_credit, accountid, contractorid)
 		output inserted.entryid into @entries;
-		--select e.*, a.account, c.contractor from acc.entries e 
-		--	join @entries en on en.entryid=e.entryid
-		--	join acc.accounts a on a.accountid=e.accountid
-		--	join org.contractors c on c.contractorID=e.contractorid;
 
+		select e.*, a.account, c.contractor, t.*, ar.article
+		from acc.entries e 
+			join acc.transactions t on t.transactionid=e.transactionid
+			join @entries en on en.entryid=e.entryid
+			join acc.accounts a on a.accountid=e.accountid
+			join org.contractors c on c.contractorID=e.contractorid
+			join acc.articles ar on ar.articleid=t.articleid;
 
 	select @note = '№ возврата - ' + format(@returnid, '0') + '; ' + STRING_AGG(convert(varchar(max), rt.r_type_rus +' - ' + format(sr.amount, '#,##0.00;' ) ),  '; ' ) 
 	from inv.sales_receipts sr 
@@ -199,13 +206,7 @@ begin catch
 	rollback transaction
 end catch
 go
-set nocount on; declare @note varchar (max), @userid int = 1; declare @divisionid int = 27; 
-declare @date datetime = '20240211'; declare @info inv.barcode_type; 
-insert @info values (666706); 
---exec INV.return_all_receipts_p @info = @info, @userid = @userid, @date = @date, @divisionid = @divisionid, @note = @note output; select @note
 
-
-
-
-
-
+set nocount on; declare @info inv.sales_cash_type; insert @info values (666706, 110000, 0.3, 77000, 1); 
+declare @customerid int = 1, @user varchar (25) = 'ЛАЗАРЕВА Н. В.', @division varchar (25) = '05 УИКЕНД', @customer_discount decimal (4, 3) = 0, @datetime datetime = '20240223', @r int; 
+--exec @r = inv.sales_cash_proc_3 @datetime,  @customerid, @user, @division, @customer_discount, @info, 0, 'по телефону:77000:ТИНЬКОФФ', NULL; select @r;
