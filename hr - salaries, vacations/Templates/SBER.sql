@@ -67,5 +67,6 @@ begin
 		
 end 
 go
-declare @periodEndDate date = '20231231';
+declare @periodEndDate date = '20240215';
 select * from hr.SBER_template_(@periodEndDate, 'cash')
+select * from hr.periodCharges order by 4 desc;

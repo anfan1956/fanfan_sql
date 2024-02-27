@@ -2,16 +2,22 @@
 go
 
 create function acc.tAccount_ (@account varchar(max), @contractor varchar(max), @date datetime ) returns table as return
-	with s (transId, transDate, transtype, item, amount, document, orderid, showroom, brand, article, category, barcodeid, comment, [register/saleid]) as (
+	with s (transId, transDate, transtype, 
+			item, amount, document, orderid, 
+			showroom, brand, article, category, barcodeid, saleAmout,  comment, [register/saleid],
+			bank, receipt, rate
+			) as (
 		select 
 			0,  @date transdate, 'НО', 'НАЧАЛЬНЫЕ ОСТАТКИ', 
 			isnull(sum(amount), 0) amount, 
-			'НО' document, '', '', '', '',  '',  '', 
-			'calculated' comment, 'НО' [register/saleid]	
+			'НО' document, '', '', '', '',  '',  '', '', 
+			'calculated' comment, 'НО' [register/saleid], '', '', ''
 		from acc.consignmentReport_ (@contractor, @account) r
 		where r.transdate < @date
 		union all
-		select transactionid, transdate, r.transtype, item, amount, document, r.orderID, r.showroom, r.brand, r.article, r.category, r.barcodeID, comment, [register/saleid]
+		select 
+			transactionid, transdate, r.transtype, item, amount, 
+			document, r.orderID, r.showroom, r.brand, r.article, r.category, r.barcodeID, r.saleAmt, comment, [register/saleid], r.bank, r.receipttype, r.rate
 		from acc.consignmentReport_ (@contractor, @account) r
 		where r.transdate>=@date
 	)

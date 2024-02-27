@@ -70,6 +70,7 @@ begin try
 
 		select @document = h.value
 		from @header h 	where h.field='Документ';		
+--		select @document;
 
 		select @clientid = c.contractorID
 		from @header h 	
@@ -134,7 +135,7 @@ begin try
 		select @message = 'записана оплата для ' + cast( @@ROWCOUNT/2 as varchar(max)) + ' сотрудников'
 		select @message  success for json path;				
 
-;--		throw 500001, 'debuging', 1
+--	; throw 500001, 'debuging', 1
 		commit transaction
 end try
 begin catch
@@ -142,22 +143,3 @@ begin catch
 	select  ERROR_MESSAGE() error for json path
 end catch
 go
-
-set nocount on; declare @json varchar(max), @json2 varchar(max); 
-select @json = 
-'[
-	{"phone":"9166778576","lastname":"ГОРЛОВА","firstname":"АНЖЕЛИКА","middlename":"РОМАНОВНА","amount":"3280.52"},
-	{"phone":"9254499543","lastname":"БАЛУШКИНА","firstname":"АННА","middlename":"АЛЕКСАНДРОВНА","amount":"8075.72"},
-	{"phone":"9161572835","lastname":"КУЛИКОВСКАЯ","firstname":"СВЕТЛАНА","middlename":"АНАТОЛЬЕВНА","amount":"3469.25"},
-	{"phone":"9295951967","lastname":"ШЕМЯКИНА","firstname":"ЕЛЕНА","middlename":"ВЛАДИМИРОВНА","amount":"4960.88"},
-	{"phone":"9651404758","lastname":"БЕЗЗУБЦЕВА","firstname":"ЕЛЕНА","middlename":"ВАЛЕРЬЕВНА","amount":"8359.78"},
-	{"phone":"9037170419","lastname":"ЛАЗАРЕВА","firstname":"НАТАЛИЯ","middlename":"ВЛАДИМИРОВНА","amount":"6860.47"}]'; 
-select @json2 =  
-'[{"field":"Период","value":"31.12.2023"},
-	{"field":"Оператор","value":"ФЕДОРОВ А. Н."},
-	{"field":"Дата платежа","value":"11.01.2024"},
-	{"field":"Документ","value":"bank"},
-	{"field":"Банк","value":"СБЕРБАНК"},
-	{"field":"Плательщик","value":"ИП Федоров"}]'; 
---exec hr.paysheet_record_JSON_ @json, @json2;
-

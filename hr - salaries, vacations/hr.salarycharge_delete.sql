@@ -20,6 +20,7 @@ set nocount on;
 
 		delete e from acc.entries e join @transactions t on t.transactionid=e.transactionid;
 		delete e from acc.transactions e join @transactions t on t.transactionid=e.transactionid;
+		delete p from hr.periodCharges p where p.periodEndDate = @salary_date;
 		update s set success= null, recorded_time = null from hr.salary_dates s where s.salary_date=@salary_date;
 		insert hr.salary_jobs_log (result, logtime, salary_date) select 'начисление анулировано', CURRENT_TIMESTAMP, @salary_date
 

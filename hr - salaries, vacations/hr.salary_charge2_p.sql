@@ -180,6 +180,6 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20231115'
+declare @salary_date date = '20240215'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 --declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
