@@ -6,11 +6,13 @@ select
 	v.contractor vendor, 
 	cn.contractor showroom,
 	s.styleid,
+	br.brand,
 	s.article, 
 	cost, 
 	retail, 
 	inventorytyperus category, sizegrid,
-	color, sz.sizeID, sz.size,
+	color, sz.sizeID, sz.size, 
+	sz.sizegridID gridId,
 	b.barcodeID
 from inv.orders o 
 	join inv.styles s on s.orderID= o.orderID
@@ -21,10 +23,11 @@ from inv.orders o
 	join inv.sizes sz on sz.sizeID=b.sizeID
 	join org.contractors v on v.contractorID=o.vendorID
 	left join org.contractors cn on cn.contractorID=o.showroomID
+	join inv.brands br on br.brandID=s.brandID
 --where s.orderID=@orderid
 go
 
-declare @orderid int = 80039
+declare @orderid int = 81243
 select * from inv.ordersCompositions_v
 where orderID =@orderid
 order by 1 desc

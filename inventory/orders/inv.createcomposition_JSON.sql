@@ -10,6 +10,8 @@ set nocount on;
 declare @message varchar (max)
 begin try
 	begin transaction
+		declare @seasonid int;
+		select @seasonid = o.seasonID from inv.orders o where o.orderID = @orderid;
 		DECLARE	@updateComposition bit;
 
 			SET @updateComposition = 1; -- This sets the variable to true
@@ -53,7 +55,7 @@ begin try
 		)
 		insert @style (brand, gender, category, article, cost, price, sizeGrid, composition, details, styleid)
 		select brand, gender, category, article, cost, price, sizeGrid, composition, details, styleid from s;
---		select * from @style;
+		--select * from @style;
 		declare @styleid  int = (select styleid from @style);
 
 		
@@ -70,13 +72,14 @@ begin try
 				from @info i 
 					join inv.materials m on m.material=i.var1;
 --				select * from inv.compositionscontent where compositionID = @r;
+
 			
 		;		with s (orderid, article, sizegridID, inventorytypeid, seasonid, brandid, 
 						customscodeid, compositionid, workshopid, cost, retail, description, gender, currencyid
 					) as (
 				select 
 					@orderid orderid, article, sg.sizegridID, it.inventorytypeID, 
-					0 seasonid, b.brandID, null customscodeiD, @r compositionid, 
+					@seasonid seasonid, b.brandID, null customscodeiD, @r compositionid, 
 					null workshopid, s.cost, s.price retail, s.details description, 
 					s.gender, o.currencyID
 				from @style s
@@ -104,6 +107,8 @@ begin try
 					currencyID = s.currencyID
 					output inserted.styleid, @styleid into @output
 				;
+--select s.* from inv.styles s join @output o on o.inserted=s.styleid;
+--select * from @output;
 
 				SELECT @message = 
 					CASE 
@@ -166,5 +171,5 @@ go
 set nocount on; declare @info dbo.var_decimal_type ; insert @info values ('COTTON', 94), ('ELASTAN', 6); 
 declare @json varchar(max); 
 select @json = 
-'{"Brand":"ADRIANO GOLDSCHMIED","Gender":"жен","Category":"ДЖИНСЫ","Article":"fd/e5","Cost":"45","Price":"90","Size Grid":"JEANS 25-26-…","details":"loose fit","origin":"ИТАЛИЯ","Composition":"Active","StyleID":"20423","Quantity":"0","Total":"0"}'; 
---exec inv.createcomposition_JSON @info, 80033, @json 
+'{"Brand":"ADRIANO GOLDSCHMIED","Gender":"жен","Category":"ДЖИНСЫ","Article":"e5fd/e5","Cost":"45","Price":"90","Size Grid":"JEANS 25-26-…","details":"loose fit","origin":"ИТАЛИЯ","Composition":"Active","StyleID":"20423","Quantity":"0","Total":"0"}'; 
+--exec inv.createcomposition_JSON @info, 81234, @json 

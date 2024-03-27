@@ -54,8 +54,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 									 then DATEADD(hh, 22, dbo.justdate(checktime))
 							else checktime end t_verified
 				from org.attendance a
--- hardcoding Федоров out because I use myself for development
-				where a.personID <>org.person_id('Федоров А. Н.')
+			-- hardcoding Федоров out because I use myself and Efim for development 
+				where a.personID not in (1, 19)
 				)
 			, _hours as (
 				select a.personid, sum(CONVERT(money, a.t_verified)* (1-2*checktype)*24) wk_hours
@@ -180,6 +180,6 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20240215'
+declare @salary_date date = '20240229'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 --declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;

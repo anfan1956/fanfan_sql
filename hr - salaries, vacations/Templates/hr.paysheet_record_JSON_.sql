@@ -34,25 +34,25 @@ begin try
 		declare @registerid int  ;
 
 		/*extracting data from @json parameters into @tables*/
-;		with s (phone, lastname, firstname, middlename, amount)  as 
-		(select phone, lastname, firstname, middlename, amount 
+;		with s (phone, lastname, firstname, middlename, amount, userid)  as 
+		(select phone, lastname, firstname, middlename, amount, userid 
 			from OPENJSON(@json)
 			with (
 				phone varchar(max) '$.phone',
 				lastname varchar(max) '$.lastname',
 				firstname varchar(max) '$.firstname',
 				middlename varchar(max) '$.middlename',
-				amount varchar(max) '$.amount'
+				amount varchar(max) '$.amount', 
+				userid  varchar(max) '$.userID'
 			) as jsonValue	
 		)
 		insert @paysheet (phone, lastname, firstname, middlename, amount, personid)
-		select s.phone, s.lastname, s.firstname, s.middlename, amount, p.personID 
+		select
+			s.phone, s.lastname, s.firstname, s.middlename, amount, s.userid 
 		from s
-			join org.persons p on 
-				p.lastname = s.lastname and
-				p.firstname = s.firstname and 
-				p.middlename = s.middlename
-			join org.users u on u.userID = p.personID
+			;
+
+	--select * from @paysheet;
 
 ;		with s (field, value)  as 
 		(select field, value 
@@ -97,8 +97,7 @@ begin try
 		select @bookkeeperid = p.personID
 		from @header h
 			join org.persons p on p.lfmname=h.value
-		where h.field='Оператор'
-		
+		where h.field='Оператор'	
 
 		--this merge statement i would have never come up with without chatGPT. Incredible!
 		MERGE INTO acc.transactions AS target

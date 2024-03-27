@@ -22,18 +22,14 @@ having sum(i.opersign)>0
 select 
 	isnull(s.orderID, o.orderID) orderid,
 	se.season, 
-	br.brand,s.article, 
-	it.inventorytyperus category, c.color, 
+	br.brand,
+	s.styleID,
+	s.article, 
+	it.inventorytyperus category, 
+	c.color, 
 	sz.size, 
 	b.barcodeid, 
-
-	round(
-	case o.orderclassID
-		when 3 then cte.price
-		else 
-			ISNULL(s.cost_adj, 1) * s.cost * r.rate* r.markup
-		end, -1) price,
---	cte.price,
+	round (cte.price, -1) price,
 	s.retail,
 	isnull(cte.discount, 0) discount, 
 	d.divisionfullname shop
@@ -47,7 +43,7 @@ from _barcodes b
 	join inv.colors c on c.colorID=b.colorid
 	join inv.sizes sz on sz.sizeID=b.sizeid
 	--left join inv.orders o on o.orderID=s.orderID
-	join _s cte on cte.styleID=s.styleID and cte.num=1
+	left join _s cte on cte.styleID=s.styleID and cte.num=1
 	left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
 	left join cmn.currencies cr on cr.currencyID=s.currencyID
 
@@ -58,7 +54,7 @@ where
 go 
 
 select 
-	orderid, season, brand, article, category, color, size, barcodeid, price, discount
+	orderid, season, brand, styleID, article, category, color, size, barcodeid, price, discount
 from inv.barcodesInShops_v
 where shop = '05 Уикенд' and orderid =81079
 

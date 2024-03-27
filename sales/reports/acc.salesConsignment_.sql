@@ -1,7 +1,11 @@
-﻿if OBJECT_ID('acc.salesConsignment_') is not null drop function acc.salesConsignment_
+﻿declare @date date = '20240101';
+if OBJECT_ID('acc.salesConsignment_') is not null drop function acc.salesConsignment_
 go 
 create function acc.salesConsignment_(@date as date) returns table as return
-with s as (
+with s (
+	saleid, transactiontypeid, receipttypeID, r_type_rus, 
+	aqrate, barcodeID, amount, cost, allComm, num) as 
+	(
 	select 
 		sg.saleID, 
 		tr.transactiontypeID, 		
@@ -23,7 +27,7 @@ with s as (
 			--ставка налога с оборота УСН
 			when s.fiscal_id is null then 0
 			else .06  end allComm 		
-			, ROW_NUMBER() over (partition by s.saleid, a.registerid, a.acqTypeid order by a.datestart desc) num
+			, ROW_NUMBER() over (partition by sg.barcodeid, s.saleid, a.registerid, a.acqTypeid order by a.datestart desc) num
 
 	from inv.sales s 
 		join inv.sales_goods sg on sg.saleID=s.saleID
@@ -58,5 +62,6 @@ select f.* from _final f
 go
 
 declare @date date = '20240101'
-select * from acc.salesConsignment_(@date) s where s.barcodeid = 666706;
+select * from acc.salesConsignment_(@date) s where s.saleid= 81311
+select * from inv.sales_receipts s where s.saleID= 81311
 
