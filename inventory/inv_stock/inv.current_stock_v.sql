@@ -29,13 +29,7 @@ create view inv.current_stock_v as
 		s.cost costCUR,
 		s.cost * r.rate cost,
 		round(
-			cte.price
-			--case o.orderclassID
-			--	when 3 then cte.price
-			--	else 
-			--		ISNULL(s.cost_adj, 1) * s.cost * r.rate* r.markup
-			--	end
-			, -1) price		
+			cte.price, -1) price		
 		--lp.price
 	from inv.inventory i
 		join org.divisions d on d.divisionID=i.divisionID
@@ -50,8 +44,9 @@ create view inv.current_stock_v as
 		left join org.contractors cn on cn.contractorID=showroomID
 		left join inv.orderclasses cl on cl.orderclassID = o.orderclassID
 --		join inv.current_rate_v r on r.currencyid= o.currencyID	
-		left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
+		--left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
 		--join cmn.vCurrentRates r on r.currencyID=o.currencyID
+		join cmn.rateOnDate_(getdate()) r on r.currencyid = isnull(o.currencyID, s.currencyID)
 		join inv.v_lastprices lp on lp.styleID=s.styleID
 		join _s cte on cte.styleID=s.styleID and cte.num=1
 	where  i.logstateID= inv.logstate_id('IN-WAREHOUSE')
@@ -67,11 +62,10 @@ create view inv.current_stock_v as
 		se.season, 
 		s.cost, lp.price,	
 		r.rate, 
-		o.orderclassID, cte.price, 
-		s.cost_adj, r.markup
+		o.orderclassID, cte.price
 	having sum(i.opersign)>0
 GO
 
 
 select * from inv.current_stock_v
-where магазин = '05 УИКЕНД'
+where orderid = 81048
