@@ -22,11 +22,7 @@ begin try
 		insert hr.logAutorizations (userid, cashierid, amount, code, articleid)
 		values (@userid, @cashierid, @amount, @code, @articleid)
 		select @logid = SCOPE_IDENTITY();
-
-		select @logid;
-		
-
-
+		select @code;
 
 --	;throw 50001, @message, 1
 	commit transaction

@@ -47,4 +47,27 @@ group by client, showroom, vendor, brand, season, gender, order_date, s.orderid,
 	;
 GO
 
+declare @date date = '20240309';
 
+select * from inv.order_header_v where order_date>= @date  order by orderid desc ;
+with _inv as (
+	select  
+		i.clientID, i.transactionID, inv.barcodeShowroom_(i.barcodeID) showroom, 
+		inv.barcodeVendor_(i.barcodeID) vendor, se.season, br.brand, b.barcodeID, s.cost
+	from inv.inventory i		
+		join inv.barcodes b on b.barcodeID = i.barcodeID
+		join inv.styles s on s.styleID = b.styleID
+		join inv.seasons se on se.seasonID=s.seasonID
+		left join inv.brands br on br.brandID=s.brandID
+)
+select 
+	cl.clientRus, i.showroom, i.vendor, i.brand, i.season, t.transactiondate, t.transactionID, tt.transactiontype, 
+	count(i.barcodeID) pieces, sum(i.cost) amount, null paid, 1 closed
+	
+from inv.transactions t
+	join _inv i on i.transactionID=t.transactionID
+	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+	join org.clients cl on cl.clientID=i.clientID
+where tt.transactiontype in ('order','consignment','consignment return') and DATEPART(YYYY, t.transactiondate)>=2024
+group by cl.clientRus, i.showroom, i.vendor, i.brand, i.season, t.transactiondate, t.transactionID, tt.transactiontype 
+order by t.transactionID desc

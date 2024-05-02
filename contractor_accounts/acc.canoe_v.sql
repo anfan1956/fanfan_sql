@@ -42,9 +42,8 @@ group by
 	it.inventorytyperus, d.divisionfullname, s.cost, t.transactiontypeID, it.inventorytypeID, s.orderID, se.season
 having sum (i.opersign)>0
 go
-select * from inv.styles s where s.styleID= 20370
-select * from acc.canoe_v 
-where transid>79805
+--select * from inv.styles s where s.styleID= 20370
+select * from acc.canoe_v where transid>79805
 order by 1 desc
 
 
