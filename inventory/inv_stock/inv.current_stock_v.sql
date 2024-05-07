@@ -23,6 +23,7 @@ create view inv.current_stock_v as
 		s.article, 
 		br.brand, 
 		it.inventorytyperus категория, 
+		s.gender, 
 		c.color цвет, 
 		sz.size размер, 
 		se.season сезон, 
@@ -56,7 +57,8 @@ create view inv.current_stock_v as
 		s.orderID,
 		cn.contractor, 
 		cl.orderclassRus,
-		s.article,
+		s.article, 
+		s.gender,
 		d.divisionfullname, 
 		br.brand, it.inventorytyperus, c.color, sz.size, 
 		se.season, 
@@ -68,4 +70,3 @@ GO
 
 
 select * from inv.current_stock_v
-where orderid = 81048

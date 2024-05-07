@@ -68,6 +68,7 @@ from inv.transactions t
 	join _inv i on i.transactionID=t.transactionID
 	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
 	join org.clients cl on cl.clientID=i.clientID
-where tt.transactiontype in ('order','consignment','consignment return') and DATEPART(YYYY, t.transactiondate)>=2024
+--where tt.transactiontype in ('order','consignment','consignment return') and DATEPART(YYYY, t.transactiondate)>=2024
+where tt.transactiontype in ('consignment return') and DATEPART(YYYY, t.transactiondate)>=2024
 group by cl.clientRus, i.showroom, i.vendor, i.brand, i.season, t.transactiondate, t.transactionID, tt.transactiontype 
 order by t.transactionID desc
