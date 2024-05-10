@@ -27,3 +27,5 @@ go
 
 declare @account varchar(max) = 'счета к оплате', @contractor varchar(max) ='E&N suppliers'
 select * from acc.consignmentReport_(@contractor, @account)
+
+select * from acc.tAccount_('счета к оплате', 'E&N suppliers', '20240401') order by transDate, transid;

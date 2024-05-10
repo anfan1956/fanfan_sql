@@ -70,10 +70,10 @@ where
 	--and t.saleid =@saleid
 go
 
-declare @date date = '20240101', @account varchar(max) ='счета к оплате', @contractor varchar(max)='E&N suppliers', @saleid int  = 81288
+declare @date date = '20240101', @account varchar(max) ='счета к оплате', @contractor varchar(max)='E&N suppliers', @saleid int  = 82430
 declare @trid int = 7832;
-select * from acc.consignmentReport_(@contractor, @account) r --where r.[register/saleid] = cast(@saleid as varchar(max))
-order by 1
+select * from acc.consignmentReport_(@contractor, @account) r --where r.[register/saleid] = cast(@saleid as varchar(max)) order by 1
+where [register/saleid]=cast(@saleid as varchar(max))
 
 --select sg.* , tt.transactiontype, t.transactiondate, br.brand
 --from inv.sales_goods sg 
@@ -89,3 +89,28 @@ order by 1
 
 
 --select * from acc.transactions t where t.saleid =@saleid
+	select 
+	sg.saleID, 
+	aa.acqTypeid, 
+	sr.registerid
+		--sg.saleID, sg.barcodeid, sr.receipttypeID, sr.registerid, r.bankid, 
+		--inv.transaction_type_f(t.transactiontypeID) transtype, st.brandID, st.inventorytypeID, st.article, 
+		--o.orderid, o.showroomID,
+		--sum (sg.amount) over (partition by sg.saleid)
+		--, b.colorID, b.sizeID, a.rate, 
+		--ROW_NUMBER() over (partition by sg.saleid, b.barcodeid order by a.id desc)
+	from  inv.sales_goods sg
+		join inv.sales_receipts sr on sr.saleID=sg.saleID
+		join inv.transactions t on t.transactionID=sg.saleID
+		join inv.barcodes b on b.barcodeID=sg.barcodeID
+		join inv.styles st on st.styleID=b.styleID
+		join inv.orders o on o.orderID=st.orderID and o.orderclassID =3
+		join acc.rectypes_acqTypes aa on aa.receipttypeID=sr.receipttypeID
+		join acc.acquiring a 
+			on a.acqTypeid = aa.acqTypeid 
+			and a.registerid=sr.registerid
+			and a.datestart<=t.transactiondate		
+		join acc.registers r on r.registerid= sr.registerid
+	where sg.saleID = @saleid
+select * from acc.acquiring a
+where a.acqTypeid= 8 and registerid =1

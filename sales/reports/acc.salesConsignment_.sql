@@ -18,7 +18,7 @@ with s (
 		+  case 
 			--ставка аренды
 			when s.fiscal_id is null then 0
-			else .13*1.2  end  + 
+			else acc.rentRateDate_(s.divisionID, tr.transactiondate)  end  + 
 		case 
 			--ставка эквайринга
 			when s.fiscal_id is null then 0
@@ -28,7 +28,6 @@ with s (
 			when s.fiscal_id is null then 0
 			else .06  end allComm 		
 			, ROW_NUMBER() over (partition by sg.barcodeid, s.saleid, a.registerid, a.acqTypeid order by a.datestart desc) num
-
 	from inv.sales s 
 		join inv.sales_goods sg on sg.saleID=s.saleID
 		join inv.transactions tr on tr.transactionID= s.saleID
@@ -62,6 +61,9 @@ select f.* from _final f
 go
 
 declare @date date = '20240101'
-select * from acc.salesConsignment_(@date) s where s.saleid= 81311
-select * from inv.sales_receipts s where s.saleID= 81311
-
+select * from acc.salesConsignment_(@date) s where s.saleid= 82436
+select * from inv.sales_receipts s where s.saleID= 82436
+select * 
+--update t set t.amount = 5160.510
+from acc.transactions t where t.saleid = 82436
+and t.transactionid = 10514

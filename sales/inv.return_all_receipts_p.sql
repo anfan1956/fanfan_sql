@@ -183,13 +183,13 @@ begin try
 		values(transactionid, is_credit, accountid, contractorid)
 		output inserted.entryid into @entries;
 
-		select e.*, a.account, c.contractor, t.*, ar.article
-		from acc.entries e 
-			join acc.transactions t on t.transactionid=e.transactionid
-			join @entries en on en.entryid=e.entryid
-			join acc.accounts a on a.accountid=e.accountid
-			join org.contractors c on c.contractorID=e.contractorid
-			join acc.articles ar on ar.articleid=t.articleid;
+		--select e.*, a.account, c.contractor, t.*, ar.article
+		--from acc.entries e 
+		--	join acc.transactions t on t.transactionid=e.transactionid
+		--	join @entries en on en.entryid=e.entryid
+		--	join acc.accounts a on a.accountid=e.accountid
+		--	join org.contractors c on c.contractorID=e.contractorid
+		--	join acc.articles ar on ar.articleid=t.articleid;
 
 	select @note = '№ возврата - ' + format(@returnid, '0') + '; ' + STRING_AGG(convert(varchar(max), rt.r_type_rus +' - ' + format(sr.amount, '#,##0.00;' ) ),  '; ' ) 
 	from inv.sales_receipts sr 
@@ -210,3 +210,14 @@ go
 set nocount on; declare @info inv.sales_cash_type; insert @info values (666706, 110000, 0.3, 77000, 1); 
 declare @customerid int = 1, @user varchar (25) = 'ЛАЗАРЕВА Н. В.', @division varchar (25) = '05 УИКЕНД', @customer_discount decimal (4, 3) = 0, @datetime datetime = '20240223', @r int; 
 --exec @r = inv.sales_cash_proc_3 @datetime,  @customerid, @user, @division, @customer_discount, @info, 0, 'по телефону:77000:ТИНЬКОФФ', NULL; select @r;
+go
+
+set nocount on; declare @note varchar (max), @userid int = 59; declare @divisionid int = 18; declare @date datetime = '20240508'; 
+declare @info inv.barcode_type; insert @info values (581841); 
+--exec INV.return_all_receipts_p @info = @info, @userid = @userid, @date = @date, @divisionid = @divisionid, @note = @note output; select @note
+
+
+
+
+
+
