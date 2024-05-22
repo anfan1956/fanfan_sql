@@ -4,7 +4,7 @@ create function inv.consReturns_ (@date date) returns table as return
 select 
 	t.transactionID returnid,
 	t.transactiondate, tt.transactiontype, i.barcodeID, u.username,
-	c.contractor vendor, c2.contractor showroom, br.brand, st.article, cl.color, 
+	c.contractor vendor, c2.contractor showroom, br.brand, st.article, it.inventorytyperus category, cl.color, 
 	sz.size, 
 	tr.transactiondate consigned_on
 from inv.transactions t 
@@ -20,6 +20,7 @@ from inv.transactions t
 	join inv.brands br on br.brandID=st.brandID
 	join inv.colors cl on cl.colorID=b.colorID
 	join inv.sizes sz on sz.sizeID=b.sizeID
+	join inv.inventorytypes it on it.inventorytypeID=st.inventorytypeID
 
 where tt.transactiontypeID = inv.transactiontype_id('CONSIGNMENT RETURN') 
 	and t.transactiondate > @date

@@ -134,15 +134,15 @@ go
 			
 
 set nocount on; declare 
-	@fname varchar( 25 )='Елена',
-	@mname varchar( 25 )='Анатольевна',
-	@lname varchar( 25 )='Шуршикова',
-	@birthdate date='19781012',
+	@fname varchar( 25 )='Вера',
+	@mname varchar( 25 )='Владимировна',
+	@lname varchar( 25 )='Юрова',
+	@birthdate date='19861205',
 	@gender char( 3 )='жен',
-	@inn varchar( 25 )='771513228408',
+	@inn varchar( 25 )='000000',
 	@position varchar (25)='консультант', 
-	@has_MW bit='true',
-	@datestart date='20240212',
+	@has_MW bit='False',
+	@datestart date='20240510',
 	@note varchar( max );
 declare @companies dbo.var_type;
 insert @companies values ('Проект Ф')

@@ -44,7 +44,5 @@ from inv.orders o
 where o.orderID= @orderid
 GO
 
-select * from inv.orderHeader_(80041)
+select * from inv.orderHeader_(82446)
 
-select * from inv.styles s where s.styleID = 20423
-select * from inv.compositionscontent where compositionID = 5284
