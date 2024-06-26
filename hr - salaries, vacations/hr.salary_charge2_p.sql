@@ -55,7 +55,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 							else checktime end t_verified
 				from org.attendance a
 			-- hardcoding Федоров out because I use myself and Efim for development 
-				where a.personID not in (1, 19)
+--				where a.personID not in (1, 19)
+				where a.personID not in (1)
 				)
 			, _hours as (
 				select a.personid, sum(CONVERT(money, a.t_verified)* (1-2*checktype)*24) wk_hours
