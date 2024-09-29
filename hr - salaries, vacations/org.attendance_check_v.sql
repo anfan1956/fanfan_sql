@@ -9,7 +9,7 @@ create view org.attendance_check_v as
 		from org.attendance a
 		where 
 			--a.personID = 67		and 
-			year(checktime) = 2023 and 
+			year(checktime)  in (DATEPART(YYYY, GETDATE()), DATEPART(YYYY, GETDATE())-1) and 
 			cast(checktime  as date)<cast(getdate() as date) and 
 			a.personID >1
 	)

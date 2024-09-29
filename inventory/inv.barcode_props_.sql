@@ -10,12 +10,16 @@ create function inv.barcode_props_(@barcodeid int) returns table as return
 		b.barcodeID, 
 		br.brand, 
 		it.inventorytyperus category, 
-		s.styleID, 
+		s.styleID,
+		o.orderID, 
+		oc.orderclass orderType, 
+		se.season,
 		s.article, 
 		cmn.norm_(c.color) color,
 		sz.size,
 		s.cost, 
-		o.currencyID
+		o.currencyID, 
+		cn.contractor showroom
 	from inv.barcodes b
 		join inv.styles s on s.styleID=b.styleID
 		join inv.brands br on br.brandid=s.brandID
@@ -23,8 +27,11 @@ create function inv.barcode_props_(@barcodeid int) returns table as return
 		join inv.colors c on c.colorID = b.colorID
 		join inv.sizes sz on sz.sizeID=b.sizeID
 		join inv.orders o on o.orderID=s.orderID
+		join inv.orderclasses oc on oc.orderclassID=o.orderclassID
+		join org.contractors cn on cn.contractorID = o.showroomID
+		left join inv.seasons se on se.seasonID = o.seasonID
 	where b.barcodeID =@barcodeid
 go
-declare @barcodeid int = 648747;
+declare @barcodeid int = 668342;
 select * from inv.barcode_props_(@barcodeid)
 
