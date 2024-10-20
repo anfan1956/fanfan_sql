@@ -1,15 +1,17 @@
-select top 1 * from inv.sales s  join inv.sales_receipts r on r.saleID = s.saleID order by 1 desc
 /*
 	python "Z:\Управление предприятием\accounting\Prop_soft\sale_fiscal.py" "ФЕДОРОВ А. Н." 84848 "'663892','ДЖИНСЫ',30600;'663894','ДЖИНСЫ',30600" 0 "sale"
+	python "Z:\Управление предприятием\accounting\Prop_soft\sale_fiscal.py" "ФЕДОРОВ А. Н." 84862 "'663892','ДЖИНСЫ','40800';'663894','ДЖИНСЫ','40800'" 0 "SALE"
+
 */
 
 if OBJECT_ID ('acc.CardSaleReceipts_v') is not null drop view acc.CardSaleReceipts_v
 go 
 create view acc.CardSaleReceipts_v as
 select 
-	tt.transactiontype ttype
+	LOWER( tt.transactiontype) ttype
 	, l.transactionId transId
 	, p.lfmname person
+	, rt.r_type_rus recType
 	, sg.barcodeID barcode
 	, it.inventorytyperus invType
 	, sg.amount 
@@ -22,8 +24,12 @@ from acc.CardRedirectLog l
 	join inv.inventorytypes it on it.inventorytypeID=st.inventorytypeID	
 	join inv.transactions t on t.transactionID=s.saleID
 	join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+	join inv.sales_receipts sr on sr.saleID=s.saleID
+	join fin.receipttypes rt on rt.receipttypeID=sr.receipttypeID
 where closedTime is null
 go
-select transId, ttype, person, barcode, invType, amount from acc.CardSaleReceipts_v
 
+select transId, ttype, recType, person, barcode, invType, amount from acc.CardSaleReceipts_v 
+select * from acc.CardRedirectLog
+select * from inv.sales s order by 1 desc
 

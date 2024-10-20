@@ -40,7 +40,7 @@ set nocount on;
 
 
 			with _s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document) as (
-				select @date, org.person_id(@bookkeeper), cmn.currency_id(@currency), @articleid, org.contractor_id(@client), @amount, @comment, @document
+				select @date, org.person_id(@bookkeeper), cmn.currency_id(@currency), @articleid, org.client_id_clientRUS(@client), @amount, @comment, @document
 			)
 			insert acc.transactions (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document)
 			select 
@@ -89,7 +89,7 @@ set nocount on;
 						+ format (@amount, '#,##0.00') + ' '  + @currency + ' сделано ' + format(@date, 'dd.MM.yyyy', 'ru');
 			end
 
---		throw 50001, @note, 1;
+--;		throw 50001, @note, 1;
 		commit transaction
 	end try
 	begin catch
@@ -97,28 +97,12 @@ set nocount on;
 		rollback transaction
 	end catch
 go
+
+
 declare @note varchar(max); 
-/*
-exec acc.invoicesPost_p 
-	@note output, 
-	'зарплата к оплате', 
-	'зарплата', 
-	'20221226', 
-	'RUR', 
-	'БЕЗЗУБЦЕВА Е. В.', 
-	'НАЧИСЛЕНИЕ ОТПУСКНЫХ', 
-	'', '', '', 
-	'cash', 
-	'тест', 
-	'Проект Ф', 
-	'ПИКУЛЕВА О. Н.', 
-	'12222'; 
-select @note;
-*/
-select t.*, e.*
-from acc.transactions t
-	join acc.entries e on e.transactionid = t.transactionid
-order by 1 desc
-
---exec acc.payment_delete_p @note output, 1331
-
+--exec acc.invoicesPost_p @note output, 
+--		'счета к оплате', 'аренда', '20240731', 
+--		'RUR', 'КРОКУС СИТИ МОЛЛ', 'АРЕНДА ПО СЧЕТУ', 
+--		'да', '20240731', '20240805', '№ 1971', 'без ФД', 
+--		'ИП ИВАНОВА', 'ФЕДОРОВ А. Н.', '14773.58'; 
+--	select @note;

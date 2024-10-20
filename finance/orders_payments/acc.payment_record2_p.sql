@@ -27,7 +27,7 @@ set nocount on;
 					@date,
 					@bookkeeperid, iv.currencyid, 
 					acc.article_id('ОПЛАТА ИНВОЙСОВ'), 
-					org.contractor_id(@payer),
+					org.client_id_clientRUS(@payer),
 					sum(i.amount), 
 					@comment, 
 					@document
@@ -69,7 +69,7 @@ set nocount on;
 					' на общую сумму ' + format (sum(i.amount), '#,##0.00 ') + @currency
 			FROM @invoices i;
 
----			throw 50001, @note, 1;
+--			;throw 50001, @note, 1;
 		commit transaction
 	end try
 	begin catch
@@ -78,7 +78,8 @@ set nocount on;
 	end catch
 go
 
-declare  @note varchar(max), @invoices dbo.id_money_type; insert @invoices (id, amount) values (1291, 1213), (1292, 12.23); 
---exec acc.payment_record2_p @note output, @invoices, '20221225', 'ИП Федоров', 'ТИНЬКОФФ', '40802810700002267131', 'no', 'частичная оплата', 'ПИКУЛЕВА О. Н.'; select @note;
-;
-select * from acc.invoices_payments
+set nocount on; 
+declare @note varchar(max), @invoices dbo.id_money_type; 
+insert @invoices (id, amount) values (14573, 14773.58), (14574, 20946.91), (14575, 13793.14); 
+--exec acc.payment_record2_p @note output, @invoices, '20241020', 'ИП ИВАНОВА', 'АЛЬФА-БАНК', '40802810502980004273', 'Пп №12_21.10.2024', 'оплатили вместе с Таней', 'ФЕДОРОВ А. Н.'; 
+select @note;
