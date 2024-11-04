@@ -18,6 +18,7 @@ create view inv.current_stock_v as
 		s.styleID, 
 		s.orderID,
 		cn.contractor шоурум, 
+		con.contractor поставщик, 
 		cl.orderclassRus orderType,
 		d.divisionfullname магазин, 
 		s.article, 
@@ -42,7 +43,8 @@ create view inv.current_stock_v as
 		join inv.inventorytypes it on it.inventorytypeID=s.inventorytypeID
 		left join inv.seasons se on se.seasonID=s.seasonID
 		join inv.orders o on o.orderid=s.orderID
-		left join org.contractors cn on cn.contractorID=showroomID
+		left join org.contractors cn on cn.contractorID=o.showroomID
+		left join org.contractors con on con.contractorID= o.vendorID
 		left join inv.orderclasses cl on cl.orderclassID = o.orderclassID
 --		join inv.current_rate_v r on r.currencyid= o.currencyID	
 		--left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
@@ -65,6 +67,7 @@ create view inv.current_stock_v as
 		s.cost, lp.price,	
 		r.rate, 
 		o.orderclassID, cte.price
+		, con.contractor
 	having sum(i.opersign)>0
 GO
 
