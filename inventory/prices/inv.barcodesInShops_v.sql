@@ -47,19 +47,16 @@ from _barcodes b
 	left JOIN inv.current_rate_v r ON r.divisionid= d.divisionID AND r.currencyid= o.currencyID
 	left join cmn.currencies cr on cr.currencyID=s.currencyID
 
-where 
+where 1=1
 	--o.orderID is not null 	and 
-	b.divisionid in (18, 25, 27)
+	and d.datefinish is null 
+	and d.retail = 'True'
 
 go 
 
 select 
 	orderid, season, brand, styleID, article, category, color, size, barcodeid, price, discount
 from inv.barcodesInShops_v
-where shop = '05 Уикенд' and orderid =81079
+where shop = '07 Уикенд' 
 
 
-select * 
-from inv.orders o 
-	join inv.seasons s on s.seasonID=o.seasonID
-where o.orderID= 81079
