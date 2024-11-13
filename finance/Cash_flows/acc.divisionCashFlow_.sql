@@ -23,7 +23,7 @@ create function acc.divisionCashFlow_(@date date, @shop varchar(max))
 		u.username person,
 		'НО на начало периода' comment
 	from acc.divisions_cash_f(@date) c  
-		cross apply (select * from org.users where userID = 1070) u
+		cross apply (select * from org.users where userID = org.user_id('INTERBOT')) u
 		cross apply _date d
 	where c.shop= @shop and c.transdate<d.startDate
 	group by u.userID, u.username, d.startDate
@@ -38,8 +38,14 @@ go
 
 
 declare 
-	@date date = '20240111',
-	@shop varchar(max)= '08 ФАНФАН';
+	@date date = '20241101',
+	@shop varchar(max)= '07 Уикенд';
 select d.*, sum(amount)  over()
 from acc.divisionCashFlow_(@date, @shop) d
 order by d.transdate
+select * from org.users u where u.userID = org.user_id('INTERBOT')
+
+select * from acc.beg_entries e order by 1 desc
+--insert acc.beg_entries(entrydate, registerid, amount, bookkeeperid) select '20241101', 31, 0, 1
+
+
