@@ -84,7 +84,7 @@ return
 
 go
 
-select * from acc.ConsignmentAPs (default, 'ИП Карпинская Анастасия')
+select * from acc.ConsignmentAPs (default, 'ИП Карпинская Анастасия') order by 1 desc
 select * from acc.transactions t
 where saleid =85934 
 
