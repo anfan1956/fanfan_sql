@@ -7,7 +7,7 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	declare @commission money;
 	declare @fistDate date = hr.salary_first_date();
 	declare @lastDate date = hr.salary_last_date();
-	declare @charges table (personid int, amount money, item varchar(10))
+	declare @charges table (personid int, amount money, item varchar(10), condition varchar(255) null)
 	declare @transactions table (transactionid int, document varchar(150), person varchar(50))
 	begin try
 		begin transaction;
@@ -38,8 +38,7 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			from _sales s
 				join hr.latest_comm_rates_date_f(@fistDate) r on r.receipttypeid= s.receipttypeID;
 
-
-			with 
+;			with 
 			 _attd (personid, checktype, t_verified) as (
 				select 
 					a.personid, a.checktype, 
@@ -56,7 +55,9 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 				from org.attendance a
 			-- hardcoding Федоров out because I use myself and Efim for development 
 --				where a.personID not in (1, 19)
-				where a.personID not in (1)
+				where 1=1
+					and a.personID not in (1)
+					and a.workstationID not in (23)
 				)
 			, _hours as (
 				select a.personid, sum(CONVERT(money, a.t_verified)* (1-2*checktype)*24) wk_hours
@@ -99,16 +100,20 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			unpivot (amount for item in (cash, bank, pit, SocTax)) as pt
 			where amount <>0
 			) 
-			insert @charges(personid, amount, item)
+			insert @charges(personid, amount, item, condition)
 			select 
-				u.personid, u.amount, u.item
-			from _unpivot u;
+				u.personid, u.amount, u.item, ''
+			from _unpivot u
+			union all 
+			select b.personID, b.amount, b.item, b.condition
+			from hr.BunkovoPlazaSalary_p (@lastDate) b
+			;
 
 --select * from @charges;			
 --	 this is a procedure to record charges data to hr.periodCharges table
 			declare @charge hr.chargeType;
-			insert @charge (personid, amount, item)
-			select p.personid, p.amount, p.item
+			insert @charge (personid, amount, item, condition)
+			select p.personid, p.amount, p.item, p.condition
 			from @charges p
 				
 			exec hr.periodCharges_update_ @charge, @lastDate;
@@ -116,24 +121,34 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 --			with s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, comment, document ) as (
 			with s (transdate, bookkeeperid, currencyid, articleid, clientid, amount, document, person ) as (
 				select 
-					@lastDate, 
-					org.user_id('INTERBOT'), 
-					cmn.currency_id ('RUR'), 
-					acc.article_id('начисление зарплаты'), 
-					org.contractor_id ('ИП Федоров'), 
-					c.amount, 
-					c.item,
-					p.lfmname
+					transdate  = @lastDate, 
+					bookkeeperid = org.user_id('INTERBOT'), 
+					currencyid = cmn.currency_id ('RUR'), 
+					articleid = 
+								case 
+									when condition = '/Буньково'
+										then acc.article_id('начисление зарплаты/Буньково')
+									else
+										acc.article_id('начисление зарплаты')
+								end, 
+					clienid = 
+								case 
+									when condition = '/Буньково'
+										then org.contractor_id ('ИП Федоров')
+									else
+										org.contractor_id ('ИП ИВАНОВА T. K.')
+								end, 
+					amount = c.amount, 
+					document = c.item,
+					person  = p.lfmname
 				from @charges c
 					join org.persons p on p.personID = c.personid
 			)
 			insert acc.transactions (transdate, bookkeeperid, currencyid, articleid, clientid, amount, document, comment)
 			output inserted.transactionid, inserted.document, inserted.comment into @transactions
 			select transdate, bookkeeperid, currencyid, articleid, clientid, amount, document, person from s;
-			;
---select * from @transactions;
 
-			with _transactions (transactionid, contractorid, personid, document) as
+;			with _transactions (transactionid, contractorid, personid, document) as
 				(	select 
 						t.transactionid, 
 						case t.document	 
@@ -181,6 +196,6 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20240229'
+declare @salary_date date = '20241115'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 --declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;

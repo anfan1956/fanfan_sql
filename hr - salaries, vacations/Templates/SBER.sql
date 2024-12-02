@@ -7,7 +7,7 @@ go
 
 create table hr.payrollItems (
 	itemid int not null identity primary key, 
-	item varchar(50) not null unique
+	item varchar(50) not null unique 
 )
 
 insert hr.payrollItems(item)
@@ -18,7 +18,8 @@ create table hr.periodCharges (
 	itemid int not null foreign key references hr.payrollItems (itemid),
 	amount money not null, 
 	periodEndDate date not null, 
-	primary key (personid, itemid, periodEndDate)
+	condition varchar(50) not null default('')
+	, primary key (personid, itemid, periodEndDate, condition)
 )
 */
 
@@ -28,27 +29,29 @@ if type_ID ('hr.chargeType') is not null drop type hr.chargeType
 create type hr.chargeType as table (
 	personid int, 
 	amount money, 
-	item varchar(50)
+	item varchar(50), 
+	condition varchar(50)
 )
 go
 
 create proc hr.periodCharges_update_ @charge hr.chargeType readonly, @chargeDate date as
 begin
-	with s (personid, amount, itemid, periodEndDate ) as (
-		select c.personid, amount, itemid, @chargeDate  
+	with s (personid, amount, itemid, periodEndDate, condition ) as (
+		select c.personid, amount, itemid, @chargeDate, isnull(condition, '')  
 		from @charge c
 			join hr.payrollItems i on i.item =c.item
 		)
 		merge hr.periodCharges as t using s
 		on	
-			t.personid = s.personid and
-			t.itemid =s.itemid and
-			t.periodEndDate=s.periodEndDate
+			t.personid = s.personid 
+			and t.itemid =s.itemid 
+			and t.periodEndDate=s.periodEndDate
+			and t.condition = s.condition
 		when matched then update  set
 				t.amount= s.amount
 		when not matched then 
-			insert (personid, amount, itemid, periodEndDate )
-			values (personid, amount, itemid, periodEndDate );
+			insert (personid, amount, itemid, periodEndDate, condition )
+			values (personid, amount, itemid, periodEndDate, condition );
 		
 end 
 go

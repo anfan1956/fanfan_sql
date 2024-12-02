@@ -11,7 +11,7 @@ set nocount on;
 		declare @transactions table (transactionid int);
 		insert @transactions select t.transactionid from acc.transactions t 
 		where t.transdate= @salary_date
-			and t.articleid = acc.article_id('Начисление зарплаты')
+			and t.articleid in ( acc.article_id('Начисление зарплаты'), acc.article_id('НАЧИСЛЕНИЕ ЗАРПЛАТЫ/Буньково'))
 		if (select count(*) from @transactions) = 0  
 			begin
 				select @note = 'зарплатa от ' + format(@salary_date, 'dd.MM.yyyy')  + ' не начислена';
@@ -36,5 +36,4 @@ go
 
 declare @salary_date date = '2023-03-31'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date;select @note
-
 
