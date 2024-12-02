@@ -1,4 +1,4 @@
-if OBJECT_ID ('acc.ConsignmentAPs') is not null drop function acc.ConsignmentAPs
+п»їif OBJECT_ID ('acc.ConsignmentAPs') is not null drop function acc.ConsignmentAPs
 go 
 
 create function acc.ConsignmentAPs (@startdate date = '20241101', @vendor varchar(max)) returns table as 
@@ -59,7 +59,7 @@ return
 		, case e.is_credit 
 			when 'True' then 'CREDIT'
 			else 'PAYMENT' end transtype
-		, 'Банковский перевод'  
+		, 'Р‘Р°РЅРєРѕРІСЃРєРёР№ РїРµСЂРµРІРѕРґ'  
 		, t.comment	
 		, NULL
 		, NULL
@@ -84,7 +84,7 @@ return
 
 go
 
-select * from acc.ConsignmentAPs (default, 'ИП Карпинская Анастасия') order by 1 desc
+select * from acc.ConsignmentAPs (default, 'РРџ РљР°СЂРїРёРЅСЃРєР°СЏ РђРЅР°СЃС‚Р°СЃРёСЏ') order by 1 desc
 select * from acc.transactions t
 where saleid =85934 
 
