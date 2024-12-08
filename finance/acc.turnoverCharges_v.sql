@@ -3,13 +3,14 @@ if OBJECT_ID('acc.turnoverCharges_v') is not null drop view acc.turnoverCharges_
 go
 create view acc.turnoverCharges_v as
 
-	with _operations (operDate, operId, operType, division, customer, pmtType, fiscal_id, amount) as (
+	with _operations (operDate, operId, operType, division, customer, employee, pmtType, fiscal_id, amount) as (
 	select
 		cast(t.transactiondate as date)
 		, s.saleID
 		, tt.transactiontype
 		, d.divisionfullname 
 		, p.lfmname
+		, pe.lfmname
 		, rt.r_type_rus
 		, fiscal_id
 		, sr.amount * iif (inv.transaction_type_f(t.transactiontypeID) = 'RETURN', -1, 1) 
@@ -21,19 +22,24 @@ create view acc.turnoverCharges_v as
 		join org.persons ps on ps.personID = s.salepersonID
 		join fin.receipttypes rt on rt.receipttypeID=sr.receipttypeID
 		join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
+		join org.persons pe on pe.personID =s.salepersonID
       /* 
       Author: Фёдоров А.
       Date: 
       Comment:  hardcoding startdate *********************************************************************************************************************
       */
-		cross Apply (select '20240901') as st(startDate)  
+		cross Apply (select '20240801') as st(startDate)  
       
 	where 
 		fiscal_id is not null
 		and t.transactiondate >= st.startDate
 	)
 	select 
-			cast (o.operDate as datetime) operDate, o.operId, o.operType, o.division, o.customer, o.pmtType, o.fiscal_id, o.amount 
+			cast (o.operDate as datetime) operDate
+			, o.operId, o.operType, o.division
+			, o.customer
+			, o.employee
+			, o.pmtType, o.fiscal_id, o.amount 
 			, chrg.chargeType
 			, case chrg.chargeType
 				when 'tax' then 
@@ -53,5 +59,5 @@ create view acc.turnoverCharges_v as
 		cross join (select 'tax' union all select 'rent' ) as chrg(chargeType)
 
 go
-declare @startdate date = '2024-09-01';
+
 select * from acc.turnoverCharges_v

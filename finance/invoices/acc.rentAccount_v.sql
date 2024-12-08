@@ -1,7 +1,15 @@
 if OBJECT_ID ('acc.rentAccount_v') is not null drop view acc.rentAccount_v
 go 
 create view acc.rentAccount_v as
-	select * from acc.turnoverCharges_v
+	select  
+			t.operDate, t.operId
+		, t.operType, t.division
+		, t.employee, t.pmtType
+		, t.fiscal_id, t.amount
+		, t.chargeType, t.charge
+		, t.operYear, t.operMonth
+		, t.operDay, t.journal
+	from acc.turnoverCharges_v t
 union all 
 	select * from acc.rentPayments_v
 union all 
