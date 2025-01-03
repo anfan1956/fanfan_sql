@@ -6,7 +6,7 @@ return
 
 	with  _barcodes  (barcodeid ,  vendorid) as (
 		select distinct 
-			barcodeid, o.vendorID
+			barcodeid, o.showroomID
 		from inv.inventory i 
 			join inv.orders o on o.orderID = i.transactionID and o.orderclassID =3
 			join inv.transactions t on t.transactionID= o.orderID
@@ -40,9 +40,22 @@ return
 			join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
 		
 	)
-, final as (
+, final (
+	transactiondate
+	, transactionid
+	, tranDate
+	, transType
+	, division
+	, sc
+	, category
+	, article
+	, amount
+	, vendorid
+
+) as (
 	select
-		t.transactionid
+		t.transdate
+		, t.transactionid
 		, FORMAT(t.transdate , 'dd.MM.yyyy') tranDate
 		, s.transtype
 		, shop, SC
@@ -51,15 +64,19 @@ return
 		, cost amount
 		, vendorid 
 	from acc.transactions t 
-		join _sales s on t.saleid =s.saleid and t.barcodeid =s.barcodeid
+				join _sales s on t.saleid =s.saleid 
+		and t.barcodeid =s.barcodeid
+		and t.articleid in 
+				( acc.article_id('закупочная стоимость'), acc.article_id('за консигн. товар'))
 	union all 
-	select 
-		t.transactionid
+	select
+		t.transdate
+		, t.transactionid
 		, FORMAT(t.transdate, 'dd.MM.yyyy')  transdate
 		, case e.is_credit 
 			when 'True' then 'CREDIT'
 			else 'PAYMENT' end transtype
-		, 'Банковский перевод'  
+		, 'ИП Иванова Т. К.'  
 		, t.comment	
 		, NULL
 		, NULL
@@ -76,17 +93,14 @@ return
 	group by 
 		vendorid
 		, e.is_credit
-		, t.transactionid, t.transdate, t.amount, t.comment
+		, t.transactionid, t.transdate, t.amount, t.comment	
 	)
-	select f.transactionid, f.tranDate, f.transtype, shop, sc, category, article, amount 
+	select f.transactiondate, f.transactionid, f.tranDate, f.transtype, division, sc, category, article, amount 
+		, vendor = c.contractor
 	from final f
 	join org.contractors c on c.contractor = @vendor
 
 go
 
-select * from acc.ConsignmentAPs (default, 'ИП Карпинская Анастасия') order by 1 desc
-select * from acc.transactions t
-where saleid =85934 
-
-
+select c.transactionid, c.tranDate, c.transType, c.division, c.sc, category, c.article, c.amount from acc.ConsignmentAPs (default, 'ИП Карпинская Анастасия') c order by c.transactiondate desc, transactionid 
 

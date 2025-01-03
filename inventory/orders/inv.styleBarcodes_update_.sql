@@ -16,6 +16,8 @@ set nocount on;
 declare @message varchar (max)= 'Just debugging'
 begin try
 	begin transaction
+
+
 	declare @r int, @clientID int, @orderID int, @transactiontypeID int,  @vendorid int, @cogs money;
 	declare @logStateInId int = inv.logstate_id('in-warehouse')	
 	declare @logStateOutId int = inv.logstate_id('external')
@@ -27,6 +29,20 @@ begin try
 		join inv.transactions t on t.transactionID=o.orderID
 	where s.styleID=@styleID;
 --	select @clientID clientid, @orderID orderid, @transactiontypeID transtypeid, @vendorid
+
+	;with s (color, orderid) as (
+		select distinct i.color, ord.orderid
+		from @info i 
+			cross apply 
+			(select orderid from inv.styles s where s.styleID = @styleid) ord (orderid)
+	)
+	merge inv.colors as t using s
+	on t.color = s.color 
+		and t.orderid = s.orderid
+	when not matched then 
+		insert (color, orderid)
+		values (color, orderid)
+;
 
 	-- delete all the barcodes from inventory for the styleid. We shall insert them later
 	delete i from inv.inventory i
@@ -90,14 +106,6 @@ begin catch
 end catch
 go
 		
-set nocount on; declare @info inv.colorSizeQty_type, @shop varchar(max) = '05 УИКЕНД', @styleid int =20407;
-insert @info (color, size, qty) values 
-('BLACK','36', 3), ('BLACK','38', 2), ('BLACK','40', 2), ('BLACK','42', 3), 
-('BLUE','36', 1), ('BLUE','38', 2), ('BLUE','40', 2), ('BLUE','42', 2), ('BLUE','44', 1), 
-('WHITE','40', 1), ('WHITE','42', 1), ('WHITE','44', 1);
---exec inv.styleBarcodes_update_ @info, @shop, @styleid
-
-
-
-
-
+set nocount on; declare @info inv.colorSizeQty_type, @styleid int =21853, @shop varchar(max) = '07 УИКЕНД' 
+insert @info (color, size, qty) values ('АНТРАЦИТ','S', 1), ('АНТРАЦИТ','M', 2), ('АНТРАЦИТ','L', 1), ('БОРДО','S', 1), ('БОРДО','M', 2), ('БОРДО','L', 1); 
+--exec inv.styleBarcodes_update_ @info, @shop, @styleid; 

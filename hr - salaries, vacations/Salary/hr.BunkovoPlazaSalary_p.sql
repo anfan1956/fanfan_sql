@@ -10,7 +10,11 @@ select
 	a.personID
 	, p.lfmname
 	, COUNT(1)/2 daysWorked
-	, COUNT(1)/2 *6000 amount
+	, COUNT(1)/2 * 
+				case
+					when a.personID in (1, 5) then 4000 
+					else 6000 
+				end	amount
 	, item = 'cash'
 	, condition = '/Буньково'
 from org.attendance a 

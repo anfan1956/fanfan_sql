@@ -43,7 +43,7 @@ end catch
 go 
 
 declare 
-			@date datetime = '2024-11-15'
+			@date datetime = '2024-12-15'
 		, 	@amount money = 50000
 		,	@person varchar(max) = '»¬¿ÕŒ¬¿ “.  .'
 		,	@doc varchar(max) = 'cash'
@@ -51,6 +51,17 @@ declare
 	
 --exec hr.manualSalary @date, @amount, @person, @doc
 
-select top 3 t.*
+select top 10 t.*
+	, p.lfmname
+	, a.article 
 from acc.transactions t 
+	join acc.entries e on e.transactionid = t.transactionid 
+		and e.is_credit = 'True'
+		and t.articleid =2055
+	join org.persons p on p.personID =e.personid and p.personID =5
+	join acc.articles a on a.articleid = t.articleid
 order by 1 desc
+select t.*
+--update t set t.amount = t.amount/6*4
+from acc.transactions t 
+where t.transactionid in (16920,16892,16740)
