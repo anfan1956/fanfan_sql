@@ -9,6 +9,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	declare @lastDate date = hr.salary_last_date();
 	declare @charges table (personid int, amount money, item varchar(10), condition varchar(255) null)
 	declare @transactions table (transactionid int, document varchar(150), person varchar(50))
+	declare @warning varchar(max)
+
 	begin try
 		begin transaction;
 
@@ -17,6 +19,13 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 				select @note = 'it is too early';
 				throw 50001, @note, 1
 			end;
+
+		select @warning = org.checkAttendance_(@lastDate)
+		if @warning <> 'OK'
+		begin 
+				select @note = @warning;
+				throw 50001, @note, 1
+		end;
 
 		if (select count(*) from org.attendance_check_v) > 0/*other conditiion*/
 			begin
@@ -174,9 +183,6 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 			from _transactions t
 				cross apply _seed s;
 
---select t.*, e.*, a.account from acc.entries e join @transactions t on t.transactionid=e.transactionid join acc.accounts a on a.accountid=e.accountid
-	
-
 			update s set success= 'True', recorded_time =  CURRENT_TIMESTAMP
 			from hr.salary_dates s 
 			where s.salary_date =@lastDate;
@@ -196,6 +202,7 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20241115'
+declare @salary_date date = '20241231'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
---declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
+declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
+
