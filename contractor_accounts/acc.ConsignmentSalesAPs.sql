@@ -84,19 +84,19 @@ create proc  acc.ConsignmentSalesAPs as
 				from _entries e		
 				;
 
-			select 
-				t.transactionid, t.transdate, amount, t.comment, t.saleid, t.barcodeid, 
-				case e.is_credit
-					when 1 then 'Credit'
-					else 'Debet' 
-				end is_credit
-				, a.account, c.contractor
-			from acc.transactions t 
-				join @transOutput tou on tou.transactionid=t.transactionid
-				join acc.entries e on e.transactionid =t.transactionid
-				join acc.accounts a on a.accountid=e.accountid
-				left join org.contractors c on c.contractorID =e.contractorid
-			order by 1 
+			--select 
+			--	t.transactionid, t.transdate, amount, t.comment, t.saleid, t.barcodeid, 
+			--	case e.is_credit
+			--		when 1 then 'Credit'
+			--		else 'Debet' 
+			--	end is_credit
+			--	, a.account, c.contractor
+			--from acc.transactions t 
+			--	join @transOutput tou on tou.transactionid=t.transactionid
+			--	join acc.entries e on e.transactionid =t.transactionid
+			--	join acc.accounts a on a.accountid=e.accountid
+			--	left join org.contractors c on c.contractorID =e.contractorid
+			--order by 1 
 
 --		;throw 50001, 'debuging' , 1 
 		select @msg = null

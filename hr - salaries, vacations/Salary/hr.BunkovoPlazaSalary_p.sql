@@ -32,5 +32,5 @@ group by a.personID, p.lfmname
 HAVING COUNT(CASE WHEN checktype = 1 THEN 1 END) = COUNT(CASE WHEN checktype = 0 THEN 1 END)
 go
 
-declare @periodEnd date= '20241130'
+declare @periodEnd date= '20241231'
 select * from hr.BunkovoPlazaSalary_p(@periodEnd)
