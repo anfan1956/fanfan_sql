@@ -8,6 +8,7 @@ create proc  org.attendanceFull_p
 		,	@personID int 
 		,	@workstationID int
 		,	@delete bit = 'False'
+		,   @full bit = 'True'
 as 
 set nocount on;
 set transaction isolation level read committed;
@@ -17,27 +18,33 @@ declare @msg varchar (max)
 			declare 
 					@sTime TIME		= '10:00'
 				,	@eTime TIME		= '22:00'
-
+				if org.ws_divisionName( @workstationID) =  '07 УИКЕНД'
+					begin
+						set @sTime = '12:00'
+						set @eTime = '20:00'
+					end 
 			delete a
 			from org.attendance a
 			where	a.workstationID				= @workstationID
 				and	a.personID					= @personID
 				and cast(a.checktime as date )	= @date;
 		set @delete = isnull(@delete, 'False')
+		set @full  = ISNULL(@full, 'True')
 		if @delete = 'False'
 		begin
-			with _seed (checktype, checktime) as (
-				select 1,  cast(@date as datetime) + cast(@sTime as datetime)
-				union all 
-				select 0,  cast(@date as datetime) + cast(@eTime as datetime)
-			)
-			insert org.attendance (personID, checktime, checktype, workstationID, superviserID)
-			select @personID, s.checktime, s.checktype, @workstationID, 1 superviserID
-			from _seed s;
+
+				insert org.attendance (personID, checktime, checktype, workstationID, superviserID)
+				select @personID, cast (@date as datetime) + cast(@sTime as datetime), 1, @workstationID, 1 superviserID
+				select @@ROWCOUNT rowsInserted
+			if @full = 'TRUE' 
+				begin 
+					insert org.attendance (personID, checktime, checktype, workstationID, superviserID)
+					select @personID, cast (@date as datetime) + cast(@eTime as datetime), 0, @workstationID, 1 superviserID
+				end 
 		end
 	--	;throw 50001, 'debuging' , 1 
 		select @msg = @@ROWCOUNT
-		select @msg msg
+		select convert(varchar,  @msg)  + ' строк редактировано' msg
 		commit transaction
 	end try
 
@@ -50,25 +57,38 @@ go
 
 
 declare 
-	@date datetime = '20241022' 
-	, @personid int = 1078 
-	, @workstationID int = 14
+	@date datetime = '20250126'
+	, @personid int = 10
+	, @workstationID int = 13
 	, @delete bit = 'False'
+	, @full bit		= 'False'
 
 ;select a.*, p.lfmname 
 from org.attendance a
 	join org.persons p on p.personID =a.personID 
 where cast(a.checktime as date) = @date
 
-/*
 exec org.attendanceFull_p 
 		@date 		= @date	
 	, 	@personID	= @personID
 	,	@workstationID  = @workstationID
 	,	@delete  = @delete
+	,	@full = @full
 ;
+/*
+delete a
+from  org.attendance a where cast(checktime as date)= @date and 
+workstationID = 16
 */
+
 ;select a.*, p.lfmname 
 from org.attendance a
 	join org.persons p on p.personID =a.personID 
 where cast(a.checktime as date) = @date        
+;
+
+select * 
+from org.attendance a 
+--where cast(checktime as date ) = '1900-01-01'
+order by 1 desc
+
