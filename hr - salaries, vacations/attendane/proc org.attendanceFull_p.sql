@@ -58,10 +58,10 @@ go
 
 declare 
 	@date datetime = '20250126'
-	, @personid int = 1
-	, @workstationID int = 23
+	, @personid int = 10
+	, @workstationID int = 13
 	, @delete bit = 'False'
-	, @full bit		= 'False'
+--	, @full bit		= 'False'
 
 ;select a.*, p.lfmname 
 from org.attendance a
@@ -86,9 +86,4 @@ from org.attendance a
 	join org.persons p on p.personID =a.personID 
 where cast(a.checktime as date) = @date        
 ;
-
-select * 
-from org.attendance a 
---where cast(checktime as date ) = '1900-01-01'
-order by 1 desc
 
