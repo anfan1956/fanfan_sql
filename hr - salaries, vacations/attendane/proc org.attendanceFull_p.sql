@@ -18,7 +18,7 @@ declare @msg varchar (max)
 			declare 
 					@sTime TIME		= '10:00'
 				,	@eTime TIME		= '22:00'
-				if org.ws_divisionName( @workstationID) =  '07 УИКЕНД'
+				if org.ws_divisionName( @workstationID) =  '07 РЈРРљР•РќР”'
 					begin
 						set @sTime = '12:00'
 						set @eTime = '20:00'
@@ -44,7 +44,7 @@ declare @msg varchar (max)
 		end
 	--	;throw 50001, 'debuging' , 1 
 		select @msg = @@ROWCOUNT
-		select convert(varchar,  @msg)  + ' строк редактировано' msg
+		select convert(varchar,  @msg)  + ' СЃС‚СЂРѕРє СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРѕ' msg
 		commit transaction
 	end try
 
