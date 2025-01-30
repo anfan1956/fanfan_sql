@@ -1,3 +1,4 @@
+select * from acc.CardRedirectLog
 if not exists
 	(select 1 
 		from sys.objects s 
@@ -30,5 +31,5 @@ select c.*, s.divisionID, s.fiscal_id, sr.amount
 from acc.CardRedirectLog c
 	join inv.sales s on s.saleID=c.transactionId 
 	join inv.sales_receipts sr on sr.saleID=s.saleID
-
 order by 1 desc
+
