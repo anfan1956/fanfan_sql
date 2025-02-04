@@ -21,7 +21,7 @@ where 1 = 1
 	and isnull(receiptid, 0) <> 0
 	and s.saleID not in (select saleID from ref)
 		
-	return @sales
+	return isnull(@sales, 0)
 end 
 
 

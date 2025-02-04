@@ -57,11 +57,11 @@ go
 
 
 declare 
-	@date datetime = '20250128'
+	@date datetime = '20250131'
 	, @personid int = 10
-	, @workstationID int = 13
+	, @workstationID int = 23
 	, @delete bit = 'False'
-	, @full bit		= 'False'
+	, @full bit		= 'True'
 
 ;select a.*, p.lfmname 
 from org.attendance a
@@ -76,10 +76,10 @@ exec org.attendanceFull_p
 	,	@delete  = @delete
 	,	@full = @full
 ;
-*/
 delete a
 from  org.attendance a where cast(checktime as date)= @date and 
 workstationID = 16
+*/
 
 ;select a.*, p.lfmname 
 from org.attendance a
