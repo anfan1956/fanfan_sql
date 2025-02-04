@@ -3,12 +3,12 @@ IF  OBJECT_ID('fsc.ReceiptCorrections', 'U') is not null drop table fsc.ReceiptC
 
 CREATE TABLE fsc.ReceiptCorrections (
     id INT identity PRIMARY KEY
-    , saleid int not null references inv.sales 
+    , saleid int not null references inv.sales (saleid)
 	, docNo varchar(10) null
 	, dateCorrected datetime 
 	, correctionDocNum varchar (10)
 	, correctionFisc varchar (12)
-	, correctionManager int not null references org.users		
+	, correctionManager int not null references org.users (userid)		
 	, constraint uq_recCorrections unique (saleid)
 );
 
