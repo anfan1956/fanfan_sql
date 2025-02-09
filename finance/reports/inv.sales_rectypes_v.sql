@@ -22,14 +22,18 @@ with _sr (saleid, saledate, rtype, receipttype, amount) as (
 		t.transactiontypeID		
 ) 
 , f (
-	saleid, fiscal_id, receiptid, barcodeid, день, мес€ц, год, дата, магазин, покупатель, 
-	продавец, телефон, сумма, форма_оплаты, saledate, rType
+		saleid
+		, fiscal_id
+		, receiptid
+		--, barcodeid
+		, день, мес€ц, год, дата, магазин, покупатель, 
+		продавец, телефон, сумма, форма_оплаты, saledate, rType
 	) as (
 select 
 	s.saleID, 
 	s.fiscal_id, 
 	s.receiptid, 
-	sg.barcodeID,
+	--sg.barcodeID,
 	DATEPART(DD, sr.saledate), 
 	DATEPART(MM, sr.saledate), 
 	DATEPART(YYYY, sr.saledate), 
@@ -46,7 +50,7 @@ select
 
 from _sr sr
 	join inv.sales s on s.saleID= sr.saleid
-	join inv.sales_goods sg on sg.saleID= s.saleID
+	--join inv.sales_goods sg on sg.saleID= s.saleID 
 	join org.divisions d on d.divisionID=s.divisionID
 	left join cust.persons p on p.personID= s.customerID
 	join org.persons u on u.personID=s.salepersonID
