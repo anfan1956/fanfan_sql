@@ -1,0 +1,21 @@
+if not exists (select 1 from sys.objects s where object_id = OBJECT_ID('inv.storage_box')) 
+--if OBJECT_ID('inv.storage_box') is not null drop table inv.storage_box
+begin
+create table inv.storage_box (
+	ID int not null,
+	transactionid int not null references inv.transactions (transactionid),
+	barcodeID int not null references inv.barcodes (barcodeid), 
+	opersign tinyint constraint check_opersing check  (opersign in (-1, 1)) 
+)
+
+end
+select * from inv.storage_box
+/*
+insert org.divisions (division,divisionfullname, clientID, holdsmoney, holdsinventory, retail, comment,datestart, chainID)
+select 'Storage', 'BunkovoStorage',1719, 0, 1, 0, 'For storage in boxes.inv.packing_p_', '2025-02-01', 10
+*/
+select org.division_id('BunkovoStorage')
+--select org.client_id('»œ »¬¿ÕŒ¬¿')
+
+
+select org.client_id_clientRUS ('»œ »¬¿ÕŒ¬¿')
