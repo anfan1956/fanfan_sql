@@ -9,8 +9,10 @@ create proc inv.storage_
 as
 	begin try
 		begin transaction
-			declare @transID int;
-			declare @sign tinyint
+			declare 
+				@transID int
+			  , @sign tinyint
+			  , @note varchar(255)
 
 			select @sign = case @proc 
 								when 'На хранение' then 1
@@ -45,8 +47,7 @@ as
 			)
 			insert inv.inventory (clientID, logstateID, divisionID, transactionID, opersign, barcodeID)
 			select clientID, logstateID, divisionID, transactionID, opersign, barcodeID from seed;
-			select * from inv.inventory i where i.transactionID = @transID
-			;
+
 	if @sign = 1 
 		begin
 			if exists (
@@ -63,7 +64,7 @@ as
 
 			insert inv.storage_box (id, transactionid, opersign, barcodeID)
 			select @boxID, @transID, @sign, i.barcodeID
-			from @info i
+			from @info i;
 		end
 	else 
 		begin
@@ -82,19 +83,21 @@ as
 			insert inv.storage_box (id, transactionid, opersign, barcodeID)
 			select @boxID, @transID, @sign, i.barcodeID
 			from @info i
-		end
 
+		end
+		select @note = 'записано баркодов: ' + convert(varchar,  @@ROWCOUNT)  
+		select @note note
 	--;throw 500001, 'debug', 1
 		commit transaction
 	end try 
 	begin catch
-		select ERROR_MESSAGE()
+		select ERROR_MESSAGE() error
 		rollback transaction
 	end catch
 go
 
 
 set nocount on; declare @info dbo.barcodes_list; insert @info values (582714), (582713), (664008); 
---exec inv.storage_ '20250217', 'БАЛУШКИНА А. А.', 'На хранение', '5', @info;
-select * from inv.storage_box;
+--exec inv.storage_ '20250217', 'ФЕДОРОВ А. Н.', 'На хранение', '5', @info;
+select * from inv.storage_box
 

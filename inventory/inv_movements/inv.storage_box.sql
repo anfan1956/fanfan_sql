@@ -7,8 +7,9 @@ create table inv.storage_box (
 	barcodeID int not null references inv.barcodes (barcodeid), 
 	opersign tinyint constraint check_opersing check  (opersign in (-1, 1)) 
 )
-
 end
+
+--truncate table inv.storage_box
 select * from inv.storage_box
 /*
 insert org.divisions (division,divisionfullname, clientID, holdsmoney, holdsinventory, retail, comment,datestart, chainID)
