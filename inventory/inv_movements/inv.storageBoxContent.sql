@@ -3,13 +3,13 @@ go
 create view inv.storageBoxContent_ as
 with _sb as (
 select 
-	sb.ID, sb.barcodeID 
+	sb.boxID, sb.barcodeID 
 from inv.storage_box sb
-group by sb.ID, sb.barcodeID
+group by sb.boxID, sb.barcodeID
 having sum(sb.opersign) =1
 )
 select 
-		sb.ID boxID
+		sb.boxID
 		, br.brand
 		, inventorytype category
 		, st.article

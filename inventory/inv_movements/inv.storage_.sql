@@ -5,6 +5,7 @@ create proc inv.storage_
 	@userName varchar(255), 
 	@proc varchar(255), 
 	@boxID int, 
+	@division varchar(255), 
 	@info dbo.barcodes_list readonly
 as
 	begin try
@@ -38,7 +39,7 @@ as
 			select 
 				org.client_id_clientRUS ('ИП ИВАНОВА')
 				, inv.logstate_id('IN-WAREHOUSE')
-				, org.division_id('BunkovoStorage')
+				, org.division_id(@division)
 				, @transID
 				, 1
 				, i.barcodeID
@@ -98,6 +99,6 @@ go
 
 
 set nocount on; declare @info dbo.barcodes_list; insert @info values (582714), (582713), (664008); 
---exec inv.storage_ '20250217', 'ФЕДОРОВ А. Н.', 'На хранение', '5', @info;
+--exec inv.storage_ '20250217', 'ФЕДОРОВ А. Н.', 'На хранение', '5', 'BunkovoStorage', @info;
 select * from inv.storage_box
 

@@ -2,10 +2,11 @@ if not exists (select 1 from sys.objects s where object_id = OBJECT_ID('inv.stor
 --if OBJECT_ID('inv.storage_box') is not null drop table inv.storage_box
 begin
 create table inv.storage_box (
-	ID int not null,
-	transactionid int not null references inv.transactions (transactionid),
+	id int not null identity primary key,
+	boxID int not null,
+	entryDate datetime default current_timestamp,
 	barcodeID int not null references inv.barcodes (barcodeid), 
-	opersign tinyint constraint check_opersing check  (opersign in (-1, 1)) 
+	opersign int constraint check_opersing check  (opersign in (-1, 1)) 
 )
 end
 
@@ -20,3 +21,4 @@ select org.division_id('BunkovoStorage')
 
 
 select org.client_id_clientRUS ('»œ »¬¿ÕŒ¬¿')
+
