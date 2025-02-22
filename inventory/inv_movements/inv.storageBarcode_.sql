@@ -23,6 +23,7 @@ as
 				select inv.transactiontype_id('STORAGE'), org.person_id(@userName)
 				select @transID = SCOPE_IDENTITY();				
 
+				-- Если товар не находится на данном складе, перемещаем товар оттуда, где он был на данный склад
 				with seed (clientid, logstateID, divisionID, transactionid, opersign, barcodeid) as (
 				select iv.clientID, iv.logstateID, iv.divisionID, iv.transactionID, iv.opersign, iv.barcodeID
 				from @info inf
@@ -48,7 +49,24 @@ as
 				select clientID, logstateID, divisionID, transactionID, opersign, barcodeID from seed;
 			END		
 
-			if (
+			-- убираем товар из тех коробок где он был, кроме той в которую читаем баркод
+			;with  _otherBoxes as (
+			select sum(opersign) qty, boxID
+			from inv.storage_box sb
+			where 1=1 
+				and sb.boxID not in (@BoxID)
+				and sb.barcodeID = @bcID
+			group by boxID
+			having sum(opersign)>0
+			)
+			insert inv.storage_box(boxID, barcodeID, opersign)
+			select ob.boxID, @bcID, -1
+			from _otherBoxes ob;
+
+			--если товар уже был в коробке, убираем его оттуда, но не убираем со склада хранения
+			--если он потом пойдет в магазин нужно будет принять его в магазине 
+			--если его просто нужно переложить в другую коробку, можно не убирать его из этой отдельной операцией
+			;if (
 				select 
 					coalesce(sum(opersign), 0)
 				from inv.storage_box sb
@@ -70,8 +88,7 @@ as
 	end catch
 go
 
-declare @bcID int = 505996, @boxID int  = 5, @transID int  = 87333,  @WH varchar(255) = 'BunkovoStorage'; 
---exec inv.storageBarcode_ @bcID, @boxID, @transID, @WH; 
-select * from inv.storage_box
-
-
+declare @bcID int = 582713, @boxID int  = 1,  @WH varchar(255) = 'BunkovoStorage', @userName varchar(255) = 'БАЛУШКИНА А. А.'; 
+-- 
+--exec inv.storageBarcode_ @bcID, @boxID, @WH, @userName; 
+select * from inv.storage_box 

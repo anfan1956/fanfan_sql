@@ -18,3 +18,4 @@ go
 select inv.nextBox_()
 
 
+select * from inv.storage_box

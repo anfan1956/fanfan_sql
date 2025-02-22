@@ -43,4 +43,4 @@ go
 declare @info dbo.barcodes_list; insert @info values (582714), (582713), (664008); 
 --where sb.ID = 5
 select * 
-from inv.storageBoxContent_ where boxID = 5
+from inv.storageBoxContent_ 
