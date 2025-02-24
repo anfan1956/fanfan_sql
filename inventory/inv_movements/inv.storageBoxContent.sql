@@ -9,7 +9,8 @@ group by sb.boxID, sb.barcodeID
 having sum(sb.opersign) =1
 )
 select 
-		sb.boxID
+		od.id
+		, sb.boxID
 		, br.brand
 		, inventorytype category
 		, st.article
@@ -38,9 +39,18 @@ from _sb sb
 			where p.styleID = st.styleID
 			order by p.pricesetID desc
 	) pr
+	outer apply (
+		select top 1 bx.id
+		from inv.storage_box bx
+		where 1=1 
+			and bx.barcodeID = b.barcodeID
+			and bx.opersign = 1
+		order by 1 desc
+	) od
 go
 
 declare @info dbo.barcodes_list; insert @info values (582714), (582713), (664008); 
 --where sb.ID = 5
 select * 
 from inv.storageBoxContent_ 
+order by id desc

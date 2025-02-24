@@ -8,6 +8,7 @@ create function inv.nextBox_ () returns int as
 			outer apply (
 					select top 1 sb.boxID
 					from inv.storage_box sb
+					order by 1 desc
 				) sb
 			where i > coalesce(sb.boxID, 0)
 			order by i 
