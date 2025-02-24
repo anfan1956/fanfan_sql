@@ -1,4 +1,4 @@
-USE fanfan
+ï»¿USE fanfan
 GO
 
 if OBJECT_ID('inv.current_stock_v') is not null drop view inv.current_stock_v
@@ -17,22 +17,23 @@ create view inv.current_stock_v as
 		i.barcodeID, 
 		s.styleID, 
 		s.orderID,
-		cn.contractor øîóðóì, 
-		con.contractor ïîñòàâùèê, 
+		cn.contractor ÑˆÐ¾ÑƒÑ€ÑƒÐ¼, 
+		con.contractor Ð¿Ð¾ÑÑ‚Ð°Ð²Ñ‰Ð¸Ðº, 
 		cl.orderclassRus orderType,
-		d.divisionfullname ìàãàçèí, 
+		d.divisionfullname Ð¼Ð°Ð³Ð°Ð·Ð¸Ð½, 
 		s.article, 
 		br.brand, 
-		it.inventorytyperus êàòåãîðèÿ, 
+		it.inventorytyperus ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ñ, 
 		s.gender, 
-		c.color öâåò, 
-		sz.size ðàçìåð, 
-		se.season ñåçîí, 
+		c.color Ñ†Ð²ÐµÑ‚, 
+		sz.size Ñ€Ð°Ð·Ð¼ÐµÑ€, 
+		se.season ÑÐµÐ·Ð¾Ð½, 
 		s.cost costCUR,
 		s.cost * r.rate cost,
 		round(
 			cte.price, -1) price		
 		--lp.price
+		, sb.boxID
 	from inv.inventory i
 		join org.divisions d on d.divisionID=i.divisionID
 		join inv.barcodes b on b.barcodeID=i.barcodeID
@@ -52,6 +53,14 @@ create view inv.current_stock_v as
 		join cmn.rateOnDate_(getdate()) r on r.currencyid = isnull(o.currencyID, s.currencyID)
 		join inv.v_lastprices lp on lp.styleID=s.styleID
 		join _s cte on cte.styleID=s.styleID and cte.num=1
+		outer apply (
+			select sto.boxID
+			from inv.storage_box sto 
+			where sto.barcodeID = b.barcodeID
+			group by sto.boxID
+			having sum(sto.opersign) = 1
+		) sb
+
 	where  i.logstateID= inv.logstate_id('IN-WAREHOUSE')
 	group by 
 		i.barcodeID, 
@@ -65,11 +74,13 @@ create view inv.current_stock_v as
 		br.brand, it.inventorytyperus, c.color, sz.size, 
 		se.season, 
 		s.cost, lp.price,	
-		r.rate, 
-		o.orderclassID, cte.price
+		r.rate 
+		, o.orderclassID, cte.price
 		, con.contractor
+		, sb.boxID
 	having sum(i.opersign)>0
 GO
 
 
 select * from inv.current_stock_v
+where boxID is not null
