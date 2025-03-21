@@ -21,13 +21,14 @@ as
 set nocount on;
 declare @message varchar (max)= 'Just debugging', @comment varchar(max)='fast track';
 declare @divisionid int = org.division_id(@division)
-declare @divisions table (divisionid int, num int, transactionid int);
 declare @transactiontypeid int = inv.transactiontype_id('MOVEMENT');
-declare @transactions table (transactionid int);
-declare @waybills table (transactionid int, warehouseid int);
 declare @carrierid int = (select clientID from org.divisions d where d.divisionfullname=@division);
 declare @targetid int = @carrierid;
+
+declare @transactions table (transactionid int);
+declare @waybills table (transactionid int, warehouseid int);
 declare @inventory table (clientid int, logstateid int, divisionid int, transactionid int, opersign int, barcodeid int)
+declare @divisions table (divisionid int, num int, transactionid int);
 
 
 begin try
@@ -105,12 +106,33 @@ begin try
             from @divisions d  
             declare @n varchar (max) = cast(@@rowcount as varchar(max))
 
+			--check the boxes
+			;with _bcodes (barcodeid, boxid) as (
+			select s.barcodeid, s.boxid 
+			from inv.storage_box s
+				join @info i on i.Id=s.barcodeid
+
+			group by s.barcodeID, s.boxid
+			having sum(s.opersign)>0
+			)
+			insert inv.storage_box(boxID, barcodeID, opersign)
+			select 
+				boxid, barcodeid, -1 
+			from _bcodes;
+			
             select @note =  @n + 'шт. - расходных и ' + @n + 'шт. - приходных накладных. Следует провести в 1С'
 
---    ;throw 50001, @message, 1
+    --;throw 50001, @message, 1
     commit transaction
 end try
 begin catch
     set @note = ERROR_MESSAGE()
     rollback transaction
 end catch
+go 
+
+
+set nocount on; declare @note varchar(max), @info dbo.id_type; 
+insert @info values (653588), (657605); 
+declare @date date= '20250321' , @division varchar (max) = '07 УИКЕНД', @userid int = 1; 
+--exec inv.barcodes_move_fast_p @info, @date, @division, @userid,  @note output; select @note;

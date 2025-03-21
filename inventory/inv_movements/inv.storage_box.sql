@@ -11,7 +11,15 @@ create table inv.storage_box (
 end
 
 --truncate table inv.storage_box
-select * from inv.storage_box
+select * 
+from inv.storage_box
+
+select sum(b.opersign) qty
+from inv.storage_box b
+having sum(b.opersign) >0
+
+
+
 /*
 insert org.divisions (division,divisionfullname, clientID, holdsmoney, holdsinventory, retail, comment,datestart, chainID)
 select 'Storage', 'BunkovoStorage',1719, 0, 1, 0, 'For storage in boxes.inv.packing_p_', '2025-02-01', 10
