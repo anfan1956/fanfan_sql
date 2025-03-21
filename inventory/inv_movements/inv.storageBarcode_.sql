@@ -8,8 +8,8 @@ as
 			declare @info table (barcodeid int);
 			insert @info select @bcID;
 
-			-- Проверка, находится ли данный баркод на складе. 
-			-- Если нет, то осуществляем транзакцию по перемещению товара на склад
+			-- РџСЂРѕРІРµСЂРєР°, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё РґР°РЅРЅС‹Р№ Р±Р°СЂРєРѕРґ РЅР° СЃРєР»Р°РґРµ. 
+			-- Р•СЃР»Рё РЅРµС‚, С‚Рѕ РѕСЃСѓС‰РµСЃС‚РІР»СЏРµРј С‚СЂР°РЅР·Р°РєС†РёСЋ РїРѕ РїРµСЂРµРјРµС‰РµРЅРёСЋ С‚РѕРІР°СЂР° РЅР° СЃРєР»Р°Рґ
 			if org.division_id(@WH)<> (
 						select top 1 i.divisionID
 						from inv.inventory i 
@@ -23,7 +23,7 @@ as
 				select inv.transactiontype_id('STORAGE'), org.person_id(@userName)
 				select @transID = SCOPE_IDENTITY();				
 
-				-- Если товар не находится на данном складе, перемещаем товар оттуда, где он был на данный склад
+				-- Р•СЃР»Рё С‚РѕРІР°СЂ РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ РЅР° РґР°РЅРЅРѕРј СЃРєР»Р°РґРµ, РїРµСЂРµРјРµС‰Р°РµРј С‚РѕРІР°СЂ РѕС‚С‚СѓРґР°, РіРґРµ РѕРЅ Р±С‹Р» РЅР° РґР°РЅРЅС‹Р№ СЃРєР»Р°Рґ
 				with seed (clientid, logstateID, divisionID, transactionid, opersign, barcodeid) as (
 				select iv.clientID, iv.logstateID, iv.divisionID, iv.transactionID, iv.opersign, iv.barcodeID
 				from @info inf
@@ -37,7 +37,7 @@ as
 					) as iv
 				union all
 				select 
-					org.client_id_clientRUS ('ИП ИВАНОВА')
+					org.client_id_clientRUS ('РРџ РР’РђРќРћР’Рђ')
 					, inv.logstate_id('IN-WAREHOUSE')
 					, org.division_id(@WH)
 					, @transID
@@ -49,7 +49,7 @@ as
 				select clientID, logstateID, divisionID, transactionID, opersign, barcodeID from seed;
 			END		
 
-			-- убираем товар из тех коробок где он был, кроме той в которую читаем баркод
+			-- СѓР±РёСЂР°РµРј С‚РѕРІР°СЂ РёР· С‚РµС… РєРѕСЂРѕР±РѕРє РіРґРµ РѕРЅ Р±С‹Р», РєСЂРѕРјРµ С‚РѕР№ РІ РєРѕС‚РѕСЂСѓСЋ С‡РёС‚Р°РµРј Р±Р°СЂРєРѕРґ
 			;with  _otherBoxes as (
 			select sum(opersign) qty, boxID
 			from inv.storage_box sb
@@ -63,9 +63,9 @@ as
 			select ob.boxID, @bcID, -1
 			from _otherBoxes ob;
 
-			--если товар уже был в коробке, убираем его оттуда, но не убираем со склада хранения
-			--если он потом пойдет в магазин нужно будет принять его в магазине 
-			--если его просто нужно переложить в другую коробку, можно не убирать его из этой отдельной операцией
+			--РµСЃР»Рё С‚РѕРІР°СЂ СѓР¶Рµ Р±С‹Р» РІ РєРѕСЂРѕР±РєРµ, СѓР±РёСЂР°РµРј РµРіРѕ РѕС‚С‚СѓРґР°, РЅРѕ РЅРµ СѓР±РёСЂР°РµРј СЃРѕ СЃРєР»Р°РґР° С…СЂР°РЅРµРЅРёСЏ
+			--РµСЃР»Рё РѕРЅ РїРѕС‚РѕРј РїРѕР№РґРµС‚ РІ РјР°РіР°Р·РёРЅ РЅСѓР¶РЅРѕ Р±СѓРґРµС‚ РїСЂРёРЅСЏС‚СЊ РµРіРѕ РІ РјР°РіР°Р·РёРЅРµ 
+			--РµСЃР»Рё РµРіРѕ РїСЂРѕСЃС‚Рѕ РЅСѓР¶РЅРѕ РїРµСЂРµР»РѕР¶РёС‚СЊ РІ РґСЂСѓРіСѓСЋ РєРѕСЂРѕР±РєСѓ, РјРѕР¶РЅРѕ РЅРµ СѓР±РёСЂР°С‚СЊ РµРіРѕ РёР· СЌС‚РѕР№ РѕС‚РґРµР»СЊРЅРѕР№ РѕРїРµСЂР°С†РёРµР№
 			;if (
 				select 
 					coalesce(sum(opersign), 0)
@@ -88,7 +88,7 @@ as
 	end catch
 go
 
-declare @bcID int = 582713, @boxID int  = 1,  @WH varchar(255) = 'BunkovoStorage', @userName varchar(255) = 'БАЛУШКИНА А. А.'; 
+declare @bcID int = 582713, @boxID int  = 1,  @WH varchar(255) = 'BunkovoStorage', @userName varchar(255) = 'Р‘РђР›РЈРЁРљРРќРђ Рђ. Рђ.'; 
 -- 
 --exec inv.storageBarcode_ @bcID, @boxID, @WH, @userName; 
 select * from inv.storage_box 
