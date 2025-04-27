@@ -21,7 +21,7 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'charge_salary',
 		@notify_level_netsend=0, 
 		@notify_level_page=0, 
 		@delete_level=0, 
-		@description=N'начисление зарплаты по 10 и 25 числам месяца. При начисление делается update success = ''True''  и пишется время', 
+		@description=N'РЅР°С‡РёСЃР»РµРЅРёРµ Р·Р°СЂРїР»Р°С‚С‹ РїРѕ 10 Рё 25 С‡РёСЃР»Р°Рј РјРµСЃСЏС†Р°. РџСЂРё РЅР°С‡РёСЃР»РµРЅРёРµ РґРµР»Р°РµС‚СЃСЏ update success = ''True''  Рё РїРёС€РµС‚СЃСЏ РІСЂРµРјСЏ', 
 		@category_name=N'[Uncategorized (Local)]', 
 		@owner_login_name=N'anfan', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback

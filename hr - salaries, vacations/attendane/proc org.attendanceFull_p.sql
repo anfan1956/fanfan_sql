@@ -57,9 +57,9 @@ go
 
 
 declare 
-	@date datetime = '20250328'
-	, @personid int = 1
-	, @workstationID int = 23
+	@date datetime = '20250426'
+	, @personid int = 1075
+	, @workstationID int = 13
 	, @delete bit = 'False'
 	, @full bit		= 'False'
 
@@ -67,8 +67,8 @@ declare
 from org.attendance a
 	join org.persons p on p.personID =a.personID 
 where cast(a.checktime as date) = @date
-
 /*
+
 exec org.attendanceFull_p 
 		@date 		= @date	
 	, 	@personID	= @personID
@@ -76,9 +76,7 @@ exec org.attendanceFull_p
 	,	@delete  = @delete
 	,	@full = @full
 ;
-delete a
-from  org.attendance a where cast(checktime as date)= @date and 
-workstationID = 16
+
 */
 
 ;select a.*, p.lfmname 
