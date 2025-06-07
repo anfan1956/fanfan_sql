@@ -57,9 +57,9 @@ go
 
 
 declare 
-	@date datetime = '20250427'
-	, @personid int = 5
-	, @workstationID int = 23
+	@date datetime = '20250607'
+	, @personid int = 7
+	, @workstationID int = 13
 	, @delete bit = 'False'
 	, @full bit		= 'False'
 
@@ -69,14 +69,7 @@ from org.attendance a
 where cast(a.checktime as date) = @date
 
 /*
-exec org.attendanceFull_p 
-		@date 		= @date	
-	, 	@personID	= @personID
-	,	@workstationID  = @workstationID
-	,	@delete  = @delete
-	,	@full = @full
-;
-
+exec org.attendanceFull_p @date = @date, @personID	= @personID, @workstationID  = @workstationID, @delete  = @delete, @full = @full;
 */
 
 ;select a.*, p.lfmname 
