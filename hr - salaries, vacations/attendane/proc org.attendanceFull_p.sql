@@ -57,20 +57,20 @@ go
 
 
 declare 
-	@date datetime = '20250609'
-	, @personid int = 5
+	@date datetime = '20250526'
+	, @personid int = 1
 
 	, @workstationID int = 23
-	, @delete bit = 'TRUE'
-	, @full bit		= 'FALSE'
+	, @delete bit = 'false'
+	, @full bit		= 'True'
 
 ;select a.*, p.lfmname 
 from org.attendance a
 	join org.persons p on p.personID =a.personID 
 where cast(a.checktime as date) = @date
+
 /*
 exec org.attendanceFull_p @date = @date, @personID	= @personID, @workstationID  = @workstationID, @delete  = @delete, @full = @full;
-
 */
 
 ;select a.*, p.lfmname 
