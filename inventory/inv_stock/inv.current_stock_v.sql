@@ -28,6 +28,9 @@ create view inv.current_stock_v as
 		c.color цвет, 
 		sz.size размер, 
 		se.season сезон, 
+		SeasonGen= case
+						when left(se.season, 2) = 'ss' then 'Весна/Лето'
+						else 'Осень/Зима' end,
 		s.cost costCUR,
 		s.cost * r.rate cost,
 		round(
