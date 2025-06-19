@@ -1,4 +1,4 @@
-use fanfan
+п»їuse fanfan
 go
 
 -- 20250619_CreateOrdersTable.sql
@@ -11,21 +11,21 @@ create table cust.visitorType (
 	, visitorType varchar (10)
 )
 insert cust.visitorType values 
-('муж'), 
-('жен'), 
-('семья'), 
-('друзья'); 
+('РјСѓР¶'), 
+('Р¶РµРЅ'), 
+('СЃРµРјСЊСЏ'), 
+('РґСЂСѓР·СЊСЏ'); 
 
 create table cust.visitAction (
 		id int primary key identity(1,1) 
 	,	actionName varchar(255) not null
 )
 insert cust.visitAction values 
-('быстрый просмотр'), 
-('внимательный просмотр'), 
-('примерка'), 
-('отложка'), 
-('переброс')
+('Р±С‹СЃС‚СЂС‹Р№ РїСЂРѕСЃРјРѕС‚СЂ'), 
+('РІРЅРёРјР°С‚РµР»СЊРЅС‹Р№ РїСЂРѕСЃРјРѕС‚СЂ'), 
+('РїСЂРёРјРµСЂРєР°'), 
+('РѕС‚Р»РѕР¶РєР°'), 
+('РїРµСЂРµР±СЂРѕСЃ')
 
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[cust].[visit]') AND type = 'U')
 
