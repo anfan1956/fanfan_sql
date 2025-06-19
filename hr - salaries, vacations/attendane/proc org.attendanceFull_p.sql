@@ -61,8 +61,8 @@ declare
 	, @personid int = 10
 
 	, @workstationID int = 13
-	, @delete bit = 'True'
-	, @full bit		= 'True'
+	, @delete bit = 'False'
+	, @full bit		= 'False'
 
 ;select a.*, p.lfmname 
 from org.attendance a
