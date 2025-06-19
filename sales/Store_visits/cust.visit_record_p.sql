@@ -1,4 +1,4 @@
-if OBJECT_ID('cust.visit_record_p') is not null drop proc cust.visit_record_p
+п»їif OBJECT_ID('cust.visit_record_p') is not null drop proc cust.visit_record_p
 
 go
 create proc cust.visit_record_p 
@@ -23,16 +23,17 @@ begin
 			where a. actionName = @action
 		) as actionid
 		, (select coalesce (@visittime, current_timestamp)) as visittime;
-	select 'сделана запись '
+	select 'СЃРґРµР»Р°РЅР° Р·Р°РїРёСЃСЊ '
 	+ cast(scope_identity() as varchar) +
-	' о посещении магазина ' 
+	' Рѕ РїРѕСЃРµС‰РµРЅРёРё РјР°РіР°Р·РёРЅР° ' 
 end
 
 go
-
+/*
 exec cust.visit_record_p 
-	  'Федоров А. Н.' 
-	, '07 УИКЕНД' 
-	, 'ЖЕН'
-	, 'ПРИМЕРКА'
+	  'Р¤РµРґРѕСЂРѕРІ Рђ. Рќ.' 
+	, '07 РЈРРљР•РќР”' 
+	, 'Р–Р•Рќ'
+	, 'РџР РРњР•Р РљРђ'
 
+*/
