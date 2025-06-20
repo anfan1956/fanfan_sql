@@ -23,12 +23,28 @@ begin
 			where a. actionName = @action
 		) as actionid
 		, (select coalesce (@visittime, current_timestamp)) as visittime;
-	select 'сделана запись '
-	+ cast(scope_identity() as varchar) +
-	' о посещении магазина ' 
+
+		declare @thiscount int = (
+			select count(1) 
+			from cust.visit v 
+			where 1=1	
+				and cast(visitTime as date) = cast (getdate() as date)
+				and divisionid =  org.division_id(@division)
+		), @totalCount int = (
+			select count(1) 
+			from cust.visit v 
+			where 1=1	
+				and cast(visitTime as date) = cast (getdate() as date)
+		)
+
+
+	select 'сделана запись №'
+	+ cast(@thiscount as varchar) + ' из ' + cast (@totalCount as varchar) +
+	' о посещении магазина ' as msg
 end
 
 go
+
 /*
 exec cust.visit_record_p 
 	  'Федоров А. Н.' 
@@ -37,3 +53,18 @@ exec cust.visit_record_p
 	, 'ПРИМЕРКА'
 
 */
+declare @shop varchar(25) = '07 УИКЕНД'; 
+declare @thiscount int = (
+	select count(1) 
+	from cust.visit v 
+	where 1=1	
+		and cast(visitTime as date) = cast (getdate() as date)
+		and divisionid =  org.division_id(@shop)
+), @totalCount int = (
+	select count(1) 
+	from cust.visit v 
+	where 1=1	
+		and cast(visitTime as date) = cast (getdate() as date)
+)
+
+select @thiscount, @totalCount
