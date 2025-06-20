@@ -57,11 +57,11 @@ go
 
 
 declare 
-	@date datetime = '20250616'
-	, @personid int = 10
+	@date datetime = '20250620'
+	, @personid int = 1
 
-	, @workstationID int = 13
-	, @delete bit = 'False'
+	, @workstationID int = 16
+	, @delete bit = 'True'
 	, @full bit		= 'False'
 
 ;select a.*, p.lfmname 
