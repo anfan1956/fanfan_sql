@@ -206,3 +206,4 @@ declare @salary_date date = '20241231'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
 declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
 
+select * from org.attendance_check_v
