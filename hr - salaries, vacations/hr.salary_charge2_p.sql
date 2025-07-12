@@ -202,8 +202,8 @@ create proc hr.salary_charge2_p @note varchar(max) output as
 	end catch
 
 go
-declare @salary_date date = '20241231'
+declare @salary_date date = '20250630'
 --declare @note varchar(max); exec hr.salarycharge_delete @note output, @salary_date ;select @note
-declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
+--declare @note varchar(max); exec hr.salary_charge2_p @note output; select @note;
 
 select * from org.attendance_check_v
