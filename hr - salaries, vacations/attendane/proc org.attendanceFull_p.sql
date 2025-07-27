@@ -57,7 +57,7 @@ go
 
 
 declare 
-	@date datetime = '20250716'
+	@date datetime = '20250721'
 	, @personid int = 5
 
 	, @workstationID int = 23
