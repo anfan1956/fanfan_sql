@@ -1,4 +1,5 @@
-
+use fanfan
+go
 -- ***************************************---
 if OBJECT_ID ('org.attendanceFull_p') is not null drop proc org.attendanceFull_p
 go
@@ -57,12 +58,12 @@ go
 
 
 declare 
-	@date datetime = '20250721'
-	, @personid int = 5
+	@date datetime = '20250726'
+	, @personid int = 1075
 
-	, @workstationID int = 23
+	, @workstationID int = 13
 	, @delete bit = 'False'
-	, @full bit		= 'False'
+	, @full bit		= 'True'
 
 ;select a.*, p.lfmname 
 from org.attendance a
