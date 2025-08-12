@@ -58,12 +58,12 @@ go
 
 
 declare 
-	@date datetime = '20250810'
-	, @personid int = 10
+	@date datetime = '20250808'
+	, @personid int = 5
 
 	, @workstationID int = 23
 	, @delete bit = 'False'
-	, @full bit		= 'False'
+	, @full bit		= 'True'
 
 ;select a.*, p.lfmname 
 from org.attendance a
