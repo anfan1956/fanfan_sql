@@ -43,7 +43,7 @@ end catch
 go 
 
 declare 
-			@date datetime = '2025-07-15'
+			@date datetime = '2025-08-15'
 		, 	@amount money = 50000
 		,	@person varchar(max) = 'ÈÂÀÍÎÂÀ Ò. Ê.'
 		,	@doc varchar(max) = 'cash'
