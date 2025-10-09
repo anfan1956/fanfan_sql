@@ -13,11 +13,13 @@ CREATE OR ALTER view inv.barcode_info_v as
 
 with src as 
 (
-	select i.transactionID, t.transactiondate, i.barcodeID
+	select  i.transactionID, t.transactiondate, i.barcodeID
 		from inv.inventory i
 		join inv.transactions t on t.transactionID=i.transactionID
 		join inv.transactiontypes tt on tt.transactiontypeID=t.transactiontypeID
-	where tt.transactiontype in ('order', 'ORDER LOCAL', 'consignment' )
+	where 1=1
+		and tt.transactiontype in ('order', 'ORDER LOCAL', 'consignment' )
+		and i.opersign =1
 )
 select i.barcodeid, i.logstateID, s.orderid, o.currencyID, 	 
 	o.orderdiscount
@@ -31,13 +33,18 @@ select i.barcodeid, i.logstateID, s.orderid, o.currencyID,
 	, b.sizeID
 	, s.sizegridID
 	, s.cost
-	, src.transactiondate 
+	, src1.transactiondate 
 from inv.inventory i
 	join inv.barcodes b on b.barcodeID= i.barcodeID
 	join inv.styles s on s.styleID=b.styleID
-	join src on src.barcodeID=i.barcodeID
 	left join inv.orders o on o.orderID=s.orderID
---where i.barcodeID = @barcodeid	
+	outer apply (
+		select top 1 
+		src.transactiondate 
+		from src
+		where src.barcodeID= i.barcodeID
+		order by 1 desc
+	) as src1
 group by 
 	i.barcodeID, 
 	s.orderID,
@@ -51,9 +58,12 @@ group by
 	, b.sizeID
 	, s.sizegridID
 	, s.cost 
-	, src.transactiondate
+	, src1.transactiondate
 
 having sum(i.opersign)>0
 GO
 
+DECLARE @startDate DATE = '20251008'
+	, @barcodeid int  = 664226;
 
+select * from inv.barcode_info_v v where v.barcodeid=@barcodeid
