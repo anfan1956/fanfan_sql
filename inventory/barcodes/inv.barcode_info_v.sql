@@ -21,8 +21,13 @@ with src as
 		and tt.transactiontype in ('order', 'ORDER LOCAL', 'consignment' )
 		and i.opersign =1
 )
-select i.barcodeid, i.logstateID, s.orderid, o.currencyID, 	 
-	o.orderdiscount
+select 
+	i.barcodeid
+	, i.logstateID
+	, s.orderid
+	, oc.orderclassID
+	, o.currencyID
+	, o.orderdiscount
 	, s.retail
 	,o.buyerID as clientid
 	, s.brandID
@@ -38,6 +43,7 @@ from inv.inventory i
 	join inv.barcodes b on b.barcodeID= i.barcodeID
 	join inv.styles s on s.styleID=b.styleID
 	left join inv.orders o on o.orderID=s.orderID
+	left join inv.orderclasses oc on oc.orderclassID=o.orderclassID
 	outer apply (
 		select top 1 
 		src.transactiondate 
@@ -47,14 +53,16 @@ from inv.inventory i
 	) as src1
 group by 
 	i.barcodeID, 
-	s.orderID,
-	o.currencyID, 
+	s.orderID
+	, oc.orderclassID
+	, o.currencyID, 
 	i.logstateID, 
 	o.orderdiscount, 
 	s.retail, 
 	o.buyerID, 
-	s.brandID, s.seasonID, s.inventorytypeID, s.styleID, 
-	b.colorID
+	s.brandID, s.seasonID, s.inventorytypeID
+	, s.styleID
+	, b.colorID
 	, b.sizeID
 	, s.sizegridID
 	, s.cost 
