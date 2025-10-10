@@ -6,13 +6,18 @@ RETURNS TABLE
 AS
 RETURN
 (
-    SELECT ai.barcodeid
+    SELECT 
+        ai.barcodeid
+        , Ведомость
+        , ai.divisionfullname as магазин
     FROM (
         -- Active Inventory: Barcodes from inventory takes after the given date
         SELECT DISTINCT
-            i.barcodeid
+            i.barcodeid, i.takeid [Ведомость], d.divisionfullname
         FROM inv.invTake_barcodes i
-        JOIN inv.transactions t ON t.transactionID = i.takeID
+            JOIN inv.transactions t ON t.transactionID = i.takeID
+            join inv.inventorytakes it on it.inventorytakeID=i.takeid
+            join org.divisions d on d.divisionID=it.divisionID
         WHERE t.transactiondate >= @startDate
     ) ai
     OUTER APPLY (

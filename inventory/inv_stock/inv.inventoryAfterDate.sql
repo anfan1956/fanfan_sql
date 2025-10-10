@@ -5,6 +5,7 @@ CREATE OR ALTER FUNCTION inv.inventoryAfterDate(@startDate as date) returns tabl
 
 SELECT 
 	gi.Ведомость
+	, gi.магазин
 	, bi.*
 FROM inv.GetAvailableBarcodesAfterDate(@startDate) gi
 Outer Apply
