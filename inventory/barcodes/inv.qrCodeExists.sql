@@ -17,4 +17,3 @@ RETURN
 go
 
 declare @qr varchar (83) ='nmlkdfs79b'
-select ExistsFlag from inv.qrCodeExists (@qr)
