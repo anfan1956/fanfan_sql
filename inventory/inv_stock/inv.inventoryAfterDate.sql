@@ -8,11 +8,11 @@ SELECT
 	, gi.магазин
 	, bi.*
 FROM inv.GetAvailableBarcodesAfterDate(@startDate) gi
-Outer Apply
+cross Apply
 	inv.barcodeid_info_f(gi.barcodeid) as bi
 
 go
 DECLARE @startDate DATE = '20251008';
 
 select * from inv.inventoryAfterDate (@startDate)
-
+select * from inv.barcodeid_info_f(505297)

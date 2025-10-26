@@ -26,6 +26,7 @@ select
 	, i.logstateID
 	, s.orderid
 	, oc.orderclassID
+	, o.showroomID
 	, o.currencyID
 	, o.orderdiscount
 	, s.retail
@@ -57,6 +58,7 @@ group by
 	, oc.orderclassID
 	, o.currencyID, 
 	i.logstateID, 
+	o.showroomID,
 	o.orderdiscount, 
 	s.retail, 
 	o.buyerID, 
