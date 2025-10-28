@@ -11,9 +11,9 @@ GO
 
 ALTER view [rep].[v_salesreport]
 as
-	select	dbo.justdate( t.transactiondate )				AS date,			
-			format( t.transactiondate, 't', 'RU')			AS time,
-			rt.r_type_rus									AS pmtType,
+	select	dbo.justdate( t.transactiondate )				AS [date],			
+			format( t.transactiondate, 't', 'RU')			AS [time],
+--			rt.r_type_rus									AS pmtType,
 			datepart( dd, t.transactiondate )				as day,
 			datepart( hh, t.transactiondate )				as hour, 
 			datepart( mm, t.transactiondate )				as month, 

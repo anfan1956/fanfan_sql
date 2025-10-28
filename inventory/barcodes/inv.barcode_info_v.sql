@@ -40,12 +40,19 @@ select
 	, s.sizegridID
 	, s.cost
 	, src1.transactiondate 
+	, coalesce (s.gender, o.gender, 
+		case 
+			when o.buyerid in (178, 187, 186, 177) then 'm'
+			else 'f'
+		end
+		) as gender
 from inv.inventory i
 	join inv.barcodes b on b.barcodeID= i.barcodeID
 	join inv.styles s on s.styleID=b.styleID
 	left join inv.orders o on o.orderID=s.orderID
 	left join inv.orderclasses oc on oc.orderclassID=o.orderclassID
-	outer apply (
+	
+	cross apply (
 		select top 1 
 		src.transactiondate 
 		from src
@@ -63,6 +70,7 @@ group by
 	s.retail, 
 	o.buyerID, 
 	s.brandID, s.seasonID, s.inventorytypeID
+	, s.gender, o.gender
 	, s.styleID
 	, b.colorID
 	, b.sizeID
@@ -76,4 +84,12 @@ GO
 DECLARE @startDate DATE = '20251008'
 	, @barcodeid int  = 664226;
 
-select * from inv.barcode_info_v v where v.barcodeid=@barcodeid
+select * from inv.barcode_info_v v  -- where v.barcodeid=@barcodeid -- count = 137521
+
+select top 5 c.contractor,  o.* from inv.orders  o
+	join org.contractors c on c.contractorID = o.buyerID
+order by 1 desc
+select top 5 * from inv.styles s order by 1 desc
+select distinct buyerid, contractor 
+	from inv.orders o
+	join org.contractors c on c.contractorID = o.buyerID

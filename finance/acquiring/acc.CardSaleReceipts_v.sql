@@ -33,6 +33,5 @@ go
 select transId, saleDate, ttype, recType, person, barcode, invType, amount, sum (amount) over()
 from acc.CardSaleReceipts_v 
 	order by 1 desc
-select * from acc.CardRedirectLog
-
-
+select * from acc.CardRedirectLog l 
+order by closedTime desc

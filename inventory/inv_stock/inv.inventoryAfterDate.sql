@@ -4,7 +4,7 @@ CREATE OR ALTER FUNCTION inv.inventoryAfterDate(@startDate as date) returns tabl
 
 
 SELECT 
-	gi.Ведомость
+	  gi.Ведомость
 	, gi.магазин
 	, bi.*
 FROM inv.GetAvailableBarcodesAfterDate(@startDate) gi
@@ -14,5 +14,5 @@ cross Apply
 go
 DECLARE @startDate DATE = '20251008';
 
-select * from inv.inventoryAfterDate (@startDate)
+select  * from inv.inventoryAfterDate (@startDate) i
 select * from inv.barcodeid_info_f(505297)
